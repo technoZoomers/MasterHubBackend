@@ -1,0 +1,63 @@
+package main
+
+import (
+	"github.com/google/logger"
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
+	"github.com/jackc/pgx"
+	masterHub_handlers "github.com/technoZoomers/MasterHubBackend/handlers"
+	"github.com/technoZoomers/MasterHubBackend/repository"
+	"github.com/technoZoomers/MasterHubBackend/useCases"
+	"github.com/technoZoomers/MasterHubBackend/utils"
+	"net/http"
+	"time"
+)
+
+func main() {
+
+	// logger initialization
+	utils.LoggerSetup()
+	defer utils.LoggerClose()
+
+	// database initialization
+	err := repository.Init(pgx.ConnConfig{
+		Database: utils.DBName,
+		Host:     "localhost",
+		User:     "alexis",
+		Password: "sinope27",
+	})
+	if err != nil {
+		logger.Fatalf("Couldn't initialize database: %v", err)
+	}
+
+	err = useCases.Init(repository.GetBalanceRepo(), repository.GetTransactionsRepo())
+	if err != nil {
+		logger.Fatalf("Couldn't initialize useCases: %v", err)
+	}
+
+	err = balance_handlers.Init(useCases.GetFundsUC())
+	if err != nil {
+		logger.Fatalf("Couldn't initialize handlers: %v", err)
+	}
+
+	// router initialization
+
+	r := mux.NewRouter()
+
+	cors := handlers.CORS(handlers.AllowCredentials(), handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE"}))
+
+	// server initialization
+
+	server := &http.Server{
+		Addr:         utils.PortNum,
+		Handler:      cors(r),
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+
+	err = server.ListenAndServe()
+
+	if err != nil {
+		logger.Fatalf("Failed to start server: %v", err)
+	}
+}
