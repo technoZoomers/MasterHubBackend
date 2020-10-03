@@ -37,18 +37,42 @@ func CreateErrorAnswerJson(writer http.ResponseWriter, statusCode int, error mas
 	createAnswerJson(writer, statusCode, marshalledError)
 }
 
-func CreateAnswerBalanceJson(writer http.ResponseWriter, statusCode int, chats masterhub_models.Balance) {
-	marshalledBalance, err := json.Marshal(chats)
+func CreateAnswerLanguagesJson(writer http.ResponseWriter, statusCode int, languages masterhub_models.Languages) {
+	marshalledLanguages, err := json.Marshal(languages)
 	if err != nil {
 		logger.Errorf("Error marhalling json: %v", err)
 	}
-	createAnswerJson(writer, statusCode, marshalledBalance)
+	createAnswerJson(writer, statusCode, marshalledLanguages)
 }
 
-func CreateAnswerTransactionsJson(writer http.ResponseWriter, statusCode int, chats masterhub_models.Transactions) {
-	marshalledTransactions, err := json.Marshal(chats)
+func CreateAnswerThemesJson(writer http.ResponseWriter, statusCode int, themes masterhub_models.Themes) {
+	marshalledThemes, err := json.Marshal(themes)
 	if err != nil {
 		logger.Errorf("Error marhalling json: %v", err)
 	}
-	createAnswerJson(writer, statusCode, marshalledTransactions)
+	createAnswerJson(writer, statusCode, marshalledThemes)
+}
+
+func CreateAnswerThemeJson(writer http.ResponseWriter, statusCode int, theme masterhub_models.Theme) {
+	marshalledTheme, err := json.Marshal(theme)
+	if err != nil {
+		logger.Errorf("Error marhalling json: %v", err)
+	}
+	createAnswerJson(writer, statusCode, marshalledTheme)
+}
+
+func CreateAnswerMasterJson(writer http.ResponseWriter, statusCode int, master masterhub_models.Master) {
+	marshalledMaster, err := json.Marshal(master)
+	if err != nil {
+		logger.Errorf("Error marhalling json: %v", err)
+	}
+	createAnswerJson(writer, statusCode, marshalledMaster)
+}
+
+func CreateAnswerVideoDataJson(writer http.ResponseWriter, statusCode int, videoData masterhub_models.VideoData) {
+	marshalledVideoData, err := json.Marshal(videoData)
+	if err != nil {
+		logger.Errorf("Error marhalling json: %v", err)
+	}
+	createAnswerJson(writer, statusCode, marshalledVideoData)
 }

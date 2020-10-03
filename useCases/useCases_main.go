@@ -18,7 +18,7 @@ func Init(usersRepo repository.UsersRepoI, mastersRepo repository.MastersRepoI, 
 	themesRepo repository.ThemesRepoI, languagesRepo repository.LanguagesRepoI,
 	videosRepo repository.VideosRepoI, avatarsRepo repository.AvatarsRepoI ) error {
 	uc.UsersUC = &UsersUC{usersRepo}
-	uc.MastersUC = &MastersUC{mastersRepo}
+	uc.MastersUC = &MastersUC{mastersRepo, themesRepo, languagesRepo}
 	uc.StudentsUC = &StudentsUC{studentsRepo}
 	uc.ThemesUC = &ThemesUC{themesRepo}
 	uc.LanguagesUC = &LanguagesUC{languagesRepo}

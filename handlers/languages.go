@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"fmt"
 	"github.com/google/logger"
+	"github.com/technoZoomers/MasterHubBackend/models"
 	"github.com/technoZoomers/MasterHubBackend/useCases"
+	"github.com/technoZoomers/MasterHubBackend/utils"
 	"net/http"
 )
 
@@ -12,11 +13,11 @@ type LanguagesHandlers struct {
 }
 
 func (lh *LanguagesHandlers) Get(writer http.ResponseWriter, req *http.Request) {
-	languages, err := lh.LanguagesUC.GetLanguages()
+	languages, err := lh.LanguagesUC.Get()
 	if err != nil {
 		logger.Error(err)
-		utils.CreateErrorAnswerJson(writer, utils.StatusCode("Internal Server Error"), models.CreateMessage(err.Error()))
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(err.Error()))
 		return
 	}
-	utils.CreateAnswerTransactionsJson(writer, utils.StatusCode("OK"), txs)
+	utils.CreateAnswerLanguagesJson(writer, http.StatusOK, languages)
 }

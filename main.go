@@ -45,10 +45,22 @@ func main() {
 	// router initialization
 
 	r := mux.NewRouter()
-	r.HandleFunc("/masters/{id}", masterHub_handlers.GetMastersH().Get).Methods("GET")
+
+	//languages
+
 	r.HandleFunc("/languages", masterHub_handlers.GetLanguagesH().Get).Methods("GET")
+
+	//themes
+
 	r.HandleFunc("/themes", masterHub_handlers.GetThemesH().Get).Methods("GET")
 	r.HandleFunc("/themes/{id}", masterHub_handlers.GetThemesH().GetThemeById).Methods("GET")
+
+	//masters
+
+	r.HandleFunc("/masters/{id}", masterHub_handlers.GetMastersH().GetMasterById).Methods("GET")
+	r.HandleFunc("/masters/{id}/videos/create", masterHub_handlers.GetVideosH().Upload).Methods("POST")
+
+
 
 
 	cors := handlers.CORS(handlers.AllowCredentials(), handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE"}))

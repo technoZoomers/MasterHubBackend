@@ -1,6 +1,8 @@
 package useCases
 
-type LanguagesUCInterface interface {
+import "github.com/technoZoomers/MasterHubBackend/models"
 
+type LanguagesUCInterface interface {
+	Get() (models.Languages, error)
 }
 
