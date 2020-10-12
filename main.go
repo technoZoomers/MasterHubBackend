@@ -74,7 +74,7 @@ func main() {
 	// server initialization
 
 	server := &http.Server{
-		Addr:         utils.PortNum,
+		Addr:         ":" + os.Getenv("PORT"),
 		Handler:      cors(r),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
