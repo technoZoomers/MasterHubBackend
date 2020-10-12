@@ -30,14 +30,14 @@ func Init(config pgx.ConnConfig) error {
 	//if err != nil {
 	//	return err
 	//}
-	//err = repo.createTables()
-	//if err != nil {
-	//	return err
-	//}
-	//err = repo.fillTables()
-	//if err != nil {
-	//	return err
-	//}
+	err = repo.createTables()
+	if err != nil {
+		return err
+	}
+	err = repo.fillTables()
+	if err != nil {
+		return err
+	}
 	repo.StudentsRepo = &StudentsRepo{}
 	repo.MastersRepo = &MastersRepo{}
 	repo.UsersRepo = &UsersRepo{}

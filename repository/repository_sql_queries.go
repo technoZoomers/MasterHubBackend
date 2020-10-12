@@ -104,4 +104,14 @@ INSERT INTO subthemes (name, theme_id) values
     ('interior', 11), ('exterior', 11), ('web-design', 11),
     ('make up', 12), ('hairstyling', 12);
 
+INSERT INTO users (email, password, type, created) values ('spiro@mail.ru', '1234', 0, '2020-10-03T13:54:00+00:00');
+INSERT INTO masters (user_id, username, fullname, theme, description, qualification, education_format, avg_price) values (1, 'reyamusic', 'Reya Fountain', 1, 'Hi! I''m a flutist', 1, 2, 0);
+INSERT INTO masters_subthemes (master_id, subtheme_id) values (1, 25), (1, 26);
+INSERT INTO masters_languages (master_id, language_id) values (1, 1), (1, 2);
+
+INSERT INTO users (email, password, type, created) values ('sportsman@mail.ru', '123', 0, '2020-10-03T14:54:00+00:00');
+INSERT INTO masters (user_id, username, fullname, theme, description, qualification, education_format, avg_price) values (2, 'alexsportsman', 'Alex Baranoff', 3, 'Hi! I''m a sportsman', 2, 2, 0);
+INSERT INTO masters_subthemes (master_id, subtheme_id) values (2, 29);
+INSERT INTO masters_languages (master_id, language_id) values (2, 1), (2, 2);
+
 `
