@@ -10,6 +10,7 @@ import (
 	"github.com/technoZoomers/MasterHubBackend/useCases"
 	"github.com/technoZoomers/MasterHubBackend/utils"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -20,12 +21,17 @@ func main() {
 	defer utils.LoggerClose()
 
 	// database initialization
-	err := repository.Init(pgx.ConnConfig{
-		Database: utils.DBName,
-		Host:     "localhost",
-		User:     "alexis",
-		Password: "sinope27",
-	})
+	//err := repository.Init(pgx.ConnConfig{
+	//	Database: utils.DBName,
+	//	Host:     "localhost",
+	//	User:     "alexis",
+	//	Password: "sinope27",
+	//})
+	config, err := pgx.ParseConnectionString(os.Getenv("DATABASE_URL"))
+	if err != nil {
+		logger.Fatalf("Couldn't initialize database: %v", err)
+	}
+	err = repository.Init(config)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize database: %v", err)
 	}
