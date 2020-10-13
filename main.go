@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/google/logger"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -10,8 +9,6 @@ import (
 	"github.com/technoZoomers/MasterHubBackend/repository"
 	"github.com/technoZoomers/MasterHubBackend/useCases"
 	"github.com/technoZoomers/MasterHubBackend/utils"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -22,14 +19,6 @@ func main() {
 	// logger initialization
 	utils.LoggerSetup()
 	defer utils.LoggerClose()
-
-	files, err := ioutil.ReadDir(".")
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, f := range files {
-		fmt.Println(f.Name())
-	}
 
 	// database initialization
 	//err := repository.Init(pgx.ConnConfig{
