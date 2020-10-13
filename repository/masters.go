@@ -39,7 +39,7 @@ func (mastersRepo *MastersRepo) GetMasterByUserId(master *models.MasterDB) (int6
 	return utils.NO_ERROR, nil
 }
 
-func (mastersRepo *MastersRepo) GetMasterSubthemesById(master *models.MasterDB) ([]int64, error) {
+func (mastersRepo *MastersRepo) GetMasterSubthemesById(masterId int64) ([]int64, error) {
 	subthemesIds := make([]int64, 0)
 	db := getPool()
 	transaction, err := db.Begin()
@@ -48,7 +48,7 @@ func (mastersRepo *MastersRepo) GetMasterSubthemesById(master *models.MasterDB) 
 		logger.Errorf(dbError.Error())
 		return subthemesIds, dbError
 	}
-	rows, err := transaction.Query(`SELECT subtheme_id FROM masters_subthemes WHERE master_id=$1`, master.Id)
+	rows, err := transaction.Query(`SELECT subtheme_id FROM masters_subthemes WHERE master_id=$1`, masterId)
 	if err != nil {
 		return subthemesIds, nil
 	}
@@ -75,7 +75,7 @@ func (mastersRepo *MastersRepo) GetMasterSubthemesById(master *models.MasterDB) 
 	return subthemesIds, nil
 }
 
-func (mastersRepo *MastersRepo) GetMasterLanguagesById(master *models.MasterDB) ([]int64, error) {
+func (mastersRepo *MastersRepo) GetMasterLanguagesById(masterId int64) ([]int64, error) {
 	languagesIds := make([]int64, 0)
 	db := getPool()
 	transaction, err := db.Begin()
@@ -84,7 +84,7 @@ func (mastersRepo *MastersRepo) GetMasterLanguagesById(master *models.MasterDB) 
 		logger.Errorf(dbError.Error())
 		return languagesIds, dbError
 	}
-	rows, err := transaction.Query(`SELECT language_id FROM masters_languages WHERE master_id=$1`, master.Id)
+	rows, err := transaction.Query(`SELECT language_id FROM masters_languages WHERE master_id=$1`, masterId)
 	if err != nil {
 		return languagesIds, nil
 	}
@@ -109,4 +109,31 @@ func (mastersRepo *MastersRepo) GetMasterLanguagesById(master *models.MasterDB) 
 		return languagesIds, err
 	}
 	return languagesIds, nil
+}
+
+func (mastersRepo *MastersRepo) DeleteMasterSubthemesById(masterId int64) error {
+	db := getPool()
+	transaction, err := db.Begin()
+	if err != nil {
+		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return dbError
+	}
+	_, err = transaction.Exec("DELETE FROM masters_subthemes WHERE master_id=$1", masterId)
+	if err != nil {
+		logger.Errorf("failed to delete subthemes: %v", err)
+		errRollback := transaction.Rollback()
+		if errRollback != nil {
+			logger.Errorf("failed to rollback: %v", err)
+			return errRollback
+		}
+		return err
+	}
+	err = transaction.Commit()
+	if err != nil {
+		dbError := fmt.Errorf("error commit: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return dbError
+	}
+	return nil
 }

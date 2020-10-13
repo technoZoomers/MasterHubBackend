@@ -132,10 +132,20 @@ func (videosUC *VideosUC) GetVideosByMasterId(masterId int64) ([]models.VideoDat
 	return videos, false, nil
 }
 
+
+func (videosUC *VideosUC) getTheme(themeDB *models.ThemeDB) error {
+	_, err := videosUC.ThemesRepo.GetThemeById(themeDB)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+
 func (videosUC *VideosUC) setTheme(video *models.VideoData, theme int64) error {
 	var themeDB models.ThemeDB
 	themeDB.Id = theme
-	_, err := videosUC.ThemesRepo.GetThemeById(&themeDB)
+	err := videosUC.getTheme(&themeDB)
 	if err != nil {
 		return err
 	}
@@ -169,6 +179,7 @@ func (videosUC *VideosUC) GetMasterVideo(masterId int64, videoId int64) ([]byte,
 	var videoBytes []byte
 	videoDB := models.VideoDB{
 		Id:          videoId,
+		MasterId: masterId,
 	}
 	masterDB := models.MasterDB{
 		UserId: masterId,
@@ -219,6 +230,7 @@ func (videosUC *VideosUC) GetMasterVideo(masterId int64, videoId int64) ([]byte,
 func (videosUC *VideosUC) GetVideoDataById(videoData *models.VideoData, masterId int64) (bool, error) {
 	videoDB := models.VideoDB{
 		Id: videoData.Id,
+		MasterId: masterId,
 	}
 	masterDB := models.MasterDB{
 		UserId: masterId,
@@ -259,4 +271,51 @@ func (videosUC *VideosUC) GetVideoDataById(videoData *models.VideoData, masterId
 	}
 
 	return false, nil
+}
+
+func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId int64) (bool, error) {
+	videoDB := models.VideoDB{
+		Id: videoData.Id,
+		MasterId: masterId,
+	}
+	masterDB := models.MasterDB{
+		UserId: masterId,
+	}
+	errType, err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
+	if err != nil {
+		if errType == utils.USER_ERROR {
+			return true, err
+		} else if errType == utils.SERVER_ERROR {
+			return false, fmt.Errorf("database internal error")
+		}
+	}
+	errType, err = videosUC.VideosRepo.GetVideoDataById(&videoDB)
+	if err != nil {
+		if errType == utils.USER_ERROR {
+			return true, err
+		} else if errType == utils.SERVER_ERROR {
+			return false, fmt.Errorf("database internal error")
+		}
+	}
+	if videoData.FileExt != videoDB.Extension {
+		fileError := fmt.Errorf("video extension can't be changed")
+		logger.Errorf(fileError.Error())
+		return false, fileError
+	}
+	if videoData.Uploaded != videoDB.Uploaded {
+		fileError := fmt.Errorf("video upload time can't be changed")
+		logger.Errorf(fileError.Error())
+		return false, fileError
+	}
+	var themeDB models.ThemeDB
+	themeDB.Id = videoDB.Theme
+	err := videosUC.getTheme(&themeDB)
+	if err != nil {
+		fileError := fmt.Errorf("database internal error")
+		logger.Errorf(fileError.Error())
+		return false, fileError
+	}
+	if videoData.Theme.Theme != themeDB.Name {
+
+	}
 }

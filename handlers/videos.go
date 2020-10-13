@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/gorilla/mux"
+	json "github.com/mailru/easyjson"
 	"github.com/technoZoomers/MasterHubBackend/models"
 	"github.com/technoZoomers/MasterHubBackend/useCases"
 	"github.com/technoZoomers/MasterHubBackend/utils"
@@ -162,4 +163,33 @@ func (vh *VideosHandlers) GetVideoDataById(writer http.ResponseWriter, req *http
 		return
 	}
 	utils.CreateAnswerVideoDataJson(writer, http.StatusOK, videoData)
+}
+
+func (vh *VideosHandlers) ChangeVideoData (writer http.ResponseWriter, req *http.Request) {
+	var err error
+	masterIdString := mux.Vars(req)["id"]
+	masterId, err :=  strconv.ParseInt(masterIdString, 10, 64)
+	if err != nil {
+		parseError := fmt.Errorf("error getting master id parameter: %v", err.Error())
+		logger.Errorf(parseError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(parseError.Error()))
+		return
+	}
+	videoIdString := mux.Vars(req)["videoId"]
+	videoId, err :=  strconv.ParseInt(videoIdString, 10, 64)
+	if err != nil {
+		parseError := fmt.Errorf("error getting video id parameter: %v", err.Error())
+		logger.Errorf(parseError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(parseError.Error()))
+		return
+	}
+
+	var videoData models.VideoData
+	err = json.UnmarshalFromReader(req.Body, &videoData)
+	if err != nil {
+		jsonError := fmt.Errorf("error unmarshaling json: %v", err.Error())
+		logger.Errorf(jsonError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(jsonError.Error()))
+		return
+	}
 }

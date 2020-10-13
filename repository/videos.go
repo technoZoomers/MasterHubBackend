@@ -124,7 +124,7 @@ func (videosRepo *VideosRepo) GetVideoDataById(videoDB *models.VideoDB) (int64, 
 		logger.Errorf(dbError.Error())
 		return utils.SERVER_ERROR, dbError
 	}
-	row := transaction.QueryRow("SELECT * FROM videos WHERE id=$1", videoDB.Id)
+	row := transaction.QueryRow("SELECT * FROM videos WHERE id=$1 and master_id=$2", videoDB.Id, videoDB.MasterId)
 	var theme sql.NullInt64
 	err = row.Scan(&videoDB.Id, &videoDB.MasterId, &videoDB.Filename, &videoDB.Extension, &videoDB.Name, &videoDB.Description, &videoDB.Intro, &theme, &videoDB.Uploaded)
 	if err != nil {
@@ -134,7 +134,7 @@ func (videosRepo *VideosRepo) GetVideoDataById(videoDB *models.VideoDB) (int64, 
 			logger.Errorf("failed to rollback: %v", err)
 			return utils.SERVER_ERROR, errRollback
 		}
-		return utils.USER_ERROR, fmt.Errorf("this video doesn't exist")
+		return utils.USER_ERROR, fmt.Errorf("this video doesn't exist or doesn't belong to this master")
 	}
 	videoDB.Theme = checkNullTheme(theme)
 	err = transaction.Commit()
@@ -180,4 +180,31 @@ func (videosRepo *VideosRepo) GetVideoSubthemesById(videoId int64) ([]int64, err
 		return subthemesIds, err
 	}
 	return subthemesIds, nil
+}
+
+func (videosRepo *VideosRepo) DeleteVideoSubthemesById(videoId int64) error {
+	db := getPool()
+	transaction, err := db.Begin()
+	if err != nil {
+		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return dbError
+	}
+	_, err = transaction.Exec("DELETE FROM videos_subthemes WHERE video_id=$1", videoId)
+	if err != nil {
+		logger.Errorf("failed to delete subthemes: %v", err)
+		errRollback := transaction.Rollback()
+		if errRollback != nil {
+			logger.Errorf("failed to rollback: %v", err)
+			return errRollback
+		}
+		return err
+	}
+	err = transaction.Commit()
+	if err != nil {
+		dbError := fmt.Errorf("error commit: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return dbError
+	}
+	return nil
 }

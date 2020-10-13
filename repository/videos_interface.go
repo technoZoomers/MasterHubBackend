@@ -8,4 +8,5 @@ type VideosRepoI interface {
 	GetVideosByMasterId(masterId int64) ([]models.VideoDB, error)
 	GetVideoDataById(video *models.VideoDB) (int64, error)
 	GetVideoSubthemesById(videoId int64) ([]int64, error)
+	DeleteVideoSubthemesById(videoId int64) error
 }

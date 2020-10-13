@@ -90,7 +90,7 @@ func setQualification(master *models.Master, qualification int64) error {
 
 func (mastersUC *MastersUC) setLanguages(master *models.Master, masterDB *models.MasterDB) error {
 	var langs []string
-	langsIds, err := mastersUC.MastersRepo.GetMasterLanguagesById(masterDB)
+	langsIds, err := mastersUC.MastersRepo.GetMasterLanguagesById(masterDB.Id)
 	if err != nil {
 		master.Languages = langs
 		return err
@@ -123,7 +123,7 @@ func (mastersUC *MastersUC) setTheme(master *models.Master, theme int64) error {
 
 func (mastersUC *MastersUC) setSubThemes(master *models.Master, masterDB *models.MasterDB) error {
 	var subthemes []string
-	subthemesIds, err := mastersUC.MastersRepo.GetMasterSubthemesById(masterDB)
+	subthemesIds, err := mastersUC.MastersRepo.GetMasterSubthemesById(masterDB.Id)
 	if err != nil {
 		master.Theme.Subthemes = subthemes
 		return err
