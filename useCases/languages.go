@@ -6,7 +6,7 @@ import (
 )
 
 type LanguagesUC struct {
-	LanguagesRepo  repository.LanguagesRepoI
+	LanguagesRepo repository.LanguagesRepoI
 }
 
 func (languagesUC *LanguagesUC) Get() (models.Languages, error) {

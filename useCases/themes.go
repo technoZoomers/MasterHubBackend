@@ -8,7 +8,7 @@ import (
 )
 
 type ThemesUC struct {
-	ThemesRepo  repository.ThemesRepoI
+	ThemesRepo repository.ThemesRepoI
 }
 
 func (themesUC *ThemesUC) Get() (models.Themes, error) {

@@ -10,13 +10,13 @@ import (
 )
 
 type MastersUC struct {
-	 MastersRepo  repository.MastersRepoI
-	 ThemesRepo repository.ThemesRepoI
-	 LanguagesRepo repository.LanguagesRepoI
+	MastersRepo   repository.MastersRepoI
+	ThemesRepo    repository.ThemesRepoI
+	LanguagesRepo repository.LanguagesRepoI
 }
 
-var qualificationMap = map[int64]string{1:"self-educated", 2:"professional"}
-var educationFormatMap = map[int64]string{1:"online", 2:"live"}
+var qualificationMap = map[int64]string{1: "self-educated", 2: "professional"}
+var educationFormatMap = map[int64]string{1: "online", 2: "live"}
 
 func (mastersUC *MastersUC) GetMasterById(master *models.Master) (bool, error) {
 	if master.UserId == utils.ERROR_ID {
@@ -63,7 +63,7 @@ func (mastersUC *MastersUC) GetMasterById(master *models.Master) (bool, error) {
 }
 
 func setEducationFormat(master *models.Master, format int64) error {
-	if !(format<=3 && format>=1) {
+	if !(format <= 3 && format >= 1) {
 		formatError := fmt.Errorf("wrong education format type")
 		logger.Errorf(formatError.Error())
 		return formatError

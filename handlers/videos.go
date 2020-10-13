@@ -33,9 +33,15 @@ func (vh *VideosHandlers) Upload(writer http.ResponseWriter, req *http.Request) 
 		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(parseError.Error()))
 		return
 	}
-	file, _, err := req.FormFile("video")
+	file, fileHeader, err := req.FormFile(utils.FORM_DATA_VIDEO_KEY)
 	if err != nil {
 		parseError := fmt.Errorf("error parsing video: %v", err.Error())
+		logger.Errorf(parseError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(parseError.Error()))
+		return
+	}
+	if fileHeader.Header.Get("Content-Type") != utils.VIDEO_FORMAT {
+		parseError := fmt.Errorf("wrong mime type, expected video")
 		logger.Errorf(parseError.Error())
 		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(parseError.Error()))
 		return

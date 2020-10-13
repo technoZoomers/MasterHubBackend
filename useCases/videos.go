@@ -2,65 +2,85 @@ package useCases
 
 import (
 	"fmt"
+	"github.com/google/logger"
+	"github.com/h2non/filetype"
 	"github.com/technoZoomers/MasterHubBackend/models"
 	"github.com/technoZoomers/MasterHubBackend/repository"
 	"github.com/technoZoomers/MasterHubBackend/utils"
 	"io/ioutil"
-	"mime"
 	"mime/multipart"
-	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"time"
 )
 
 type VideosUC struct {
 	VideosRepo  repository.VideosRepoI
+	MastersRepo repository.MastersRepoI
 }
 
 func (videosUC *VideosUC) NewMasterVideo(videoData *models.VideoData, file multipart.File, masterId int64) (bool, error) {
+	masterDB := models.MasterDB{
+		UserId: masterId,
+	}
+	errType, err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
+	if err != nil {
+		if errType == utils.USER_ERROR {
+			return true, err
+		} else if errType == utils.SERVER_ERROR {
+			return false, fmt.Errorf("database internal error")
+		}
+	}
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		return false, err
+		fileError := fmt.Errorf("error reading file: %s", err.Error())
+		logger.Errorf(fileError.Error())
+		return false, fileError
 	}
-	fileType := http.DetectContentType(fileBytes)
-	if fileType != "video/avi" && fileType != "video/webm" {
-		fileTypeError := fmt.Errorf("wrong file format")
-		return false, fileTypeError
-	}
-	fileEndings, err := mime.ExtensionsByType(fileType)
+
+	fileExtension, err := filetype.Match(fileBytes)
 	if err != nil {
-		return false, err
+		fileError := fmt.Errorf("error reading file extension: %s", err.Error())
+		logger.Errorf(fileError.Error())
+		return false, fileError
 	}
-
 	countVideo, err := videosUC.VideosRepo.CountVideos()
-	countVideoString := strconv.FormatInt(countVideo+1, 10)
-
-	newPath := filepath.Join("./master_videos/", "master_video_" + countVideoString +fileEndings[0])
+	if err != nil {
+		return false, fmt.Errorf("database internal error")
+	}
+	newPath := filepath.Join(fmt.Sprintf("./master_videos/master_video_%d.%s", countVideo+1, fileExtension.Extension))
 	newFile, err := os.Create(newPath)
 	if err != nil {
-		return false, err
+		fileError := fmt.Errorf("error creating file: %s", err.Error())
+		logger.Errorf(fileError.Error())
+		return false, fileError
 	}
-	var videoDB models.VideoDB
-	videoDB.Filename = newPath
-	videoDB.MasterId = masterId
-	videoDB.Intro = false
-	videoDB.Uploaded = time.Now()
+	defer newFile.Close()
+
+	_, err = newFile.Write(fileBytes)
+	if err != nil {
+		os.Remove(newPath)
+		fileError := fmt.Errorf("error creating file: %s", err.Error())
+		logger.Errorf(fileError.Error())
+		return false, fileError
+	}
+
+	videoDB := models.VideoDB{
+		Filename: newPath,
+		MasterId: masterId,
+		Name:     utils.DEFAULT_VIDEO_NAME,
+		Intro:    false,
+		Uploaded: time.Now(),
+	}
 	err = videosUC.VideosRepo.InsertVideoData(&videoDB)
 	if err != nil {
 		os.Remove(newPath)
-		return false, err
+		return false, fmt.Errorf("database internal error")
 	}
 
-	defer newFile.Close()
-	_, err = newFile.Write(fileBytes)
-	if  err != nil {
-		return false, err
-	}
-	videoData.Name = utils.DEFAULT_VIDEO_NAME
+	videoData.Name = videoDB.Name
 	videoData.Uploaded = videoDB.Uploaded
 	videoData.Id = videoDB.Id
-	return false, nil
 
+	return false, nil
 }

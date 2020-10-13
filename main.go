@@ -66,15 +66,13 @@ func main() {
 	r.HandleFunc("/masters/{id}", masterHub_handlers.GetMastersH().GetMasterById).Methods("GET")
 	r.HandleFunc("/masters/{id}/videos/create", masterHub_handlers.GetVideosH().Upload).Methods("POST")
 
-
-
-
 	cors := handlers.CORS(handlers.AllowCredentials(), handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE"}))
 
 	// server initialization
 
 	server := &http.Server{
 		Addr:         ":" + os.Getenv("PORT"),
+		//Addr:         utils.PortNum,
 		Handler:      cors(r),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,

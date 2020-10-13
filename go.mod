@@ -8,6 +8,7 @@ require (
 	github.com/google/logger v1.1.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
+	github.com/h2non/filetype v1.1.0
 	github.com/jackc/fake v0.0.0-20150926172116-812a484cc733 // indirect
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/lib/pq v1.8.0 // indirect

@@ -13,3 +13,6 @@ const (
 	USER_ERROR
 	SERVER_ERROR
 )
+
+const VIDEO_FORMAT  = "application/octet-stream"
+const FORM_DATA_VIDEO_KEY = "video"
