@@ -26,10 +26,10 @@ func Init(config pgx.ConnConfig) error {
 	if err != nil {
 		return err
 	}
-	//err = repo.dropTables()
-	//if err != nil {
-	//	return err
-	//}
+	err = repo.dropTables()
+	if err != nil {
+		return err
+	}
 	err = repo.createTables()
 	if err != nil {
 		return err
