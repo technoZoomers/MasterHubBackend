@@ -100,6 +100,10 @@ func (videosUC *VideosUC) GetVideosByMasterId(masterId int64) ([]models.VideoDat
 		}
 	}
 	videosDB, err = videosUC.VideosRepo.GetVideosByMasterId(masterId)
+	if err != nil {
+		return  videos, false, fmt.Errorf("database internal error")
+	}
+
 	for _, videoDB := range videosDB {
 		video := models.VideoData{
 			Id:          videoDB.Id,
