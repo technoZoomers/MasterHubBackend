@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/google/logger"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -19,6 +20,8 @@ func main() {
 	// logger initialization
 	utils.LoggerSetup()
 	defer utils.LoggerClose()
+
+	fmt.Println(os.Getwd())
 
 	// database initialization
 	//err := repository.Init(pgx.ConnConfig{
