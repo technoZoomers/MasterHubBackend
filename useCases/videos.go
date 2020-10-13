@@ -8,6 +8,7 @@ import (
 	"github.com/technoZoomers/MasterHubBackend/repository"
 	"github.com/technoZoomers/MasterHubBackend/utils"
 	"io/ioutil"
+	"log"
 	"mime/multipart"
 	"os"
 	"path/filepath"
@@ -114,4 +115,32 @@ func (videosUC *VideosUC) GetVideosByMasterId(masterId int64) ([]models.VideoDat
 		videos = append(videos, video)
 	}
 	return videos, false, nil
+}
+
+func (videosUC *VideosUC) GetMasterVideo(masterId int64, videoId int64) (*os.File, bool, error) {
+	var videoFile os.File
+	masterDB := models.MasterDB{
+		UserId: masterId,
+	}
+	errType, err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
+	if err != nil {
+		if errType == utils.USER_ERROR {
+			return &videoFile, true, err
+		} else if errType == utils.SERVER_ERROR {
+			return &videoFile, false, fmt.Errorf("database internal error")
+		}
+	}
+	//filenameUser, err := picUC.FilenameDB.GetFilenameByUserId(user.Id)
+	//var filenameString string
+	//if err != nil {
+	//	filenameString = "./pics/user.png"
+	//} else {
+	//	filenameString = filenameUser.Filename
+	//}
+	//log.Println(filenameString)
+	//file, err := os.Open(filenameString)
+	//if err != nil {
+	//	return false, nil, err
+	//}
+	//return false, file, nil
 }
