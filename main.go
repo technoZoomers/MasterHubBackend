@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/google/logger"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -10,8 +9,6 @@ import (
 	"github.com/technoZoomers/MasterHubBackend/repository"
 	"github.com/technoZoomers/MasterHubBackend/useCases"
 	"github.com/technoZoomers/MasterHubBackend/utils"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -23,15 +20,15 @@ func main() {
 	utils.LoggerSetup()
 	defer utils.LoggerClose()
 
-	files, err := ioutil.ReadDir(".")
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, f := range files {
-		fmt.Println(f.Name())
-	}
+	//files, err := ioutil.ReadDir(".")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//for _, f := range files {
+	//	fmt.Println(f.Name())
+	//}
 
-	// database initialization
+	//database initialization
 	//err := repository.Init(pgx.ConnConfig{
 	//	Database: utils.DBName,
 	//	Host:     "localhost",
@@ -76,6 +73,7 @@ func main() {
 
 	r.HandleFunc("/masters/{id}", masterHub_handlers.GetMastersH().GetMasterById).Methods("GET")
 	r.HandleFunc("/masters/{id}/videos/create", masterHub_handlers.GetVideosH().Upload).Methods("POST")
+	r.HandleFunc("/masters/{id}/videos/data", masterHub_handlers.GetVideosH().GetVideosByMasterId).Methods("GET")
 
 	cors := handlers.CORS(handlers.AllowCredentials(), handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE"}))
 

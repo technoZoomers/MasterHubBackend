@@ -76,3 +76,11 @@ func CreateAnswerVideoDataJson(writer http.ResponseWriter, statusCode int, video
 	}
 	createAnswerJson(writer, statusCode, marshalledVideoData)
 }
+
+func CreateAnswerVideosDataJson(writer http.ResponseWriter, statusCode int, videosData masterhub_models.VideosData) {
+	marshalledVideosData, err := json.Marshal(videosData)
+	if err != nil {
+		logger.Errorf("Error marhalling json: %v", err)
+	}
+	createAnswerJson(writer, statusCode, marshalledVideosData)
+}

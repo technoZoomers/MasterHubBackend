@@ -45,7 +45,7 @@ CREATE TABLE masters (
     username text NOT NULL UNIQUE ,
     fullname text NOT NULL,
     theme int NOT NULL REFERENCES themes(id) ON DELETE SET NULL,
-    description text ,
+    description text DEFAULT '',
     qualification int NOT NULL CHECK (qualification = 1 OR qualification = 2),
     education_format int NOT NULL CHECK (education_format >=1 AND education_format <= 3),
     avg_price numeric(20, 2) CONSTRAINT non_negative_price CHECK (avg_price >= 0)
@@ -71,7 +71,7 @@ CREATE TABLE videos (
     master_id int NOT NULL REFERENCES masters(id) ON DELETE SET NULL,
     filename text NOT NULL UNIQUE,
     name text DEFAULT 'noname',
-    description text ,
+    description text DEFAULT '' ,
     intro boolean  DEFAULT false,
     theme int REFERENCES themes(id) ON DELETE SET NULL,
     uploaded TIMESTAMPTZ NOT NULL

@@ -61,3 +61,27 @@ func (vh *VideosHandlers) Upload(writer http.ResponseWriter, req *http.Request) 
 	}
 	utils.CreateAnswerVideoDataJson(writer, http.StatusOK, videoData)
 }
+
+func (vh *VideosHandlers) GetVideosByMasterId(writer http.ResponseWriter, req *http.Request) {
+	var err error
+	masterIdString := mux.Vars(req)["id"]
+	masterId, err :=  strconv.ParseInt(masterIdString, 10, 64)
+	if err != nil {
+		parseError := fmt.Errorf("error getting master id parameter: %v", err.Error())
+		logger.Errorf(parseError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(parseError.Error()))
+		return
+	}
+	videos, absent, err := vh.VideosUC.GetVideosByMasterId(masterId)
+	if absent {
+		logger.Error(err)
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
+		return
+	}
+	if err != nil {
+		logger.Error(err)
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(err.Error()))
+		return
+	}
+	utils.CreateAnswerVideosDataJson(writer, http.StatusOK, videos)
+}

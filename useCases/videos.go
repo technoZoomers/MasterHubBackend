@@ -84,3 +84,30 @@ func (videosUC *VideosUC) NewMasterVideo(videoData *models.VideoData, file multi
 
 	return false, nil
 }
+
+func (videosUC *VideosUC) GetVideosByMasterId(masterId int64) ([]models.VideoData, bool, error) {
+	var videos []models.VideoData
+	var videosDB []models.VideoDB
+	masterDB := models.MasterDB{
+		UserId: masterId,
+	}
+	errType, err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
+	if err != nil {
+		if errType == utils.USER_ERROR {
+			return videos, true, err
+		} else if errType == utils.SERVER_ERROR {
+			return videos, false, fmt.Errorf("database internal error")
+		}
+	}
+	videosDB, err = videosUC.VideosRepo.GetVideosByMasterId(masterId)
+	for _, videoDB := range videosDB {
+		video := models.VideoData{
+			Id:          videoDB.Id,
+			Name:        videoDB.Name,
+			Description: videoDB.Description,
+			Uploaded:    videoDB.Uploaded,
+		}
+		videos = append(videos, video)
+	}
+	return videos, false, nil
+}
