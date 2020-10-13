@@ -4,7 +4,7 @@ const TABLES_DROPPING = `
 DROP TABLE IF EXISTS videos_subthemes;
 DROP TABLE IF EXISTS videos;
 DROP TABLE IF EXISTS avatars;
-DROP TABLE IF EXISTS masters_languages
+DROP TABLE IF EXISTS masters_languages;
 DROP TABLE IF EXISTS masters_subthemes;
 DROP TABLE IF EXISTS masters;
 DROP TABLE IF EXISTS users;
