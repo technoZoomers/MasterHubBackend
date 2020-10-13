@@ -70,8 +70,9 @@ CREATE TABLE videos (
     id SERIAL NOT NULL PRIMARY KEY,
     master_id int NOT NULL REFERENCES masters(id) ON DELETE SET NULL,
     filename text NOT NULL UNIQUE,
+    extension text NOT NULL, 
     name text DEFAULT 'noname',
-    description text DEFAULT '' ,
+    description text DEFAULT '',
     intro boolean  DEFAULT false,
     theme int REFERENCES themes(id) ON DELETE SET NULL,
     uploaded TIMESTAMPTZ NOT NULL

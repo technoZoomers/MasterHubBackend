@@ -106,6 +106,8 @@ func easyjson93afa840DecodeGithubComTechnoZoomersMasterHubBackendModels1(in *jle
 			out.Id = int64(in.Int64())
 		case "name":
 			out.Name = string(in.String())
+		case "extension":
+			out.FileExt = string(in.String())
 		case "description":
 			out.Description = string(in.String())
 		case "theme":
@@ -137,6 +139,11 @@ func easyjson93afa840EncodeGithubComTechnoZoomersMasterHubBackendModels1(out *jw
 		const prefix string = ",\"name\":"
 		out.RawString(prefix)
 		out.String(string(in.Name))
+	}
+	{
+		const prefix string = ",\"extension\":"
+		out.RawString(prefix)
+		out.String(string(in.FileExt))
 	}
 	if in.Description != "" {
 		const prefix string = ",\"description\":"

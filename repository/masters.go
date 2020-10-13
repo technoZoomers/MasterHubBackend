@@ -14,7 +14,7 @@ func (mastersRepo *MastersRepo) GetMasterByUserId(master *models.MasterDB) (int6
 	db := getPool()
 	transaction, err := db.Begin()
 	if err != nil {
-		dbError := fmt.Errorf("Failed to start transaction: %v", err.Error())
+		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return utils.SERVER_ERROR, dbError
 	}
@@ -22,17 +22,17 @@ func (mastersRepo *MastersRepo) GetMasterByUserId(master *models.MasterDB) (int6
 	err = row.Scan(&master.Id, &master.UserId, &master.Username, &master.Fullname, &master.Theme,
 		&master.Description, &master.Qualification, &master.EducationFormat, &master.AveragePrice)
 	if err != nil {
-		logger.Errorf("Failed to retrieve master: %v", err)
+		logger.Errorf("failed to retrieve master: %v", err)
 		errRollback := transaction.Rollback()
 		if errRollback != nil {
-			logger.Errorf("Failed to rollback: %v", err)
+			logger.Errorf("failed to rollback: %v", err)
 			return utils.SERVER_ERROR, errRollback
 		}
 		return utils.USER_ERROR, fmt.Errorf("this master doesn't exist")
 	}
 	err = transaction.Commit()
 	if err != nil {
-		dbError := fmt.Errorf("Error commit: %v", err.Error())
+		dbError := fmt.Errorf("error commit: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return utils.SERVER_ERROR, dbError
 	}
@@ -44,7 +44,7 @@ func (mastersRepo *MastersRepo) GetMasterSubthemesById(master *models.MasterDB) 
 	db := getPool()
 	transaction, err := db.Begin()
 	if err != nil {
-		dbError := fmt.Errorf("Failed to start transaction: %v", err.Error())
+		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return subthemesIds, dbError
 	}
@@ -56,10 +56,10 @@ func (mastersRepo *MastersRepo) GetMasterSubthemesById(master *models.MasterDB) 
 		var subthemeIdFound int64
 		err = rows.Scan(&subthemeIdFound)
 		if err != nil {
-			logger.Errorf("Failed to retrieve subtheme: %v", err)
+			logger.Errorf("failed to retrieve subtheme: %v", err)
 			errRollback := transaction.Rollback()
 			if errRollback != nil {
-				logger.Errorf("Failed to rollback: %v", err)
+				logger.Errorf("failed to rollback: %v", err)
 				return subthemesIds, errRollback
 			}
 			return subthemesIds, err
@@ -68,7 +68,7 @@ func (mastersRepo *MastersRepo) GetMasterSubthemesById(master *models.MasterDB) 
 	}
 	err = transaction.Commit()
 	if err != nil {
-		dbError := fmt.Errorf("Error commit: %v", err.Error())
+		dbError := fmt.Errorf("error commit: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return subthemesIds, err
 	}
@@ -80,7 +80,7 @@ func (mastersRepo *MastersRepo) GetMasterLanguagesById(master *models.MasterDB) 
 	db := getPool()
 	transaction, err := db.Begin()
 	if err != nil {
-		dbError := fmt.Errorf("Failed to start transaction: %v", err.Error())
+		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return languagesIds, dbError
 	}
@@ -92,10 +92,10 @@ func (mastersRepo *MastersRepo) GetMasterLanguagesById(master *models.MasterDB) 
 		var languageIdFound int64
 		err = rows.Scan(&languageIdFound)
 		if err != nil {
-			logger.Errorf("Failed to retrieve language: %v", err)
+			logger.Errorf("failed to retrieve language: %v", err)
 			errRollback := transaction.Rollback()
 			if errRollback != nil {
-				logger.Errorf("Failed to rollback: %v", err)
+				logger.Errorf("failed to rollback: %v", err)
 				return languagesIds, errRollback
 			}
 			return languagesIds, err
@@ -104,7 +104,7 @@ func (mastersRepo *MastersRepo) GetMasterLanguagesById(master *models.MasterDB) 
 	}
 	err = transaction.Commit()
 	if err != nil {
-		dbError := fmt.Errorf("Error commit: %v", err.Error())
+		dbError := fmt.Errorf("error commit: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return languagesIds, err
 	}

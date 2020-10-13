@@ -6,6 +6,7 @@ type VideoDB struct {
 	Id int64
 	MasterId int64
 	Filename string
+	Extension string
 	Name string
 	Description string
 	Intro bool

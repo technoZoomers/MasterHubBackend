@@ -22,7 +22,7 @@ func Init(usersRepo repository.UsersRepoI, mastersRepo repository.MastersRepoI, 
 	uc.StudentsUC = &StudentsUC{studentsRepo}
 	uc.ThemesUC = &ThemesUC{themesRepo}
 	uc.LanguagesUC = &LanguagesUC{languagesRepo}
-	uc.VideosUC = &VideosUC{videosRepo, mastersRepo}
+	uc.VideosUC = &VideosUC{videosRepo, mastersRepo, themesRepo}
 	uc.AvatarsUC = &AvatarsUC{avatarsRepo}
 	return nil
 }

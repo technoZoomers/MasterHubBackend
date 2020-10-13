@@ -10,6 +10,7 @@ import (
 	"github.com/technoZoomers/MasterHubBackend/useCases"
 	"github.com/technoZoomers/MasterHubBackend/utils"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -28,17 +29,17 @@ func main() {
 	//}
 
 	//database initialization
-	err := repository.Init(pgx.ConnConfig{
-		Database: utils.DBName,
-		Host:     "localhost",
-		User:     "alexis",
-		Password: "sinope27",
-	})
-	//config, err := pgx.ParseConnectionString(os.Getenv("DATABASE_URL"))
-	//if err != nil {
-	//	logger.Fatalf("Couldn't initialize database: %v", err)
-	//}
-	//err = repository.Init(config)
+	//err := repository.Init(pgx.ConnConfig{
+	//	Database: utils.DBName,
+	//	Host:     "localhost",
+	//	User:     "alexis",
+	//	Password: "sinope27",
+	//})
+	config, err := pgx.ParseConnectionString(os.Getenv("DATABASE_URL"))
+	if err != nil {
+		logger.Fatalf("Couldn't initialize database: %v", err)
+	}
+	err = repository.Init(config)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize database: %v", err)
 	}
@@ -73,7 +74,8 @@ func main() {
 	r.HandleFunc("/masters/{id}", masterHub_handlers.GetMastersH().GetMasterById).Methods("GET")
 	r.HandleFunc("/masters/{id}/videos/create", masterHub_handlers.GetVideosH().Upload).Methods("POST")
 	r.HandleFunc("/masters/{id}/videos/{videoId}", masterHub_handlers.GetVideosH().GetVideoById).Methods("GET")
-	r.HandleFunc("/masters/{id}/videos/data", masterHub_handlers.GetVideosH().GetVideosByMasterId).Methods("GET")
+	r.HandleFunc("/masters/{id}/videos/{videoId}/data", masterHub_handlers.GetVideosH().GetVideoDataById).Methods("GET")
+	r.HandleFunc("/masters/{id}/videos", masterHub_handlers.GetVideosH().GetVideosByMasterId).Methods("GET")
 
 
 
@@ -82,8 +84,8 @@ func main() {
 	// server initialization
 
 	server := &http.Server{
-		//Addr:         ":" + os.Getenv("PORT"),
-		Addr:         utils.PortNum,
+		Addr:         ":" + os.Getenv("PORT"),
+		//Addr:         utils.PortNum,
 		Handler:      cors(r),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
@@ -92,6 +94,6 @@ func main() {
 	err = server.ListenAndServe()
 
 	if err != nil {
-		logger.Fatalf("Failed to start server: %v", err)
+		logger.Fatalf("failed to start server: %v", err)
 	}
 }

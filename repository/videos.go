@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/technoZoomers/MasterHubBackend/models"
+	"github.com/technoZoomers/MasterHubBackend/utils"
 )
 
 type VideosRepo struct {
@@ -14,25 +15,25 @@ func (videosRepo *VideosRepo) InsertVideoData(video *models.VideoDB) error {
 	db := getPool()
 	transaction, err := db.Begin()
 	if err != nil {
-		dbError := fmt.Errorf("Failed to start transaction: %v", err.Error())
+		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return dbError
 	}
-	row := transaction.QueryRow("INSERT INTO videos (master_id, filename, intro, uploaded) VALUES ($1, $2, $3, $4) returning id",
-		video.MasterId, video.Filename, video.Intro, video.Uploaded)
+	row := transaction.QueryRow("INSERT INTO videos (master_id, filename, extension, intro, uploaded) VALUES ($1, $2, $3, $4, $5) returning id",
+		video.MasterId, video.Filename, video.Extension, video.Intro, video.Uploaded)
 	err = row.Scan(&video.Id)
 	if err != nil {
-		logger.Errorf("Failed to scan row: %v", err)
+		logger.Errorf("failed to scan row: %v", err)
 		errRollback := transaction.Rollback()
 		if errRollback != nil {
-			logger.Errorf("Failed to rollback: %v", err)
+			logger.Errorf("failed to rollback: %v", err)
 			return errRollback
 		}
 		return err
 	}
 	err = transaction.Commit()
 	if err != nil {
-		dbError := fmt.Errorf("Error commit: %v", err.Error())
+		dbError := fmt.Errorf("error commit: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return dbError
 	}
@@ -45,24 +46,24 @@ func (videosRepo *VideosRepo) CountVideos() (int64, error) {
 	db := getPool()
 	transaction, err := db.Begin()
 	if err != nil {
-		dbError := fmt.Errorf("Failed to start transaction: %v", err.Error())
+		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return countVideo, dbError
 	}
 	row := transaction.QueryRow("SELECT COUNT(*) FROM videos")
 	err = row.Scan(&countVideo)
 	if err != nil {
-		logger.Errorf("Failed to scan row: %v", err)
+		logger.Errorf("failed to scan row: %v", err)
 		errRollback := transaction.Rollback()
 		if errRollback != nil {
-			logger.Errorf("Failed to rollback: %v", err)
+			logger.Errorf("failed to rollback: %v", err)
 			return countVideo, errRollback
 		}
 		return countVideo, err
 	}
 	err = transaction.Commit()
 	if err != nil {
-		dbError := fmt.Errorf("Error commit: %v", err.Error())
+		dbError := fmt.Errorf("error commit: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return countVideo, dbError
 	}
@@ -74,7 +75,7 @@ func (videosRepo *VideosRepo) GetVideosByMasterId(masterId int64) ([]models.Vide
 	db := getPool()
 	transaction, err := db.Begin()
 	if err != nil {
-		dbError := fmt.Errorf("Failed to start transaction: %v", err.Error())
+		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return videos, dbError
 	}
@@ -85,12 +86,12 @@ func (videosRepo *VideosRepo) GetVideosByMasterId(masterId int64) ([]models.Vide
 	for rows.Next() {
 		var videoDB models.VideoDB
 		var theme sql.NullInt64
-		err = rows.Scan(&videoDB.Id, &videoDB.MasterId, &videoDB.Filename, &videoDB.Name, &videoDB.Description, &videoDB.Intro, &theme, &videoDB.Uploaded)
+		err = rows.Scan(&videoDB.Id, &videoDB.MasterId, &videoDB.Filename, &videoDB.Extension,  &videoDB.Name, &videoDB.Description, &videoDB.Intro, &theme, &videoDB.Uploaded)
 		if err != nil {
-			logger.Errorf("Failed to retrieve video data: %v", err)
+			logger.Errorf("failed to retrieve video data: %v", err)
 			errRollback := transaction.Rollback()
 			if errRollback != nil {
-				logger.Errorf("Failed to rollback: %v", err)
+				logger.Errorf("failed to rollback: %v", err)
 				return videos, errRollback
 			}
 			return videos, err
@@ -100,7 +101,7 @@ func (videosRepo *VideosRepo) GetVideosByMasterId(masterId int64) ([]models.Vide
 	}
 	err = transaction.Commit()
 	if err != nil {
-		dbError := fmt.Errorf("Error commit: %v", err.Error())
+		dbError := fmt.Errorf("error commit: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return videos, err
 	}
@@ -113,4 +114,70 @@ func checkNullTheme(theme sql.NullInt64) int64 {
 	} else {
 		return 0
 	}
+}
+
+func (videosRepo *VideosRepo) GetVideoDataById(videoDB *models.VideoDB) (int64, error) {
+	db := getPool()
+	transaction, err := db.Begin()
+	if err != nil {
+		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return utils.SERVER_ERROR, dbError
+	}
+	row := transaction.QueryRow("SELECT * FROM videos WHERE id=$1", videoDB.Id)
+	var theme sql.NullInt64
+	err = row.Scan(&videoDB.Id, &videoDB.MasterId, &videoDB.Filename, &videoDB.Extension, &videoDB.Name, &videoDB.Description, &videoDB.Intro, &theme, &videoDB.Uploaded)
+	if err != nil {
+		logger.Errorf("failed to retrieve video data: %v", err)
+		errRollback := transaction.Rollback()
+		if errRollback != nil {
+			logger.Errorf("failed to rollback: %v", err)
+			return utils.SERVER_ERROR, errRollback
+		}
+		return utils.USER_ERROR, fmt.Errorf("this video doesn't exist")
+	}
+	videoDB.Theme = checkNullTheme(theme)
+	err = transaction.Commit()
+	if err != nil {
+		dbError := fmt.Errorf("error commit: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return utils.SERVER_ERROR, dbError
+	}
+	return utils.NO_ERROR, nil
+}
+
+func (videosRepo *VideosRepo) GetVideoSubthemesById(videoId int64) ([]int64, error) {
+	subthemesIds := make([]int64, 0)
+	db := getPool()
+	transaction, err := db.Begin()
+	if err != nil {
+		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return subthemesIds, dbError
+	}
+	rows, err := transaction.Query(`SELECT subtheme_id FROM videos_subthemes WHERE video_id=$1`, videoId)
+	if err != nil {
+		return subthemesIds, nil
+	}
+	for rows.Next() {
+		var subthemeIdFound int64
+		err = rows.Scan(&subthemeIdFound)
+		if err != nil {
+			logger.Errorf("failed to retrieve subtheme: %v", err)
+			errRollback := transaction.Rollback()
+			if errRollback != nil {
+				logger.Errorf("failed to rollback: %v", err)
+				return subthemesIds, errRollback
+			}
+			return subthemesIds, err
+		}
+		subthemesIds = append(subthemesIds, subthemeIdFound)
+	}
+	err = transaction.Commit()
+	if err != nil {
+		dbError := fmt.Errorf("error commit: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return subthemesIds, err
+	}
+	return subthemesIds, nil
 }

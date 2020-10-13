@@ -15,13 +15,13 @@ func (languagesRepo *LanguagesRepo) GetAllLanguages() ([]string, error) {
 	db := getPool()
 	transaction, err := db.Begin()
 	if err != nil {
-		dbError := fmt.Errorf("Failed to start transaction: %v", err.Error())
+		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return languages, dbError
 	}
 	rows, err := transaction.Query(`SELECT name FROM languages`)
 	if err != nil {
-		dbError := fmt.Errorf("Failed to retrieve transactions: %v", err.Error())
+		dbError := fmt.Errorf("failed to retrieve transactions: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return languages, dbError
 	}
@@ -29,10 +29,10 @@ func (languagesRepo *LanguagesRepo) GetAllLanguages() ([]string, error) {
 		var langFound string
 		err = rows.Scan(&langFound)
 		if err != nil {
-			logger.Errorf("Failed to retrieve transaction: %v", err)
+			logger.Errorf("failed to retrieve transaction: %v", err)
 			errRollback := transaction.Rollback()
 			if errRollback != nil {
-				logger.Errorf("Failed to rollback: %v", err)
+				logger.Errorf("failed to rollback: %v", err)
 				return languages, errRollback
 			}
 			return languages, err
@@ -41,7 +41,7 @@ func (languagesRepo *LanguagesRepo) GetAllLanguages() ([]string, error) {
 	}
 	err = transaction.Commit()
 	if err != nil {
-		dbError := fmt.Errorf("Error commit: %v", err.Error())
+		dbError := fmt.Errorf("error commit: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return languages, err
 	}
@@ -52,24 +52,24 @@ func (languagesRepo *LanguagesRepo) GetLanguageById (language *models.LanguageDB
 	db := getPool()
 	transaction, err := db.Begin()
 	if err != nil {
-		dbError := fmt.Errorf("Failed to start transaction: %v", err.Error())
+		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return utils.SERVER_ERROR, dbError
 	}
 	row := transaction.QueryRow("SELECT name FROM languages WHERE id=$1", language.Id)
 	err = row.Scan(&language.Name)
 	if err != nil {
-		logger.Errorf("Failed to retrieve theme: %v", err)
+		logger.Errorf("failed to retrieve theme: %v", err)
 		errRollback := transaction.Rollback()
 		if errRollback != nil {
-			logger.Errorf("Failed to rollback: %v", err)
+			logger.Errorf("failed to rollback: %v", err)
 			return utils.SERVER_ERROR, errRollback
 		}
 		return utils.USER_ERROR, fmt.Errorf("this language doesn't exist")
 	}
 	err = transaction.Commit()
 	if err != nil {
-		dbError := fmt.Errorf("Error commit: %v", err.Error())
+		dbError := fmt.Errorf("error commit: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return utils.SERVER_ERROR, dbError
 	}

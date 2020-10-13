@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/google/logger"
 	"github.com/gorilla/mux"
@@ -106,31 +105,61 @@ func (vh *VideosHandlers) GetVideoById(writer http.ResponseWriter, req *http.Req
 		return
 	}
 
-	userNotExist, file, err := ph.PicUC.GetUserPic(&user)
-	if userNotExist {
-		network.CreateErrorAnswerJson(writer, utils.StatusCode("Bad Request"), models.CreateMessage(err.Error()))
+	videoBytes, absent, err := vh.VideosUC.GetMasterVideo(masterId, videoId)
+	if absent {
+		logger.Error(err)
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
 		return
 	}
 	if err != nil {
 		logger.Error(err)
-		network.CreateErrorAnswerJson(writer, utils.StatusCode("Internal Server Error"), models.CreateMessage(err.Error()))
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(err.Error()))
 		return
 	}
-	defer file.Close()
-
-	reader := bufio.NewReader(file)
-	fileInfo, _ := file.Stat()
-	size := fileInfo.Size()
-
-	bytes := make([]byte, size)
-	_, err = reader.Read(bytes)
 
 	writer.Header().Set("content-type", "multipart/form-data;boundary=1")
-
-	_, err = writer.Write(bytes)
+	_, err = writer.Write(videoBytes)
 	if err != nil {
-		logger.Error(err)
-		network.CreateErrorAnswerJson(writer, utils.StatusCode("Internal Server Error"), models.CreateMessage(err.Error()))
+		writeBytesError := fmt.Errorf("error writing video bytes to response: %v", err.Error())
+		logger.Error(writeBytesError)
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(writeBytesError.Error()))
 		return
 	}
+	utils.CreateEmptyBodyAnswerJson(writer, http.StatusOK)
+
+}
+
+func (vh *VideosHandlers) GetVideoDataById(writer http.ResponseWriter, req *http.Request) {
+	var err error
+	masterIdString := mux.Vars(req)["id"]
+	masterId, err :=  strconv.ParseInt(masterIdString, 10, 64)
+	if err != nil {
+		parseError := fmt.Errorf("error getting master id parameter: %v", err.Error())
+		logger.Errorf(parseError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(parseError.Error()))
+		return
+	}
+	videoIdString := mux.Vars(req)["videoId"]
+	videoId, err :=  strconv.ParseInt(videoIdString, 10, 64)
+	if err != nil {
+		parseError := fmt.Errorf("error getting video id parameter: %v", err.Error())
+		logger.Errorf(parseError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(parseError.Error()))
+		return
+	}
+	videoData := models.VideoData{
+		Id:videoId,
+	}
+	absent, err := vh.VideosUC.GetVideoDataById(&videoData, masterId)
+	if absent {
+		logger.Error(err)
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
+		return
+	}
+	if err != nil {
+		logger.Error(err)
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(err.Error()))
+		return
+	}
+	utils.CreateAnswerVideoDataJson(writer, http.StatusOK, videoData)
 }
