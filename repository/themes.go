@@ -112,6 +112,34 @@ func (themesRepo *ThemesRepo) GetThemeById(theme *models.ThemeDB) (int64, error)
 	return utils.NO_ERROR, nil
 }
 
+func (themesRepo *ThemesRepo) GetThemeByName(theme *models.ThemeDB) (int64, error) {
+	db := getPool()
+	transaction, err := db.Begin()
+	if err != nil {
+		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return utils.SERVER_ERROR, dbError
+	}
+	row := transaction.QueryRow("SELECT id FROM themes WHERE name=$1", theme.Name)
+	err = row.Scan(&theme.Id)
+	if err != nil {
+		logger.Errorf("failed to retrieve theme: %v", err)
+		errRollback := transaction.Rollback()
+		if errRollback != nil {
+			logger.Errorf("failed to rollback: %v", err)
+			return utils.SERVER_ERROR, errRollback
+		}
+		return utils.USER_ERROR, fmt.Errorf("this theme doesn't exist")
+	}
+	err = transaction.Commit()
+	if err != nil {
+		dbError := fmt.Errorf("error commit: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return utils.SERVER_ERROR, dbError
+	}
+	return utils.NO_ERROR, nil
+}
+
 func (themesRepo *ThemesRepo) GetSubthemeById (subtheme *models.SubthemeDB) (int64, error) {
 	db := getPool()
 	transaction, err := db.Begin()
@@ -122,6 +150,34 @@ func (themesRepo *ThemesRepo) GetSubthemeById (subtheme *models.SubthemeDB) (int
 	}
 	row := transaction.QueryRow("SELECT name FROM subthemes WHERE id=$1", subtheme.Id)
 	err = row.Scan(&subtheme.Name)
+	if err != nil {
+		logger.Errorf("failed to retrieve theme: %v", err)
+		errRollback := transaction.Rollback()
+		if errRollback != nil {
+			logger.Errorf("failed to rollback: %v", err)
+			return utils.SERVER_ERROR, errRollback
+		}
+		return utils.USER_ERROR, fmt.Errorf("this subtheme doesn't exist")
+	}
+	err = transaction.Commit()
+	if err != nil {
+		dbError := fmt.Errorf("error commit: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return utils.SERVER_ERROR, dbError
+	}
+	return utils.NO_ERROR, nil
+}
+
+func (themesRepo *ThemesRepo) GetSubthemeByName(subtheme *models.SubthemeDB) (int64, error) {
+	db := getPool()
+	transaction, err := db.Begin()
+	if err != nil {
+		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return utils.SERVER_ERROR, dbError
+	}
+	row := transaction.QueryRow("SELECT id, theme_id FROM subthemes WHERE name=$1", subtheme.Name)
+	err = row.Scan(&subtheme.Id, &subtheme.ThemeId)
 	if err != nil {
 		logger.Errorf("failed to retrieve theme: %v", err)
 		errRollback := transaction.Rollback()

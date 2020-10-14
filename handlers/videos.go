@@ -192,4 +192,22 @@ func (vh *VideosHandlers) ChangeVideoData (writer http.ResponseWriter, req *http
 		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(jsonError.Error()))
 		return
 	}
+	if videoId != videoData.Id {
+		paramError := fmt.Errorf("wrong video id parameter")
+		logger.Errorf(paramError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(paramError.Error()))
+		return
+	}
+	absent, err := vh.VideosUC.ChangeVideoData(&videoData, masterId)
+	if absent {
+		logger.Error(err)
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
+		return
+	}
+	if err != nil {
+		logger.Error(err)
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(err.Error()))
+		return
+	}
+	utils.CreateAnswerVideoDataJson(writer, http.StatusOK, videoData)
 }

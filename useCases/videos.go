@@ -252,24 +252,21 @@ func (videosUC *VideosUC) GetVideoDataById(videoData *models.VideoData, masterId
 		}
 	}
 
-	video := models.VideoData{
-		Id:          videoDB.Id,
-		Name:        videoDB.Name,
-		FileExt:     videoDB.Extension,
-		Description: videoDB.Description,
-		Uploaded:    videoDB.Uploaded,
-	}
-	if videoDB.Theme != 0 {
-		err = videosUC.setTheme(&video, videoDB.Theme)
-		if err != nil {
-			return false, err
-		}
-		err = videosUC.setSubThemes(&video, &videoDB)
-		if err != nil {
-			return false, err
-		}
-	}
+	videoData.Name = videoDB.Name
+	videoData.FileExt = videoDB.Extension
+	videoData.Description = videoDB.Description
+	videoData.Uploaded = videoDB.Uploaded
 
+	if videoDB.Theme != 0 {
+		err = videosUC.setTheme(videoData, videoDB.Theme)
+		if err != nil {
+			return false, err
+		}
+		err = videosUC.setSubThemes(videoData, &videoDB)
+		if err != nil {
+			return false, err
+		}
+	}
 	return false, nil
 }
 
@@ -309,13 +306,63 @@ func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId 
 	}
 	var themeDB models.ThemeDB
 	themeDB.Id = videoDB.Theme
-	err := videosUC.getTheme(&themeDB)
-	if err != nil {
-		fileError := fmt.Errorf("database internal error")
-		logger.Errorf(fileError.Error())
-		return false, fileError
-	}
-	if videoData.Theme.Theme != themeDB.Name {
+	_ = videosUC.getTheme(&themeDB)
 
+	absent, err := videosUC.changeVideoTheme(videoData, &themeDB, &videoDB)
+	if err != nil {
+		return absent, err
 	}
+	videoDB.Description = videoData.Description
+	videoDB.Name = videoData.Name
+	err = videosUC.VideosRepo.UpdateVideo(&videoDB)
+	if err != nil {
+		return false, fmt.Errorf("database internal error")
+	}
+	return false, nil
+}
+
+func (videosUC *VideosUC) changeVideoTheme(videoData *models.VideoData, oldTheme *models.ThemeDB, videoDB *models.VideoDB) (bool, error) {
+	if videoData.Theme.Theme != oldTheme.Name {
+		newThemeDB := models.ThemeDB{
+			Name:videoData.Theme.Theme,
+		}
+		errType, err := videosUC.ThemesRepo.GetThemeByName(&newThemeDB)
+		if err != nil {
+			if errType == utils.USER_ERROR {
+				fileError := fmt.Errorf("cant't update video, theme doesn't exist")
+				logger.Errorf(fileError.Error())
+				return true, fileError
+			} else if errType == utils.SERVER_ERROR {
+				return false, fmt.Errorf("database internal error")
+			}
+		}
+		videoDB.Theme = newThemeDB.Id
+	}
+	var newSubthemesIds []int64
+	for _, subtheme := range videoData.Theme.Subthemes {
+		subthemeDB := models.SubthemeDB{Name:subtheme}
+		errType, err := videosUC.ThemesRepo.GetSubthemeByName(&subthemeDB)
+		if err != nil {
+			if errType == utils.USER_ERROR {
+				fileError := fmt.Errorf("cant't update video, subtheme doesn't exist")
+				logger.Errorf(fileError.Error())
+				return true, fileError
+			} else if errType == utils.SERVER_ERROR {
+				return false, fmt.Errorf("database internal error")
+			}
+		}
+		newSubthemesIds = append(newSubthemesIds, subthemeDB.Id)
+	}
+
+	err := videosUC.VideosRepo.DeleteVideoSubthemesById(videoData.Id)
+	if err != nil {
+		return false, fmt.Errorf("database internal error")
+	}
+
+	err = videosUC.VideosRepo.SetVideoSubthemesById(videoData.Id, newSubthemesIds)
+	if err != nil {
+		videoData.Theme.Subthemes = []string{}
+		return false, fmt.Errorf("database internal error")
+	}
+	return false, nil
 }

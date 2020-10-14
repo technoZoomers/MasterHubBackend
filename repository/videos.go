@@ -208,3 +208,69 @@ func (videosRepo *VideosRepo) DeleteVideoSubthemesById(videoId int64) error {
 	}
 	return nil
 }
+
+func (videosRepo *VideosRepo) SetVideoSubthemesById(videoId int64, subthemes []int64) error {
+	if subthemes == nil || len(subthemes) == 0 {
+		return nil
+	}
+	db := getPool()
+	transaction, err := db.Begin()
+	if err != nil {
+		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return dbError
+	}
+	var values []interface{}
+	insertQuery := "INSERT INTO videos_subthemes (video_id, subtheme_id) values "
+	values = append(values, videoId)
+	for i, st := range subthemes {
+		insertQuery += fmt.Sprintf("($1, $%d),", i+2)
+		values = append(values, st)
+	}
+	insertQuery = insertQuery[:len(insertQuery)-1]
+	insertQuery += ";"
+	_, err = transaction.Exec(insertQuery, values...)
+	if err != nil {
+		logger.Errorf("failed to insert subthemes: %v", err)
+		errRollback := transaction.Rollback()
+		if errRollback != nil {
+			logger.Errorf("failed to rollback: %v", err)
+			return errRollback
+		}
+		return err
+	}
+	err = transaction.Commit()
+	if err != nil {
+		dbError := fmt.Errorf("error commit: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return dbError
+	}
+	return nil
+}
+
+func (videosRepo *VideosRepo) UpdateVideo(video *models.VideoDB) error {
+	db := getPool()
+	transaction, err := db.Begin()
+	if err != nil {
+		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return dbError
+	}
+	_, err = transaction.Exec("UPDATE videos SET (name, description, theme) = ($1, $2, $3) WHERE id=$4", video.Name, video.Description, video.Theme, video.Id)
+	if err != nil {
+		logger.Errorf("failed to update theme: %v", err)
+		errRollback := transaction.Rollback()
+		if errRollback != nil {
+			logger.Errorf("failed to rollback: %v", err)
+			return errRollback
+		}
+		return err
+	}
+	err = transaction.Commit()
+	if err != nil {
+		dbError := fmt.Errorf("error commit: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return dbError
+	}
+	return nil
+}
