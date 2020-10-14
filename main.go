@@ -35,6 +35,7 @@ func main() {
 	//	User:     "alexis",
 	//	Password: "sinope27",
 	//})
+
 	config, err := pgx.ParseConnectionString(os.Getenv("DATABASE_URL"))
 	if err != nil {
 		logger.Fatalf("Couldn't initialize database: %v", err)
