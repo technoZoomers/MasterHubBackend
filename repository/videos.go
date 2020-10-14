@@ -256,7 +256,7 @@ func (videosRepo *VideosRepo) UpdateVideo(video *models.VideoDB) error {
 		logger.Errorf(dbError.Error())
 		return dbError
 	}
-	_, err = transaction.Exec("UPDATE videos SET (name, description, theme) = ($1, $2, $3) WHERE id=$4", video.Name, video.Description, video.Theme, video.Id)
+	_, err = transaction.Exec("UPDATE videos SET (name, description, theme) = ($1, $2, nullif($3, 0)) WHERE id=$4", video.Name, video.Description, video.Theme, video.Id)
 	if err != nil {
 		logger.Errorf("failed to update theme: %v", err)
 		errRollback := transaction.Rollback()
