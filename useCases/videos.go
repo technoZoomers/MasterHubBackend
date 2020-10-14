@@ -295,13 +295,12 @@ func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId 
 		}
 	}
 
-	if videoData.FileExt != videoDB.Extension {
+	if videoData.FileExt != "" && videoData.FileExt != videoDB.Extension {
 		fileError := fmt.Errorf("video extension can't be changed")
 		logger.Errorf(fileError.Error())
 		return false, fileError
 	}
-	fmt.Println(videoDB.Uploaded, videoData.Uploaded)
-	fmt.Println(videoDB.Uploaded.Equal(videoData.Uploaded))
+	fmt.Println(videoData.Uploaded)
 	if !videoDB.Uploaded.Equal(videoData.Uploaded) {
 		fileError := fmt.Errorf("video upload time can't be changed")
 		logger.Errorf(fileError.Error())

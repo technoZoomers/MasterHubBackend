@@ -42,7 +42,7 @@ func (vh *VideosHandlers) Upload(writer http.ResponseWriter, req *http.Request) 
 		return
 	}
 	if fileHeader.Header.Get("Content-Type") != utils.VIDEO_FORMAT {
-		parseError := fmt.Errorf("wrong mime type, expected video")
+		parseError := fmt.Errorf("wrong mime type:%s, expected video", fileHeader.Header.Get("Content-Type"))
 		logger.Errorf(parseError.Error())
 		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(parseError.Error()))
 		return
