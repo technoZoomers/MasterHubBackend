@@ -34,19 +34,19 @@ func (vh *VideosHandlers) Upload(writer http.ResponseWriter, req *http.Request) 
 	//	utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(parseError.Error()))
 	//	return
 	//}
-	file, fileHeader, err := req.FormFile(utils.FORM_DATA_VIDEO_KEY)
+	file, _, err := req.FormFile(utils.FORM_DATA_VIDEO_KEY)
 	if err != nil {
 		parseError := fmt.Errorf("error parsing video: %v", err.Error())
 		logger.Errorf(parseError.Error())
 		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(parseError.Error()))
 		return
 	}
-	if fileHeader.Header.Get("Content-Type") != utils.VIDEO_FORMAT {
-		parseError := fmt.Errorf("wrong mime type:%s, expected video", fileHeader.Header.Get("Content-Type"))
-		logger.Errorf(parseError.Error())
-		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(parseError.Error()))
-		return
-	}
+	//if fileHeader.Header.Get("Content-Type") != utils.VIDEO_FORMAT {
+	//	parseError := fmt.Errorf("wrong mime type:%s, expected video", fileHeader.Header.Get("Content-Type"))
+	//	logger.Errorf(parseError.Error())
+	//	utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(parseError.Error()))
+	//	return
+	//}
 	defer file.Close()
 
 	absent, err := vh.VideosUC.NewMasterVideo(&videoData, file, masterId)
