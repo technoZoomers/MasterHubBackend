@@ -203,7 +203,7 @@ func (videosUC *VideosUC) GetMasterVideo(masterId int64, videoId int64) ([]byte,
 	}
 
 
-	files, err := ioutil.ReadDir(".")
+	files, err := ioutil.ReadDir("master_videos")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -211,7 +211,7 @@ func (videosUC *VideosUC) GetMasterVideo(masterId int64, videoId int64) ([]byte,
 		fmt.Println(f.Name())
 	}
 
-	videoFile, err := os.Open(fmt.Sprintf("../master_videos/%s.%s", videoDB.Filename, videoDB.Extension))
+	videoFile, err := os.Open(fmt.Sprintf("master_videos/%s.%s", videoDB.Filename, videoDB.Extension))
 	if err != nil {
 		fileError := fmt.Errorf("error opening file: %s", err.Error())
 		logger.Errorf(fileError.Error())
