@@ -9,6 +9,7 @@ import (
 	"github.com/technoZoomers/MasterHubBackend/repository"
 	"github.com/technoZoomers/MasterHubBackend/utils"
 	"io/ioutil"
+	"log"
 	"mime/multipart"
 	"os"
 	"time"
@@ -200,7 +201,17 @@ func (videosUC *VideosUC) GetMasterVideo(masterId int64, videoId int64) ([]byte,
 			return videoBytes, false, fmt.Errorf("database internal error")
 		}
 	}
-	videoFile, err := os.Open(fmt.Sprintf("./master_videos/%s.%s", videoDB.Filename, videoDB.Extension))
+
+
+	files, err := ioutil.ReadDir(".")
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, f := range files {
+		fmt.Println(f.Name())
+	}
+
+	videoFile, err := os.Open(fmt.Sprintf("../master_videos/%s.%s", videoDB.Filename, videoDB.Extension))
 	if err != nil {
 		fileError := fmt.Errorf("error opening file: %s", err.Error())
 		logger.Errorf(fileError.Error())
