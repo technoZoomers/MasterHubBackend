@@ -301,6 +301,7 @@ func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId 
 		return false, fileError
 	}
 	fmt.Println(videoDB.Uploaded, videoData.Uploaded)
+	fmt.Println(videoDB.Uploaded.Equal(videoData.Uploaded))
 	if videoData.Uploaded != videoDB.Uploaded {
 		fileError := fmt.Errorf("video upload time can't be changed")
 		logger.Errorf(fileError.Error())
