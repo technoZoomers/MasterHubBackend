@@ -4,24 +4,22 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/technoZoomers/MasterHubBackend/models"
-	"github.com/technoZoomers/MasterHubBackend/utils"
 )
 
 type ThemesRepo struct {
+	repository *Repository
 }
 
 func (themesRepo *ThemesRepo) GetAllThemes() ([]models.ThemeDB, error) {
+	var dbError error
 	themes := make([]models.ThemeDB, 0)
-	db := getPool()
-	transaction, err := db.Begin()
+	transaction, err := themesRepo.repository.startTransaction()
 	if err != nil {
-		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
-		logger.Errorf(dbError.Error())
-		return themes, dbError
+		return themes, err
 	}
 	rows, err := transaction.Query(`SELECT * FROM themes`)
 	if err != nil {
-		dbError := fmt.Errorf("failed to retrieve transactions: %v", err.Error())
+		dbError = fmt.Errorf("failed to retrieve themes: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return themes, dbError
 	}
@@ -29,169 +27,121 @@ func (themesRepo *ThemesRepo) GetAllThemes() ([]models.ThemeDB, error) {
 		var themeFound models.ThemeDB
 		err = rows.Scan(&themeFound.Id, &themeFound.Name)
 		if err != nil {
-			logger.Errorf("failed to retrieve transaction: %v", err)
-			errRollback := transaction.Rollback()
-			if errRollback != nil {
-				logger.Errorf("failed to rollback: %v", err)
-				return themes, errRollback
-			}
-			return themes, err
+			dbError = fmt.Errorf("failed to retrieve theme: %v", err)
+			logger.Errorf(dbError.Error())
+			return themes, dbError
 		}
 		themes = append(themes, themeFound)
 	}
-	err = transaction.Commit()
+	err = themesRepo.repository.commitTransaction(transaction)
 	if err != nil {
-		dbError := fmt.Errorf("error commit: %v", err.Error())
-		logger.Errorf(dbError.Error())
 		return themes, err
 	}
 	return themes, nil
 }
 
 func (themesRepo *ThemesRepo) GetSubthemesByTheme(theme *models.ThemeDB) ([]string, error) {
+	var dbError error
 	subthemes := make([]string, 0)
-	db := getPool()
-	transaction, err := db.Begin()
+	transaction, err := themesRepo.repository.startTransaction()
 	if err != nil {
-		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
-		logger.Errorf(dbError.Error())
-		return subthemes, dbError
+		return subthemes, err
 	}
 	rows, err := transaction.Query(`SELECT name FROM subthemes WHERE theme_id=$1`, theme.Id)
 	if err != nil {
-		return subthemes, nil
+		dbError = fmt.Errorf("failed to retrieve subthemes by theme: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return subthemes, dbError
 	}
 	for rows.Next() {
 		var subthemeFound string
 		err = rows.Scan(&subthemeFound)
 		if err != nil {
-			logger.Errorf("failed to retrieve transaction: %v", err)
-			errRollback := transaction.Rollback()
-			if errRollback != nil {
-				logger.Errorf("failed to rollback: %v", err)
-				return subthemes, errRollback
-			}
-			return subthemes, err
+			dbError = fmt.Errorf("failed to retrieve subtheme: %v", err)
+			logger.Errorf(dbError.Error())
+			return subthemes, dbError
 		}
 		subthemes = append(subthemes, subthemeFound)
 	}
-	err = transaction.Commit()
+	err = themesRepo.repository.commitTransaction(transaction)
 	if err != nil {
-		dbError := fmt.Errorf("error commit: %v", err.Error())
-		logger.Errorf(dbError.Error())
 		return subthemes, err
 	}
 	return subthemes, nil
 }
 
-func (themesRepo *ThemesRepo) GetThemeById(theme *models.ThemeDB) (int64, error) {
-	db := getPool()
-	transaction, err := db.Begin()
+func (themesRepo *ThemesRepo) GetThemeById(theme *models.ThemeDB) error {
+	var dbError error
+	transaction, err := themesRepo.repository.startTransaction()
 	if err != nil {
-		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
-		logger.Errorf(dbError.Error())
-		return utils.SERVER_ERROR, dbError
+		return err
 	}
 	row := transaction.QueryRow("SELECT name FROM themes WHERE id=$1", theme.Id)
 	err = row.Scan(&theme.Name)
 	if err != nil {
-		logger.Errorf("failed to retrieve theme: %v", err)
-		errRollback := transaction.Rollback()
-		if errRollback != nil {
-			logger.Errorf("failed to rollback: %v", err)
-			return utils.SERVER_ERROR, errRollback
-		}
-		return utils.USER_ERROR, fmt.Errorf("this theme doesn't exist")
-	}
-	err = transaction.Commit()
-	if err != nil {
-		dbError := fmt.Errorf("error commit: %v", err.Error())
+		dbError = fmt.Errorf("failed to retrieve theme: %v", err.Error())
 		logger.Errorf(dbError.Error())
-		return utils.SERVER_ERROR, dbError
 	}
-	return utils.NO_ERROR, nil
+	err = themesRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (themesRepo *ThemesRepo) GetThemeByName(theme *models.ThemeDB) (int64, error) {
-	db := getPool()
-	transaction, err := db.Begin()
+func (themesRepo *ThemesRepo) GetThemeByName(theme *models.ThemeDB) error {
+	var dbError error
+	transaction, err := themesRepo.repository.startTransaction()
 	if err != nil {
-		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
-		logger.Errorf(dbError.Error())
-		return utils.SERVER_ERROR, dbError
+		return err
 	}
 	row := transaction.QueryRow("SELECT id FROM themes WHERE name=$1", theme.Name)
 	err = row.Scan(&theme.Id)
 	if err != nil {
-		logger.Errorf("failed to retrieve theme: %v", err)
-		errRollback := transaction.Rollback()
-		if errRollback != nil {
-			logger.Errorf("failed to rollback: %v", err)
-			return utils.SERVER_ERROR, errRollback
-		}
-		return utils.USER_ERROR, fmt.Errorf("this theme doesn't exist")
-	}
-	err = transaction.Commit()
-	if err != nil {
-		dbError := fmt.Errorf("error commit: %v", err.Error())
+		dbError = fmt.Errorf("failed to retrieve theme: %v", err.Error())
 		logger.Errorf(dbError.Error())
-		return utils.SERVER_ERROR, dbError
 	}
-	return utils.NO_ERROR, nil
+	err = themesRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (themesRepo *ThemesRepo) GetSubthemeById (subtheme *models.SubthemeDB) (int64, error) {
-	db := getPool()
-	transaction, err := db.Begin()
+func (themesRepo *ThemesRepo) GetSubthemeById(subtheme *models.SubthemeDB) error {
+	var dbError error
+	transaction, err := themesRepo.repository.startTransaction()
 	if err != nil {
-		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
-		logger.Errorf(dbError.Error())
-		return utils.SERVER_ERROR, dbError
+		return err
 	}
 	row := transaction.QueryRow("SELECT name FROM subthemes WHERE id=$1", subtheme.Id)
 	err = row.Scan(&subtheme.Name)
 	if err != nil {
-		logger.Errorf("failed to retrieve theme: %v", err)
-		errRollback := transaction.Rollback()
-		if errRollback != nil {
-			logger.Errorf("failed to rollback: %v", err)
-			return utils.SERVER_ERROR, errRollback
-		}
-		return utils.USER_ERROR, fmt.Errorf("this subtheme doesn't exist")
-	}
-	err = transaction.Commit()
-	if err != nil {
-		dbError := fmt.Errorf("error commit: %v", err.Error())
+		dbError = fmt.Errorf("failed to retrieve subtheme: %v", err.Error())
 		logger.Errorf(dbError.Error())
-		return utils.SERVER_ERROR, dbError
 	}
-	return utils.NO_ERROR, nil
+	err = themesRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (themesRepo *ThemesRepo) GetSubthemeByName(subtheme *models.SubthemeDB) (int64, error) {
-	db := getPool()
-	transaction, err := db.Begin()
+func (themesRepo *ThemesRepo) GetSubthemeByName(subtheme *models.SubthemeDB) error {
+	var dbError error
+	transaction, err := themesRepo.repository.startTransaction()
 	if err != nil {
-		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
-		logger.Errorf(dbError.Error())
-		return utils.SERVER_ERROR, dbError
+		return err
 	}
 	row := transaction.QueryRow("SELECT id, theme_id FROM subthemes WHERE name=$1", subtheme.Name)
 	err = row.Scan(&subtheme.Id, &subtheme.ThemeId)
 	if err != nil {
-		logger.Errorf("failed to retrieve theme: %v", err)
-		errRollback := transaction.Rollback()
-		if errRollback != nil {
-			logger.Errorf("failed to rollback: %v", err)
-			return utils.SERVER_ERROR, errRollback
-		}
-		return utils.USER_ERROR, fmt.Errorf("this subtheme doesn't exist")
-	}
-	err = transaction.Commit()
-	if err != nil {
-		dbError := fmt.Errorf("error commit: %v", err.Error())
+		dbError = fmt.Errorf("failed to retrieve subtheme: %v", err.Error())
 		logger.Errorf(dbError.Error())
-		return utils.SERVER_ERROR, dbError
 	}
-	return utils.NO_ERROR, nil
+	err = themesRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
 }

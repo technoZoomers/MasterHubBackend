@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"github.com/google/logger"
 	"github.com/gorilla/mux"
@@ -15,7 +16,6 @@ type ThemesHandlers struct {
 	ThemesUC useCases.ThemesUCInterface
 }
 
-
 func (th *ThemesHandlers) Get(writer http.ResponseWriter, req *http.Request) {
 	themes, err := th.ThemesUC.Get()
 	if err != nil {
@@ -28,7 +28,7 @@ func (th *ThemesHandlers) Get(writer http.ResponseWriter, req *http.Request) {
 
 func (th *ThemesHandlers) GetThemeById(writer http.ResponseWriter, req *http.Request) {
 	themeIdString := mux.Vars(req)["id"]
-	themeId, err :=  strconv.ParseInt(themeIdString, 10, 64)
+	themeId, err := strconv.ParseInt(themeIdString, 10, 64)
 	if err != nil {
 		parseError := fmt.Errorf("error getting theme id parameter: %v", err.Error())
 		logger.Errorf(parseError.Error())
@@ -37,8 +37,9 @@ func (th *ThemesHandlers) GetThemeById(writer http.ResponseWriter, req *http.Req
 	}
 	var theme models.Theme
 	theme.Id = themeId
-	absent, err := th.ThemesUC.GetThemeById(&theme)
-	if absent {
+	err = th.ThemesUC.GetThemeById(&theme)
+	var nfError *models.NotFoundError
+	if errors.As(err, &nfError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
 		return

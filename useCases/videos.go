@@ -9,77 +9,88 @@ import (
 	"github.com/technoZoomers/MasterHubBackend/repository"
 	"github.com/technoZoomers/MasterHubBackend/utils"
 	"io/ioutil"
-	"log"
 	"mime/multipart"
 	"os"
 	"time"
 )
 
 type VideosUC struct {
-	VideosRepo  repository.VideosRepoI
-	MastersRepo repository.MastersRepoI
-	ThemesRepo repository.ThemesRepoI
+	useCases     *UseCases
+	VideosRepo   repository.VideosRepoI
+	MastersRepo  repository.MastersRepoI
+	ThemesRepo   repository.ThemesRepoI
+	videosConfig VideoConfig
 }
 
-func (videosUC *VideosUC) NewMasterVideo(videoData *models.VideoData, file multipart.File, masterId int64) (bool, error) {
+type VideoConfig struct {
+	videosDir           string
+	videosDefaultName   string
+	videoFilenamePrefix string
+}
+
+func (videosUC *VideosUC) NewMasterVideo(videoData *models.VideoData, file multipart.File, masterId int64) error {
+	if masterId == utils.ERROR_ID {
+		return &models.NotFoundError{Message: "incorrect master id", RequestId: masterId}
+	}
 	masterDB := models.MasterDB{
 		UserId: masterId,
 	}
-	errType, err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
+	err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
 	if err != nil {
-		if errType == utils.USER_ERROR {
-			return true, err
-		} else if errType == utils.SERVER_ERROR {
-			return false, fmt.Errorf("database internal error")
-		}
+		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+	}
+	if masterDB.Id == utils.ERROR_ID {
+		absenceError := &models.NotFoundError{Message: "master doesn't exist", RequestId: masterId}
+		logger.Errorf(absenceError.Error())
+		return absenceError
 	}
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		fileError := fmt.Errorf("error reading file: %s", err.Error())
+		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileReadError, err.Error())
 		logger.Errorf(fileError.Error())
-		return false, fileError
+		return fileError
 	}
 
 	fileExtension, err := filetype.Match(fileBytes)
 	if err != nil {
-		fileError := fmt.Errorf("error reading file extension: %s", err.Error())
+		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileReadExtensionError, err.Error())
 		logger.Errorf(fileError.Error())
-		return false, fileError
+		return fileError
 	}
 	countVideo, err := videosUC.VideosRepo.CountVideos()
 	if err != nil {
-		return false, fmt.Errorf("database internal error")
+		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
-	fileName := fmt.Sprintf("master_video_%d", countVideo+1)
-	newPath := fmt.Sprintf("./master_videos/%s.%s", fileName, fileExtension.Extension)
+	fileName := fmt.Sprintf("%s%d", videosUC.videosConfig.videoFilenamePrefix, countVideo+1)
+	newPath := fmt.Sprintf("%s%s.%s", videosUC.videosConfig.videosDir, fileName, fileExtension.Extension)
 	newFile, err := os.Create(newPath)
 	if err != nil {
-		fileError := fmt.Errorf("error creating file: %s", err.Error())
+		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileCreateError, err.Error())
 		logger.Errorf(fileError.Error())
-		return false, fileError
+		return fileError
 	}
 	defer newFile.Close()
 
 	_, err = newFile.Write(fileBytes)
 	if err != nil {
 		os.Remove(newPath)
-		fileError := fmt.Errorf("error creating file: %s", err.Error())
+		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileCreateError, err.Error())
 		logger.Errorf(fileError.Error())
-		return false, fileError
+		return fileError
 	}
 
 	videoDB := models.VideoDB{
-		Filename: fileName,
+		Filename:  fileName,
 		Extension: fileExtension.Extension,
-		MasterId: masterId,
-		Name:     utils.DEFAULT_VIDEO_NAME,
-		Intro:    false,
-		Uploaded: time.Now(),
+		MasterId:  masterId,
+		Name:      videosUC.videosConfig.videosDefaultName,
+		Intro:     false,
+		Uploaded:  time.Now(),
 	}
 	err = videosUC.VideosRepo.InsertVideoData(&videoDB)
 	if err != nil {
 		os.Remove(newPath)
-		return false, fmt.Errorf("database internal error")
+		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
 
 	videoData.Name = videoDB.Name
@@ -87,61 +98,63 @@ func (videosUC *VideosUC) NewMasterVideo(videoData *models.VideoData, file multi
 	videoData.Id = videoDB.Id
 	videoData.FileExt = videoDB.Extension
 
-	return false, nil
+	return nil
 }
 
-func (videosUC *VideosUC) GetVideosByMasterId(masterId int64) ([]models.VideoData, bool, error) {
+func (videosUC *VideosUC) GetVideosByMasterId(masterId int64) ([]models.VideoData, error) {
 	var videos []models.VideoData
 	var videosDB []models.VideoDB
+	if masterId == utils.ERROR_ID {
+		return videos, &models.NotFoundError{Message: "incorrect master id", RequestId: masterId}
+	}
 	masterDB := models.MasterDB{
 		UserId: masterId,
 	}
-	errType, err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
+	err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
 	if err != nil {
-		if errType == utils.USER_ERROR {
-			return videos, true, err
-		} else if errType == utils.SERVER_ERROR {
-			return videos, false, fmt.Errorf("database internal error")
-		}
+		return videos, fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+	}
+	if masterDB.Id == utils.ERROR_ID {
+		absenceError := &models.NotFoundError{Message: "master doesn't exist", RequestId: masterId}
+		logger.Errorf(absenceError.Error())
+		return videos, absenceError
 	}
 	videosDB, err = videosUC.VideosRepo.GetVideosByMasterId(masterId)
 	if err != nil {
-		return  videos, false, fmt.Errorf("database internal error")
+		return videos, fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
 
 	for _, videoDB := range videosDB {
 		video := models.VideoData{
 			Id:          videoDB.Id,
 			Name:        videoDB.Name,
-			FileExt: videoDB.Extension,
+			FileExt:     videoDB.Extension,
 			Description: videoDB.Description,
 			Uploaded:    videoDB.Uploaded,
 		}
-		if videoDB.Theme != 0 {
+		if videoDB.Theme != utils.ERROR_ID {
 			err = videosUC.setTheme(&video, videoDB.Theme)
 			if err != nil {
-				return videos, false, err
+				return videos, err
 			}
 			err = videosUC.setSubThemes(&video, &videoDB)
 			if err != nil {
-				return videos, false, err
+				return videos, err
 			}
 		}
 
 		videos = append(videos, video)
 	}
-	return videos, false, nil
+	return videos, nil
 }
 
-
 func (videosUC *VideosUC) getTheme(themeDB *models.ThemeDB) error {
-	_, err := videosUC.ThemesRepo.GetThemeById(themeDB)
+	err := videosUC.ThemesRepo.GetThemeById(themeDB)
 	if err != nil {
-		return err
+		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
 	return nil
 }
-
 
 func (videosUC *VideosUC) setTheme(video *models.VideoData, theme int64) error {
 	var themeDB models.ThemeDB
@@ -160,15 +173,21 @@ func (videosUC *VideosUC) setSubThemes(video *models.VideoData, videoDB *models.
 	subthemesIds, err := videosUC.VideosRepo.GetVideoSubthemesById(videoDB.Id)
 	if err != nil {
 		video.Theme.Subthemes = subthemes
-		return err
+		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
 	for _, subthemeId := range subthemesIds {
 		var subtheme models.SubthemeDB
 		subtheme.Id = subthemeId
-		_, err = videosUC.ThemesRepo.GetSubthemeById(&subtheme)
+		err = videosUC.ThemesRepo.GetSubthemeById(&subtheme)
 		if err != nil {
 			video.Theme.Subthemes = subthemes
-			return err
+			return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+		}
+		if subtheme.Name == "" {
+			absenceError := fmt.Errorf("subtheme doesn't exist")
+			logger.Errorf(absenceError.Error())
+			video.Theme.Subthemes = subthemes
+			return absenceError
 		}
 		subthemes = append(subthemes, subtheme.Name)
 	}
@@ -176,91 +195,97 @@ func (videosUC *VideosUC) setSubThemes(video *models.VideoData, videoDB *models.
 	return nil
 }
 
-func (videosUC *VideosUC) GetMasterVideo(masterId int64, videoId int64) ([]byte, bool, error) {
+func (videosUC *VideosUC) GetMasterVideo(masterId int64, videoId int64) ([]byte, error) {
 	var videoBytes []byte
+	if masterId == utils.ERROR_ID {
+		return videoBytes, &models.NotFoundError{Message: "incorrect master id", RequestId: masterId}
+	}
+	if videoId == utils.ERROR_ID {
+		return videoBytes, &models.NotFoundError{Message: "incorrect video id", RequestId: videoId}
+	}
 	videoDB := models.VideoDB{
-		Id:          videoId,
+		Id:       videoId,
 		MasterId: masterId,
 	}
 	masterDB := models.MasterDB{
 		UserId: masterId,
 	}
-	errType, err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
+	err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
 	if err != nil {
-		if errType == utils.USER_ERROR {
-			return videoBytes, true, err
-		} else if errType == utils.SERVER_ERROR {
-			return videoBytes, false, fmt.Errorf("database internal error")
-		}
+		return videoBytes, err
 	}
-	errType, err = videosUC.VideosRepo.GetVideoDataById(&videoDB)
+	if masterDB.Id == utils.ERROR_ID {
+		absenceError := &models.NotFoundError{Message: "master doesn't exist", RequestId: masterId}
+		logger.Errorf(absenceError.Error())
+		return videoBytes, absenceError
+	}
+	err = videosUC.VideosRepo.GetVideoDataById(&videoDB)
 	if err != nil {
-		if errType == utils.USER_ERROR {
-			return videoBytes, true, err
-		} else if errType == utils.SERVER_ERROR {
-			return videoBytes, false, fmt.Errorf("database internal error")
-		}
+		return videoBytes, fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
-
-
-	files, err := ioutil.ReadDir("master_videos")
+	if videoDB.Name == "" {
+		absenceError := &models.NotFoundError{Message: "video doesn't exist or doesn't belong to this master", RequestId: videoId}
+		logger.Errorf(absenceError.Error())
+		return videoBytes, absenceError
+	}
+	videoFile, err := os.Open(fmt.Sprintf("%s%s.%s", videosUC.videosConfig.videosDir, videoDB.Filename, videoDB.Extension))
 	if err != nil {
-		log.Fatal(err)
-	}
-	for _, f := range files {
-		fmt.Println(f.Name())
-	}
-
-	videoFile, err := os.Open(fmt.Sprintf("./master_videos/%s.%s", videoDB.Filename, videoDB.Extension))
-	if err != nil {
-		fileError := fmt.Errorf("error opening file: %s", err.Error())
+		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileOpenError, err.Error())
 		logger.Errorf(fileError.Error())
-		return videoBytes, false, fileError
+		return videoBytes, fileError
 	}
 	defer videoFile.Close()
 
 	reader := bufio.NewReader(videoFile)
 	videoFileInfo, err := videoFile.Stat()
 	if err != nil {
-		fileError := fmt.Errorf("error opening file: %s", err.Error())
+		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileOpenError, err.Error())
 		logger.Errorf(fileError.Error())
-		return videoBytes, false, fileError
+		return videoBytes, fileError
 	}
 	videoFileSize := videoFileInfo.Size()
 
 	videoBytes = make([]byte, videoFileSize)
 	_, err = reader.Read(videoBytes)
 	if err != nil {
-		fileError := fmt.Errorf("error reading file: %s", err.Error())
+		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileReadError, err.Error())
 		logger.Errorf(fileError.Error())
-		return videoBytes, false, fileError
+		return videoBytes, fileError
 	}
-	return videoBytes, false, nil
+	return videoBytes, nil
 }
 
-func (videosUC *VideosUC) GetVideoDataById(videoData *models.VideoData, masterId int64) (bool, error) {
+func (videosUC *VideosUC) GetVideoDataById(videoData *models.VideoData, masterId int64) error {
+	if masterId == utils.ERROR_ID {
+		return &models.NotFoundError{Message: "incorrect master id", RequestId: masterId}
+	}
+	if videoData.Id == utils.ERROR_ID {
+		return &models.NotFoundError{Message: "incorrect video id", RequestId: videoData.Id}
+	}
 	videoDB := models.VideoDB{
-		Id: videoData.Id,
+		Id:       videoData.Id,
 		MasterId: masterId,
 	}
 	masterDB := models.MasterDB{
 		UserId: masterId,
 	}
-	errType, err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
+	err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
 	if err != nil {
-		if errType == utils.USER_ERROR {
-			return true, err
-		} else if errType == utils.SERVER_ERROR {
-			return false, fmt.Errorf("database internal error")
-		}
+		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
-	errType, err = videosUC.VideosRepo.GetVideoDataById(&videoDB)
+	if masterDB.Id == utils.ERROR_ID {
+		absenceError := &models.NotFoundError{Message: "master doesn't exist", RequestId: masterId}
+		logger.Errorf(absenceError.Error())
+		return absenceError
+	}
+	err = videosUC.VideosRepo.GetVideoDataById(&videoDB)
 	if err != nil {
-		if errType == utils.USER_ERROR {
-			return true, err
-		} else if errType == utils.SERVER_ERROR {
-			return false, fmt.Errorf("database internal error")
-		}
+		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+	}
+	if videoDB.Name == "" {
+		absenceError := &models.NotFoundError{Message: "video doesn't exist or doesn't belong to this master", RequestId: videoData.Id}
+		logger.Errorf(absenceError.Error())
+		return absenceError
 	}
 
 	videoData.Name = videoDB.Name
@@ -271,111 +296,116 @@ func (videosUC *VideosUC) GetVideoDataById(videoData *models.VideoData, masterId
 	if videoDB.Theme != 0 {
 		err = videosUC.setTheme(videoData, videoDB.Theme)
 		if err != nil {
-			return false, err
+			return err
 		}
 		err = videosUC.setSubThemes(videoData, &videoDB)
 		if err != nil {
-			return false, err
+			return err
 		}
 	}
-	return false, nil
+	return nil
 }
 
-func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId int64) (bool, error) {
+func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId int64) error {
+	if masterId == utils.ERROR_ID {
+		return &models.NotFoundError{Message: "incorrect master id", RequestId: masterId}
+	}
+	if videoData.Id == utils.ERROR_ID {
+		return &models.NotFoundError{Message: "incorrect video id", RequestId: videoData.Id}
+	}
 	videoDB := models.VideoDB{
-		Id: videoData.Id,
+		Id:       videoData.Id,
 		MasterId: masterId,
 	}
 	masterDB := models.MasterDB{
 		UserId: masterId,
 	}
-	errType, err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
+	err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
 	if err != nil {
-		if errType == utils.USER_ERROR {
-			return true, err
-		} else if errType == utils.SERVER_ERROR {
-			return false, fmt.Errorf("database internal error")
-		}
+		return err
 	}
-	errType, err = videosUC.VideosRepo.GetVideoDataById(&videoDB)
+	if masterDB.Id == utils.ERROR_ID {
+		absenceError := &models.NotFoundError{Message: "master doesn't exist", RequestId: masterId}
+		logger.Errorf(absenceError.Error())
+		return absenceError
+	}
+	err = videosUC.VideosRepo.GetVideoDataById(&videoDB)
 	if err != nil {
-		if errType == utils.USER_ERROR {
-			return true, err
-		} else if errType == utils.SERVER_ERROR {
-			return false, fmt.Errorf("database internal error")
-		}
+		return fmt.Errorf("database internal error")
+	}
+	if videoDB.Name == "" {
+		absenceError := &models.NotFoundError{Message: "video doesn't exist or doesn't belong to master", RequestId: videoData.Id}
+		logger.Errorf(absenceError.Error())
+		return absenceError
 	}
 
 	if videoData.FileExt != "" && videoData.FileExt != videoDB.Extension {
 		fileError := fmt.Errorf("video extension can't be changed")
 		logger.Errorf(fileError.Error())
-		return false, fileError
+		return fileError
 	}
-	fmt.Println(videoData.Uploaded)
-	if !videoDB.Uploaded.Equal(videoData.Uploaded) {
+	if !videoData.Uploaded.IsZero() && !videoDB.Uploaded.Equal(videoData.Uploaded) {
 		fileError := fmt.Errorf("video upload time can't be changed")
 		logger.Errorf(fileError.Error())
-		return false, fileError
+		return fileError
 	}
 	var themeDB models.ThemeDB
 	themeDB.Id = videoDB.Theme
 	_ = videosUC.getTheme(&themeDB)
 
-	absent, err := videosUC.changeVideoTheme(videoData, &themeDB, &videoDB)
+	err = videosUC.changeVideoTheme(videoData, &themeDB, &videoDB)
 	if err != nil {
-		return absent, err
+		return err
 	}
 	videoDB.Description = videoData.Description
 	videoDB.Name = videoData.Name
 	err = videosUC.VideosRepo.UpdateVideo(&videoDB)
 	if err != nil {
-		return false, fmt.Errorf("database internal error")
+		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
-	return false, nil
+	return nil
 }
 
-func (videosUC *VideosUC) changeVideoTheme(videoData *models.VideoData, oldTheme *models.ThemeDB, videoDB *models.VideoDB) (bool, error) {
+func (videosUC *VideosUC) changeVideoTheme(videoData *models.VideoData, oldTheme *models.ThemeDB, videoDB *models.VideoDB) error {
 	if videoData.Theme.Theme != oldTheme.Name {
 		newThemeDB := models.ThemeDB{
-			Name:videoData.Theme.Theme,
+			Name: videoData.Theme.Theme,
 		}
-		errType, err := videosUC.ThemesRepo.GetThemeByName(&newThemeDB)
+		err := videosUC.ThemesRepo.GetThemeByName(&newThemeDB)
 		if err != nil {
-			if errType == utils.USER_ERROR {
-				fileError := fmt.Errorf("cant't update video, theme doesn't exist")
-				logger.Errorf(fileError.Error())
-				return true, fileError
-			} else if errType == utils.SERVER_ERROR {
-				return false, fmt.Errorf("database internal error")
-			}
+			return fmt.Errorf("database internal error")
+		}
+		if newThemeDB.Id == utils.ERROR_ID {
+			fileError := &models.NotFoundError{Message: "cant't update video, theme doesn't exist", RequestId: videoData.Id}
+			logger.Errorf(fileError.Error())
+			return fileError
 		}
 		videoDB.Theme = newThemeDB.Id
 	}
 	var newSubthemesIds []int64
 	for _, subtheme := range videoData.Theme.Subthemes {
-		subthemeDB := models.SubthemeDB{Name:subtheme}
-		errType, err := videosUC.ThemesRepo.GetSubthemeByName(&subthemeDB)
+		subthemeDB := models.SubthemeDB{Name: subtheme}
+		err := videosUC.ThemesRepo.GetSubthemeByName(&subthemeDB)
 		if err != nil {
-			if errType == utils.USER_ERROR {
-				fileError := fmt.Errorf("cant't update video, subtheme doesn't exist")
-				logger.Errorf(fileError.Error())
-				return true, fileError
-			} else if errType == utils.SERVER_ERROR {
-				return false, fmt.Errorf("database internal error")
-			}
+			return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+		}
+		if subthemeDB.Id == utils.ERROR_ID {
+			fileError := &models.NotFoundError{Message: "cant't update video, subtheme doesn't exist", RequestId: videoData.Id}
+			logger.Errorf(fileError.Error())
+			return fileError
 		}
 		newSubthemesIds = append(newSubthemesIds, subthemeDB.Id)
 	}
 
 	err := videosUC.VideosRepo.DeleteVideoSubthemesById(videoData.Id)
 	if err != nil {
-		return false, fmt.Errorf("database internal error")
+		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
 
 	err = videosUC.VideosRepo.SetVideoSubthemesById(videoData.Id, newSubthemesIds)
 	if err != nil {
 		videoData.Theme.Subthemes = []string{}
-		return false, fmt.Errorf("database internal error")
+		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
-	return false, nil
+	return nil
 }

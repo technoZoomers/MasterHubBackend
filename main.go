@@ -10,7 +10,6 @@ import (
 	"github.com/technoZoomers/MasterHubBackend/useCases"
 	"github.com/technoZoomers/MasterHubBackend/utils"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -29,30 +28,43 @@ func main() {
 	//}
 
 	//database initialization
-	//err := repository.Init(pgx.ConnConfig{
-	//	Database: utils.DBName,
-	//	Host:     "localhost",
-	//	User:     "alexis",
-	//	Password: "sinope27",
-	//})
 
-	config, err := pgx.ParseConnectionString(os.Getenv("DATABASE_URL"))
+	repo := repository.Repository{
+		DbConnections: 20,
+	}
+
+	err := repo.Init(pgx.ConnConfig{
+		Database: utils.DBName,
+		Host:     "localhost",
+		User:     "alexis",
+		Password: "sinope27",
+	})
+
+	//config, err := pgx.ParseConnectionString(os.Getenv("DATABASE_URL"))
+	//if err != nil {
+	//	logger.Fatalf("Couldn't initialize database: %v", err)
+	//}
+	//err = repository.Init(config)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize database: %v", err)
 	}
-	err = repository.Init(config)
-	if err != nil {
-		logger.Fatalf("Couldn't initialize database: %v", err)
-	}
 
-	err = useCases.Init(repository.GetUsersRepo(), repository.GetMastersRepo(), repository.GetStudentsRepo(), repository.GetThemesRepo(), repository.GetLanguagesRepo(),
-		repository.GetVideosRepo(), repository.GetAvatarsRepo())
+	//usecases initialization
+
+	useCases := useCases.UseCases{}
+
+	err = useCases.Init(repo.UsersRepo, repo.MastersRepo, repo.StudentsRepo, repo.ThemesRepo, repo.LanguagesRepo,
+		repo.VideosRepo, repo.AvatarsRepo)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize useCases: %v", err)
 	}
 
-	err = masterHub_handlers.Init(useCases.GetUsersUC(), useCases.GetMastersUC(), useCases.GetStudentsUC(), useCases.GetThemesUC(), useCases.GetLanguagesUC(),
-		useCases.GetVideosUC(), useCases.GetAvatarsUC())
+	//handlers initialization
+
+	mhHandlers := masterHub_handlers.Handlers{}
+
+	err = mhHandlers.Init(useCases.UsersUC, useCases.MastersUC, useCases.StudentsUC, useCases.ThemesUC, useCases.LanguagesUC,
+		useCases.VideosUC, useCases.AvatarsUC)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize handlers: %v", err)
 	}
@@ -63,31 +75,30 @@ func main() {
 
 	//languages
 
-	r.HandleFunc("/languages", masterHub_handlers.GetLanguagesH().Get).Methods("GET")
+	r.HandleFunc("/languages", mhHandlers.LanguagesHandlers.Get).Methods("GET")
 
 	//themes
 
-	r.HandleFunc("/themes", masterHub_handlers.GetThemesH().Get).Methods("GET")
-	r.HandleFunc("/themes/{id}", masterHub_handlers.GetThemesH().GetThemeById).Methods("GET")
+	r.HandleFunc("/themes", mhHandlers.ThemesHandlers.Get).Methods("GET")
+	r.HandleFunc("/themes/{id}", mhHandlers.ThemesHandlers.GetThemeById).Methods("GET")
 
 	//masters
 
-	r.HandleFunc("/masters/{id}", masterHub_handlers.GetMastersH().GetMasterById).Methods("GET")
-	r.HandleFunc("/masters/{id}/videos/create", masterHub_handlers.GetVideosH().Upload).Methods("POST")
-	r.HandleFunc("/masters/{id}/videos/{videoId}", masterHub_handlers.GetVideosH().GetVideoById).Methods("GET")
-	r.HandleFunc("/masters/{id}/videos/{videoId}/data", masterHub_handlers.GetVideosH().GetVideoDataById).Methods("GET")
-	r.HandleFunc("/masters/{id}/videos/{videoId}/data", masterHub_handlers.GetVideosH().ChangeVideoData).Methods("PUT")
-	r.HandleFunc("/masters/{id}/videos", masterHub_handlers.GetVideosH().GetVideosByMasterId).Methods("GET")
-
-
+	r.HandleFunc("/masters/{id}", mhHandlers.MastersHandlers.GetMasterById).Methods("GET")
+	r.HandleFunc("/masters/{id}", mhHandlers.MastersHandlers.ChangeMasterData).Methods("PUT")
+	r.HandleFunc("/masters/{id}/videos/create", mhHandlers.VideosHandlers.Upload).Methods("POST")
+	r.HandleFunc("/masters/{id}/videos/{videoId}", mhHandlers.VideosHandlers.GetVideoById).Methods("GET")
+	r.HandleFunc("/masters/{id}/videos/{videoId}/data", mhHandlers.VideosHandlers.GetVideoDataById).Methods("GET")
+	r.HandleFunc("/masters/{id}/videos/{videoId}/data", mhHandlers.VideosHandlers.ChangeVideoData).Methods("PUT")
+	r.HandleFunc("/masters/{id}/videos", mhHandlers.VideosHandlers.GetVideosByMasterId).Methods("GET")
 
 	cors := handlers.CORS(handlers.AllowCredentials(), handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE"}))
 
 	// server initialization
 
 	server := &http.Server{
-		Addr:         ":" + os.Getenv("PORT"),
-		//Addr:         utils.PortNum,
+		//Addr:         ":" + os.Getenv("PORT"),
+		Addr:         utils.PortNum,
 		Handler:      cors(r),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,

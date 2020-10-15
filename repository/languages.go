@@ -4,24 +4,22 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/technoZoomers/MasterHubBackend/models"
-	"github.com/technoZoomers/MasterHubBackend/utils"
 )
 
 type LanguagesRepo struct {
+	repository *Repository
 }
 
 func (languagesRepo *LanguagesRepo) GetAllLanguages() ([]string, error) {
+	var dbError error
 	languages := make([]string, 0)
-	db := getPool()
-	transaction, err := db.Begin()
+	transaction, err := languagesRepo.repository.startTransaction()
 	if err != nil {
-		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
-		logger.Errorf(dbError.Error())
-		return languages, dbError
+		return languages, err
 	}
 	rows, err := transaction.Query(`SELECT name FROM languages`)
 	if err != nil {
-		dbError := fmt.Errorf("failed to retrieve transactions: %v", err.Error())
+		dbError = fmt.Errorf("failed to retrieve languages: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return languages, dbError
 	}
@@ -29,49 +27,34 @@ func (languagesRepo *LanguagesRepo) GetAllLanguages() ([]string, error) {
 		var langFound string
 		err = rows.Scan(&langFound)
 		if err != nil {
-			logger.Errorf("failed to retrieve transaction: %v", err)
-			errRollback := transaction.Rollback()
-			if errRollback != nil {
-				logger.Errorf("failed to rollback: %v", err)
-				return languages, errRollback
-			}
-			return languages, err
+			dbError = fmt.Errorf("failed to retrieve language: %v", err)
+			logger.Errorf(dbError.Error())
+			return languages, dbError
 		}
 		languages = append(languages, langFound)
 	}
-	err = transaction.Commit()
+	err = languagesRepo.repository.commitTransaction(transaction)
 	if err != nil {
-		dbError := fmt.Errorf("error commit: %v", err.Error())
-		logger.Errorf(dbError.Error())
 		return languages, err
 	}
 	return languages, nil
 }
 
-func (languagesRepo *LanguagesRepo) GetLanguageById (language *models.LanguageDB) (int64, error) {
-	db := getPool()
-	transaction, err := db.Begin()
+func (languagesRepo *LanguagesRepo) GetLanguageById(language *models.LanguageDB) error {
+	var dbError error
+	transaction, err := languagesRepo.repository.startTransaction()
 	if err != nil {
-		dbError := fmt.Errorf("failed to start transaction: %v", err.Error())
-		logger.Errorf(dbError.Error())
-		return utils.SERVER_ERROR, dbError
+		return err
 	}
 	row := transaction.QueryRow("SELECT name FROM languages WHERE id=$1", language.Id)
 	err = row.Scan(&language.Name)
 	if err != nil {
-		logger.Errorf("failed to retrieve theme: %v", err)
-		errRollback := transaction.Rollback()
-		if errRollback != nil {
-			logger.Errorf("failed to rollback: %v", err)
-			return utils.SERVER_ERROR, errRollback
-		}
-		return utils.USER_ERROR, fmt.Errorf("this language doesn't exist")
-	}
-	err = transaction.Commit()
-	if err != nil {
-		dbError := fmt.Errorf("error commit: %v", err.Error())
+		dbError = fmt.Errorf("failed to retrieve language: %v", err.Error())
 		logger.Errorf(dbError.Error())
-		return utils.SERVER_ERROR, dbError
 	}
-	return utils.NO_ERROR, nil
+	err = languagesRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
 }

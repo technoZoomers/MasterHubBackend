@@ -2,56 +2,37 @@ package handlers
 
 import "github.com/technoZoomers/MasterHubBackend/useCases"
 
-
 type Handlers struct {
-	UsersHandlers *UsersHandlers
-	MastersHandlers *MastersHandlers
-	StudentsHandlers *StudentsHandlers
+	UsersHandlers     *UsersHandlers
+	MastersHandlers   *MastersHandlers
+	StudentsHandlers  *StudentsHandlers
 	LanguagesHandlers *LanguagesHandlers
-	ThemesHandlers *ThemesHandlers
-	VideosHandlers *VideosHandlers
-	AvatarsHandlers *AvatarsHandlers
+	ThemesHandlers    *ThemesHandlers
+	VideosHandlers    *VideosHandlers
+	AvatarsHandlers   *AvatarsHandlers
 }
 
-var h Handlers
-
-func Init(usersUC useCases.UsersUCInterface, mastersUC useCases.MastersUCInterface, studentsUC useCases.StudentsUCInterface,
+func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useCases.MastersUCInterface, studentsUC useCases.StudentsUCInterface,
 	themesUC useCases.ThemesUCInterface, languagesUC useCases.LanguagesUCInterface,
-	videosUC useCases.VideosUCInterface, avatarsUC useCases.AvatarsUCInterface, ) error {
-	h.UsersHandlers = &UsersHandlers{usersUC}
-	h.MastersHandlers = &MastersHandlers{mastersUC}
-	h.StudentsHandlers = &StudentsHandlers{studentsUC}
-	h.LanguagesHandlers = &LanguagesHandlers{languagesUC}
-	h.ThemesHandlers = &ThemesHandlers{themesUC}
-	h.AvatarsHandlers = &AvatarsHandlers{avatarsUC}
-	h.VideosHandlers = &VideosHandlers{videosUC}
+	videosUC useCases.VideosUCInterface, avatarsUC useCases.AvatarsUCInterface) error {
+	handlers.UsersHandlers = &UsersHandlers{usersUC}
+	handlers.MastersHandlers = &MastersHandlers{mastersUC}
+	handlers.StudentsHandlers = &StudentsHandlers{studentsUC}
+	handlers.LanguagesHandlers = &LanguagesHandlers{languagesUC}
+	handlers.ThemesHandlers = &ThemesHandlers{themesUC}
+	handlers.AvatarsHandlers = &AvatarsHandlers{avatarsUC}
+	handlers.VideosHandlers = &VideosHandlers{
+		VideosUC:videosUC,
+	VideoParseConfig:VideoParseConfig{
+		FormDataKey:  "video",
+		VideoFormats: map[string]bool{
+			"video/webm":               true,
+			"audio/ogg":                true,
+			"video/mp4":                true,
+			"video/quicktime":          true,
+			"video/x-msvideo":          true,
+			"application/octet-stream": true,
+		},
+	}}
 	return nil
-}
-
-func GetUsersH() *UsersHandlers {
-	return h.UsersHandlers
-}
-
-func GetMastersH() *MastersHandlers {
-	return h.MastersHandlers
-}
-
-func GetStudentsH() *StudentsHandlers {
-	return h.StudentsHandlers
-}
-
-func GetLanguagesH() *LanguagesHandlers {
-	return h.LanguagesHandlers
-}
-
-func GetThemesH() *ThemesHandlers {
-	return h.ThemesHandlers
-}
-
-func GetVideosH() *VideosHandlers {
-	return h.VideosHandlers
-}
-
-func GetAvatarsH() *AvatarsHandlers {
-	return h.AvatarsHandlers
 }
