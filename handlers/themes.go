@@ -38,8 +38,8 @@ func (th *ThemesHandlers) GetThemeById(writer http.ResponseWriter, req *http.Req
 	var theme models.Theme
 	theme.Id = themeId
 	err = th.ThemesUC.GetThemeById(&theme)
-	var nfError *models.NotFoundError
-	if errors.As(err, &nfError) {
+	var badReqError *models.BadRequestError
+	if errors.As(err, &badReqError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
 		return

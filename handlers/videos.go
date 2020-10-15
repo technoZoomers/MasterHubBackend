@@ -50,8 +50,8 @@ func (vh *VideosHandlers) Upload(writer http.ResponseWriter, req *http.Request) 
 	defer file.Close()
 
 	err = vh.VideosUC.NewMasterVideo(&videoData, file, masterId)
-	var nfError *models.NotFoundError
-	if errors.As(err, &nfError) {
+	var badReqError *models.BadRequestError
+	if errors.As(err, &badReqError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
 		return
@@ -75,8 +75,8 @@ func (vh *VideosHandlers) GetVideosByMasterId(writer http.ResponseWriter, req *h
 		return
 	}
 	videos, err := vh.VideosUC.GetVideosByMasterId(masterId)
-	var nfError *models.NotFoundError
-	if errors.As(err, &nfError) {
+	var badReqError *models.BadRequestError
+	if errors.As(err, &badReqError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
 		return
@@ -109,8 +109,8 @@ func (vh *VideosHandlers) GetVideoById(writer http.ResponseWriter, req *http.Req
 	}
 
 	videoBytes, err := vh.VideosUC.GetMasterVideo(masterId, videoId)
-	var nfError *models.NotFoundError
-	if errors.As(err, &nfError) {
+	var badReqError *models.BadRequestError
+	if errors.As(err, &badReqError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
 		return
@@ -155,8 +155,8 @@ func (vh *VideosHandlers) GetVideoDataById(writer http.ResponseWriter, req *http
 		Id: videoId,
 	}
 	err = vh.VideosUC.GetVideoDataById(&videoData, masterId)
-	var nfError *models.NotFoundError
-	if errors.As(err, &nfError) {
+	var badReqError *models.BadRequestError
+	if errors.As(err, &badReqError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
 		return
@@ -203,8 +203,8 @@ func (vh *VideosHandlers) ChangeVideoData(writer http.ResponseWriter, req *http.
 		return
 	}
 	err = vh.VideosUC.ChangeVideoData(&videoData, masterId)
-	var nfError *models.NotFoundError
-	if errors.As(err, &nfError) {
+	var badReqError *models.BadRequestError
+	if errors.As(err, &badReqError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
 		return

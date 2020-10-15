@@ -30,7 +30,7 @@ type VideoConfig struct {
 
 func (videosUC *VideosUC) NewMasterVideo(videoData *models.VideoData, file multipart.File, masterId int64) error {
 	if masterId == utils.ERROR_ID {
-		return &models.NotFoundError{Message: "incorrect master id", RequestId: masterId}
+		return &models.BadRequestError{Message: "incorrect master id", RequestId: masterId}
 	}
 	masterDB := models.MasterDB{
 		UserId: masterId,
@@ -40,7 +40,7 @@ func (videosUC *VideosUC) NewMasterVideo(videoData *models.VideoData, file multi
 		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
 	if masterDB.Id == utils.ERROR_ID {
-		absenceError := &models.NotFoundError{Message: "master doesn't exist", RequestId: masterId}
+		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: masterId}
 		logger.Errorf(absenceError.Error())
 		return absenceError
 	}
@@ -105,7 +105,7 @@ func (videosUC *VideosUC) GetVideosByMasterId(masterId int64) ([]models.VideoDat
 	var videos []models.VideoData
 	var videosDB []models.VideoDB
 	if masterId == utils.ERROR_ID {
-		return videos, &models.NotFoundError{Message: "incorrect master id", RequestId: masterId}
+		return videos, &models.BadRequestError{Message: "incorrect master id", RequestId: masterId}
 	}
 	masterDB := models.MasterDB{
 		UserId: masterId,
@@ -115,7 +115,7 @@ func (videosUC *VideosUC) GetVideosByMasterId(masterId int64) ([]models.VideoDat
 		return videos, fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
 	if masterDB.Id == utils.ERROR_ID {
-		absenceError := &models.NotFoundError{Message: "master doesn't exist", RequestId: masterId}
+		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: masterId}
 		logger.Errorf(absenceError.Error())
 		return videos, absenceError
 	}
@@ -198,10 +198,10 @@ func (videosUC *VideosUC) setSubThemes(video *models.VideoData, videoDB *models.
 func (videosUC *VideosUC) GetMasterVideo(masterId int64, videoId int64) ([]byte, error) {
 	var videoBytes []byte
 	if masterId == utils.ERROR_ID {
-		return videoBytes, &models.NotFoundError{Message: "incorrect master id", RequestId: masterId}
+		return videoBytes, &models.BadRequestError{Message: "incorrect master id", RequestId: masterId}
 	}
 	if videoId == utils.ERROR_ID {
-		return videoBytes, &models.NotFoundError{Message: "incorrect video id", RequestId: videoId}
+		return videoBytes, &models.BadRequestError{Message: "incorrect video id", RequestId: videoId}
 	}
 	videoDB := models.VideoDB{
 		Id:       videoId,
@@ -215,7 +215,7 @@ func (videosUC *VideosUC) GetMasterVideo(masterId int64, videoId int64) ([]byte,
 		return videoBytes, err
 	}
 	if masterDB.Id == utils.ERROR_ID {
-		absenceError := &models.NotFoundError{Message: "master doesn't exist", RequestId: masterId}
+		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: masterId}
 		logger.Errorf(absenceError.Error())
 		return videoBytes, absenceError
 	}
@@ -224,7 +224,7 @@ func (videosUC *VideosUC) GetMasterVideo(masterId int64, videoId int64) ([]byte,
 		return videoBytes, fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
 	if videoDB.Name == "" {
-		absenceError := &models.NotFoundError{Message: "video doesn't exist or doesn't belong to this master", RequestId: videoId}
+		absenceError := &models.BadRequestError{Message: "video doesn't exist or doesn't belong to this master", RequestId: videoId}
 		logger.Errorf(absenceError.Error())
 		return videoBytes, absenceError
 	}
@@ -257,10 +257,10 @@ func (videosUC *VideosUC) GetMasterVideo(masterId int64, videoId int64) ([]byte,
 
 func (videosUC *VideosUC) GetVideoDataById(videoData *models.VideoData, masterId int64) error {
 	if masterId == utils.ERROR_ID {
-		return &models.NotFoundError{Message: "incorrect master id", RequestId: masterId}
+		return &models.BadRequestError{Message: "incorrect master id", RequestId: masterId}
 	}
 	if videoData.Id == utils.ERROR_ID {
-		return &models.NotFoundError{Message: "incorrect video id", RequestId: videoData.Id}
+		return &models.BadRequestError{Message: "incorrect video id", RequestId: videoData.Id}
 	}
 	videoDB := models.VideoDB{
 		Id:       videoData.Id,
@@ -274,7 +274,7 @@ func (videosUC *VideosUC) GetVideoDataById(videoData *models.VideoData, masterId
 		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
 	if masterDB.Id == utils.ERROR_ID {
-		absenceError := &models.NotFoundError{Message: "master doesn't exist", RequestId: masterId}
+		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: masterId}
 		logger.Errorf(absenceError.Error())
 		return absenceError
 	}
@@ -283,7 +283,7 @@ func (videosUC *VideosUC) GetVideoDataById(videoData *models.VideoData, masterId
 		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
 	if videoDB.Name == "" {
-		absenceError := &models.NotFoundError{Message: "video doesn't exist or doesn't belong to this master", RequestId: videoData.Id}
+		absenceError := &models.BadRequestError{Message: "video doesn't exist or doesn't belong to this master", RequestId: videoData.Id}
 		logger.Errorf(absenceError.Error())
 		return absenceError
 	}
@@ -308,10 +308,10 @@ func (videosUC *VideosUC) GetVideoDataById(videoData *models.VideoData, masterId
 
 func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId int64) error {
 	if masterId == utils.ERROR_ID {
-		return &models.NotFoundError{Message: "incorrect master id", RequestId: masterId}
+		return &models.BadRequestError{Message: "incorrect master id", RequestId: masterId}
 	}
 	if videoData.Id == utils.ERROR_ID {
-		return &models.NotFoundError{Message: "incorrect video id", RequestId: videoData.Id}
+		return &models.BadRequestError{Message: "incorrect video id", RequestId: videoData.Id}
 	}
 	videoDB := models.VideoDB{
 		Id:       videoData.Id,
@@ -325,7 +325,7 @@ func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId 
 		return err
 	}
 	if masterDB.Id == utils.ERROR_ID {
-		absenceError := &models.NotFoundError{Message: "master doesn't exist", RequestId: masterId}
+		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: masterId}
 		logger.Errorf(absenceError.Error())
 		return absenceError
 	}
@@ -334,7 +334,7 @@ func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId 
 		return fmt.Errorf("database internal error")
 	}
 	if videoDB.Name == "" {
-		absenceError := &models.NotFoundError{Message: "video doesn't exist or doesn't belong to master", RequestId: videoData.Id}
+		absenceError := &models.BadRequestError{Message: "video doesn't exist or doesn't belong to master", RequestId: videoData.Id}
 		logger.Errorf(absenceError.Error())
 		return absenceError
 	}
@@ -376,7 +376,7 @@ func (videosUC *VideosUC) changeVideoTheme(videoData *models.VideoData, oldTheme
 			return fmt.Errorf("database internal error")
 		}
 		if newThemeDB.Id == utils.ERROR_ID {
-			fileError := &models.NotFoundError{Message: "cant't update video, theme doesn't exist", RequestId: videoData.Id}
+			fileError := &models.BadRequestError{Message: "cant't update video, theme doesn't exist", RequestId: videoData.Id}
 			logger.Errorf(fileError.Error())
 			return fileError
 		}
@@ -390,7 +390,7 @@ func (videosUC *VideosUC) changeVideoTheme(videoData *models.VideoData, oldTheme
 			return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 		}
 		if subthemeDB.Id == utils.ERROR_ID {
-			fileError := &models.NotFoundError{Message: "cant't update video, subtheme doesn't exist", RequestId: videoData.Id}
+			fileError := &models.BadRequestError{Message: "cant't update video, subtheme doesn't exist", RequestId: videoData.Id}
 			logger.Errorf(fileError.Error())
 			return fileError
 		}

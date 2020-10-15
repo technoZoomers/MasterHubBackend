@@ -35,7 +35,7 @@ func (themesUC *ThemesUC) Get() (models.Themes, error) {
 
 func (themesUC *ThemesUC) GetThemeById(theme *models.Theme) error {
 	if theme.Id == utils.ERROR_ID {
-		return &models.NotFoundError{Message: "incorrect theme id", RequestId: theme.Id}
+		return &models.BadRequestError{Message: "incorrect theme id", RequestId: theme.Id}
 	}
 	var themeDB models.ThemeDB
 	themeDB.Id = theme.Id
@@ -44,7 +44,7 @@ func (themesUC *ThemesUC) GetThemeById(theme *models.Theme) error {
 		return fmt.Errorf(themesUC.useCases.errorMessages.DbError)
 	}
 	if themeDB.Name == "" {
-		absenceError := &models.NotFoundError{Message: "theme doesn't exist", RequestId: theme.Id}
+		absenceError := &models.BadRequestError{Message: "theme doesn't exist", RequestId: theme.Id}
 		logger.Errorf(absenceError.Error())
 		return absenceError
 	}

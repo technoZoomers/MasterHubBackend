@@ -51,9 +51,9 @@ func main() {
 
 	//usecases initialization
 
-	useCases := useCases.UseCases{}
+	mhuseCases := useCases.UseCases{}
 
-	err = useCases.Init(repo.UsersRepo, repo.MastersRepo, repo.StudentsRepo, repo.ThemesRepo, repo.LanguagesRepo,
+	err = mhuseCases.Init(repo.UsersRepo, repo.MastersRepo, repo.StudentsRepo, repo.ThemesRepo, repo.LanguagesRepo,
 		repo.VideosRepo, repo.AvatarsRepo)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize useCases: %v", err)
@@ -63,8 +63,8 @@ func main() {
 
 	mhHandlers := masterHub_handlers.Handlers{}
 
-	err = mhHandlers.Init(useCases.UsersUC, useCases.MastersUC, useCases.StudentsUC, useCases.ThemesUC, useCases.LanguagesUC,
-		useCases.VideosUC, useCases.AvatarsUC)
+	err = mhHandlers.Init(mhuseCases.UsersUC, mhuseCases.MastersUC, mhuseCases.StudentsUC, mhuseCases.ThemesUC, mhuseCases.LanguagesUC,
+		mhuseCases.VideosUC, mhuseCases.AvatarsUC)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize handlers: %v", err)
 	}

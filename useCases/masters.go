@@ -24,7 +24,7 @@ type MastersConfig struct {
 
 func (mastersUC *MastersUC) GetMasterById(master *models.Master) error {
 	if master.UserId == utils.ERROR_ID {
-		return &models.NotFoundError{Message: "incorrect master id", RequestId: master.UserId}
+		return &models.BadRequestError{Message: "incorrect master id", RequestId: master.UserId}
 	}
 	var masterDB models.MasterDB
 	masterDB.UserId = master.UserId
@@ -33,7 +33,7 @@ func (mastersUC *MastersUC) GetMasterById(master *models.Master) error {
 		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 	}
 	if masterDB.Id == utils.ERROR_ID {
-		absenceError := &models.NotFoundError{Message: "master doesn't exist", RequestId: master.UserId}
+		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: master.UserId}
 		logger.Errorf(absenceError.Error())
 		return absenceError
 	}
@@ -167,6 +167,9 @@ func setAveragePrice(master *models.Master, avgPrice decimal.Decimal) error {
 }
 
 func (mastersUC *MastersUC) ChangeMasterData(master *models.Master) error {
+	if master.UserId == utils.ERROR_ID {
+		return &models.BadRequestError{Message: "incorrect master id", RequestId: master.UserId}
+	}
 	masterDB := models.MasterDB{
 		UserId: master.UserId,
 	}
@@ -175,9 +178,29 @@ func (mastersUC *MastersUC) ChangeMasterData(master *models.Master) error {
 		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 	}
 	if masterDB.Id == utils.ERROR_ID {
-		absenceError := &models.NotFoundError{Message: "master doesn't exist", RequestId: master.UserId}
+		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: master.UserId}
 		logger.Errorf(absenceError.Error())
 		return absenceError
 	}
+
+	masterDBUsernameExist := models.MasterDB{
+		Username: master.Username,
+	}
+	err = mastersUC.MastersRepo.GetMasterIdByUsername(&masterDBUsernameExist)
+	if err != nil {
+		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+	}
+	if masterDBUsernameExist.Id != utils.ERROR_ID {
+		absenceError := &models.BadRequestError{Message: "can't update master, username is already taken", RequestId: master.UserId}
+		logger.Errorf(absenceError.Error())
+		return absenceError
+	}
+	var emptyPrice models.Price
+	if master.AveragePrice != emptyPrice && !master.AveragePrice.Value.Equal(masterDB.AveragePrice) {
+		fileError := fmt.Errorf("master average price can't be changed")
+		logger.Errorf(fileError.Error())
+		return fileError
+	}
+
 	return nil
 }

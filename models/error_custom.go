@@ -2,11 +2,11 @@ package models
 
 import "fmt"
 
-type NotFoundError struct {
+type BadRequestError struct {
 	Message string
 	RequestId int64
 }
 
-func (nfError* NotFoundError) Error() string {
-	return fmt.Sprintf("%s with id: %d", nfError.Message, nfError.RequestId)
+func (brError* BadRequestError) Error() string {
+	return fmt.Sprintf("%s with id: %d", brError.Message, brError.RequestId)
 }

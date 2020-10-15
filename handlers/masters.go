@@ -29,8 +29,8 @@ func (mh *MastersHandlers) GetMasterById(writer http.ResponseWriter, req *http.R
 	var master models.Master
 	master.UserId = masterId
 	err = mh.MastersUC.GetMasterById(&master)
-	var nfError *models.NotFoundError
-	if errors.As(err, &nfError) {
+	var badReqError *models.BadRequestError
+	if errors.As(err, &badReqError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
 		return
@@ -67,8 +67,8 @@ func (mh *MastersHandlers) ChangeMasterData(writer http.ResponseWriter, req *htt
 		return
 	}
 	err = mh.MastersUC.ChangeMasterData(&master)
-	var nfError *models.NotFoundError
-	if errors.As(err, &nfError) {
+	var badReqError *models.BadRequestError
+	if errors.As(err, &badReqError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
 		return
