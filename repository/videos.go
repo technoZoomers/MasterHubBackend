@@ -226,7 +226,30 @@ func (videosRepo *VideosRepo) UpdateVideo(video *models.VideoDB) error {
 	}
 	_, err = transaction.Exec("UPDATE videos SET (name, description, theme) = ($1, $2, nullif($3, 0)) WHERE id=$4", video.Name, video.Description, video.Theme, video.Id)
 	if err != nil {
-		dbError = fmt.Errorf("failed to update theme: %v", err.Error())
+		dbError = fmt.Errorf("failed to update video data: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		errRollback := videosRepo.repository.rollbackTransaction(transaction)
+		if errRollback != nil {
+			return errRollback
+		}
+		return dbError
+	}
+	err = videosRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (videosRepo *VideosRepo) DeleteVideo(video *models.VideoDB) error {
+	var dbError error
+	transaction, err := videosRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	_, err = transaction.Exec("DELETE FROM videos WHERE id=$1", video.Id)
+	if err != nil {
+		dbError = fmt.Errorf("failed to delete video data: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		errRollback := videosRepo.repository.rollbackTransaction(transaction)
 		if errRollback != nil {

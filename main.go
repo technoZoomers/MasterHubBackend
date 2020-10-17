@@ -88,7 +88,7 @@ func main() {
 	r.HandleFunc("/masters/{id}", mhHandlers.MastersHandlers.ChangeMasterData).Methods("PUT")
 	r.HandleFunc("/masters/{id}/videos/create", mhHandlers.VideosHandlers.Upload).Methods("POST")
 	r.HandleFunc("/masters/{id}/videos/{videoId}", mhHandlers.VideosHandlers.GetVideoById).Methods("GET")
-	//r.HandleFunc("/masters/{id}/videos/{videoId}", mhHandlers.VideosHandlers.DeleteVideoById).Methods("DELETE")
+	r.HandleFunc("/masters/{id}/videos/{videoId}", mhHandlers.VideosHandlers.DeleteVideoById).Methods("DELETE")
 	r.HandleFunc("/masters/{id}/videos/{videoId}/data", mhHandlers.VideosHandlers.GetVideoDataById).Methods("GET")
 	r.HandleFunc("/masters/{id}/videos/{videoId}/data", mhHandlers.VideosHandlers.ChangeVideoData).Methods("PUT")
 	r.HandleFunc("/masters/{id}/videos", mhHandlers.VideosHandlers.GetVideosByMasterId).Methods("GET")

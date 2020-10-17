@@ -19,3 +19,12 @@ type ConflictError struct {
 func (conflictError* ConflictError) Error() string {
 	return fmt.Sprintf("%s with id: %d", conflictError.Message, conflictError.RequestId)
 }
+
+type NoContentError struct {
+	Message string
+	RequestId int64
+}
+
+func (noContentError* NoContentError) Error() string {
+	return fmt.Sprintf("%s with id: %d", noContentError.Message, noContentError.RequestId)
+}

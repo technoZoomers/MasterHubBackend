@@ -11,5 +11,6 @@ type VideosRepoI interface {
 	DeleteVideoSubthemesById(videoId int64) error
 	SetVideoSubthemesById(videoId int64, subthemes []int64) error
 	UpdateVideo(video *models.VideoDB) error
+	DeleteVideo(video *models.VideoDB) error
 	GetIntroByMasterId(video *models.VideoDB) error
 }

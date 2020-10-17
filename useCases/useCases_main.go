@@ -53,6 +53,7 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 			FileReadError:          "error reading file",
 			FileReadExtensionError: "error reading file extension",
 			FileCreateError:        "error creating file",
+			FileRemoveError: "error removing file",
 		},
 	}
 	useCases.errorId = 0

@@ -19,6 +19,7 @@ type Handlers struct {
 	AvatarsHandlers   *AvatarsHandlers
 	badRequestError *models.BadRequestError
 	conflictError *models.ConflictError
+	noContentError *models.NoContentError
 }
 
 func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useCases.MastersUCInterface, studentsUC useCases.StudentsUCInterface,
@@ -56,6 +57,14 @@ func (handlers *Handlers) handleErrorConflict(writer http.ResponseWriter, err er
 	return handlers.handleError(writer, err)
 }
 
+func (handlers *Handlers) handleErrorNoContent(writer http.ResponseWriter, err error) bool {
+	if errors.As(err, &handlers.noContentError) {
+		logger.Error(err)
+		utils.CreateErrorAnswerJson(writer, http.StatusConflict, models.CreateMessage(err.Error()))
+		return true
+	}
+	return handlers.handleError(writer, err)
+}
 
 func (handlers *Handlers) handleError(writer http.ResponseWriter, err error) bool {
 	if errors.As(err, &handlers.badRequestError) {

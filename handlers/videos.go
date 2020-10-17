@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"fmt"
 	"github.com/google/logger"
 	"github.com/gorilla/mux"
@@ -58,7 +57,7 @@ func (vh *VideosHandlers) uploadVideo (writer http.ResponseWriter, req *http.Req
 	}
 	if intro {
 		err = vh.VideosUC.NewMasterIntro(&videoData, file, masterId)
-		vh.answerIntro(writer, videoData, http.StatusCreated, err)
+		vh.answerIntroPost(writer, videoData, http.StatusCreated, err)
 	} else {
 		err = vh.VideosUC.NewMasterVideo(&videoData, file, masterId)
 		vh.answerVideo(writer, videoData, http.StatusCreated, err)
@@ -89,37 +88,22 @@ func (vh *VideosHandlers) getVideo(writer http.ResponseWriter, req *http.Request
 		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(parseError.Error()))
 		return
 	}
-	videoIdString := mux.Vars(req)["videoId"]
-	videoId, err := strconv.ParseInt(videoIdString, 10, 64)
-	if err != nil {
-		parseError := fmt.Errorf("error getting video id parameter: %v", err.Error())
-		logger.Errorf(parseError.Error())
-		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(parseError.Error()))
-		return
+	var videoBytes []byte
+	if intro {
+		videoBytes, err = vh.VideosUC.GetMasterIntro(masterId)
+		vh.answerMultipartIntro(writer, videoBytes, http.StatusOK, err)
+	} else {
+		videoIdString := mux.Vars(req)["videoId"]
+		videoId, err := strconv.ParseInt(videoIdString, 10, 64)
+		if err != nil {
+			parseError := fmt.Errorf("error getting video id parameter: %v", err.Error())
+			logger.Errorf(parseError.Error())
+			utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(parseError.Error()))
+			return
+		}
+		videoBytes, err = vh.VideosUC.GetMasterVideo(masterId, videoId)
+		vh.answerMultipart(writer, videoBytes, http.StatusOK, err)
 	}
-
-	videoBytes, err := vh.VideosUC.GetMasterVideo(masterId, videoId)
-
-	if errors.As(err, &vh.handlers.badRequestError) {
-		logger.Error(err)
-		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
-		return
-	}
-	if err != nil {
-		logger.Error(err)
-		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(err.Error()))
-		return
-	}
-
-	writer.Header().Set("content-type", "multipart/form-data;boundary=1")
-	_, err = writer.Write(videoBytes)
-	if err != nil {
-		writeBytesError := fmt.Errorf("error writing video bytes to response: %v", err.Error())
-		logger.Error(writeBytesError)
-		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(writeBytesError.Error()))
-		return
-	}
-	utils.CreateEmptyBodyAnswerJson(writer, http.StatusOK)
 }
 
 func (vh *VideosHandlers) GetVideoById(writer http.ResponseWriter, req *http.Request) {
@@ -128,6 +112,28 @@ func (vh *VideosHandlers) GetVideoById(writer http.ResponseWriter, req *http.Req
 
 func (vh *VideosHandlers) GetIntro(writer http.ResponseWriter, req *http.Request) {
 	vh.getVideo(writer, req, true)
+}
+
+func (vh *VideosHandlers) DeleteVideoById(writer http.ResponseWriter, req *http.Request) {
+	var err error
+	masterIdString := mux.Vars(req)["id"]
+	masterId, err := strconv.ParseInt(masterIdString, 10, 64)
+	if err != nil {
+		parseError := fmt.Errorf("error getting master id parameter: %v", err.Error())
+		logger.Errorf(parseError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(parseError.Error()))
+		return
+	}
+	videoIdString := mux.Vars(req)["videoId"]
+	videoId, err := strconv.ParseInt(videoIdString, 10, 64)
+	if err != nil {
+		parseError := fmt.Errorf("error getting video id parameter: %v", err.Error())
+		logger.Errorf(parseError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(parseError.Error()))
+		return
+	}
+	err = vh.VideosUC.DeleteMasterVideo(masterId, videoId)
+	vh.answerEmpty(writer, http.StatusOK, err)
 }
 
 func (vh *VideosHandlers) GetVideoDataById(writer http.ResponseWriter, req *http.Request) {
@@ -192,7 +198,7 @@ func (vh *VideosHandlers) ChangeVideoData(writer http.ResponseWriter, req *http.
 	vh.answerVideo(writer, videoData, http.StatusOK, err)
 }
 
-func (vh *VideosHandlers) answerIntro(writer http.ResponseWriter, videoData models.VideoData, statusCode int, err error) {
+func (vh *VideosHandlers) answerIntroPost(writer http.ResponseWriter, videoData models.VideoData, statusCode int, err error) {
 	sent := vh.handlers.handleErrorConflict(writer, err)
 	if !sent {
 		utils.CreateAnswerVideoDataJson(writer, statusCode, videoData)
@@ -210,5 +216,26 @@ func (vh *VideosHandlers) answerVideos(writer http.ResponseWriter, videoData []m
 	sent := vh.handlers.handleError(writer, err)
 	if !sent {
 		utils.CreateAnswerVideosDataJson(writer, http.StatusOK, videoData)
+	}
+}
+
+func (vh *VideosHandlers) answerMultipart(writer http.ResponseWriter, video []byte, statusCode int, err error) {
+	sent := vh.handlers.handleError(writer, err)
+	if !sent {
+		utils.CreateAnswerMultipart(writer, statusCode, video)
+	}
+}
+
+func (vh *VideosHandlers) answerMultipartIntro(writer http.ResponseWriter, video []byte, statusCode int, err error) {
+	sent := vh.handlers.handleErrorNoContent(writer, err)
+	if !sent {
+		utils.CreateAnswerMultipart(writer, statusCode, video)
+	}
+}
+
+func (vh *VideosHandlers) answerEmpty(writer http.ResponseWriter, statusCode int, err error) {
+	sent := vh.handlers.handleError(writer, err)
+	if !sent {
+		utils.CreateEmptyBodyAnswer(writer, statusCode)
 	}
 }
