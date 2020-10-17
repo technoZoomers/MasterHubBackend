@@ -41,8 +41,8 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 			videosDefaultName: "noname",
 			videosDir:           "./master_videos/",
 			videoPrefixMaster: "master_",
-			videoPrefixVideo: "video_",
-			videoPrefixIntro: "intro",
+			videoPrefixVideo: "_video_",
+			videoPrefixIntro: "_intro",
 		},
 	}
 	useCases.AvatarsUC = &AvatarsUC{useCases, avatarsRepo}

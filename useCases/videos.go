@@ -178,23 +178,28 @@ func (videosUC *VideosUC) NewMasterIntro(videoData *models.VideoData, file multi
 	return videosUC.newVideo(videoData, file, masterId, true)
 }
 
+func (videosUC *VideosUC) ChangeMasterIntro(videoData *models.VideoData, file multipart.File, masterId int64) error {
+	videoDB := models.VideoDB{
+		MasterId: masterId,
+		Intro: true,
+	}
+	err := videosUC.deleteVideo(&videoDB)
+	if err != nil {
+		return  err
+	}
+	err = videosUC.newVideo(videoData, file, masterId, true)
+	if err != nil {
+		return  err
+	}
+	return nil
+}
+
 func (videosUC *VideosUC) GetVideosByMasterId(masterId int64) ([]models.VideoData, error) {
 	var videos []models.VideoData
 	var videosDB []models.VideoDB
-	if masterId == videosUC.useCases.errorId {
-		return videos, &models.BadRequestError{Message: "incorrect master id", RequestId: masterId}
-	}
-	masterDB := models.MasterDB{
-		UserId: masterId,
-	}
-	err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
+	err := videosUC.validateMaster(masterId)
 	if err != nil {
-		return videos, fmt.Errorf(videosUC.useCases.errorMessages.DbError)
-	}
-	if masterDB.Id == videosUC.useCases.errorId {
-		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: masterId}
-		logger.Errorf(absenceError.Error())
-		return videos, absenceError
+		return videos, err
 	}
 	videosDB, err = videosUC.VideosRepo.GetVideosByMasterId(masterId)
 	if err != nil {
@@ -208,6 +213,7 @@ func (videosUC *VideosUC) GetVideosByMasterId(masterId int64) ([]models.VideoDat
 			FileExt:     videoDB.Extension,
 			Description: videoDB.Description,
 			Uploaded:    videoDB.Uploaded,
+			Intro: videoDB.Intro,
 		}
 		if videoDB.Theme != videosUC.useCases.errorId {
 			err = videosUC.setTheme(&video, videoDB.Theme)
@@ -272,21 +278,20 @@ func (videosUC *VideosUC) setSubThemes(video *models.VideoData, videoDB *models.
 	return nil
 }
 
-func (videosUC *VideosUC) DeleteMasterVideo(masterId int64, videoId int64) error {
-	err := videosUC.validateMaster(masterId)
+func (videosUC *VideosUC) deleteVideo(videoDB *models.VideoDB) error {
+	err := videosUC.validateMaster(videoDB.MasterId)
 	if err != nil {
 		return err
 	}
-	videoDB := models.VideoDB{
-		Id:       videoId,
-		MasterId: masterId,
-		Intro: false,
+	if videoDB.Intro {
+		err = videosUC.validateIntro(videoDB)
+	} else {
+		err = videosUC.validateVideo(videoDB)
 	}
-	err = videosUC.validateVideo(&videoDB)
 	if err != nil {
 		return err
 	}
-	err = videosUC.VideosRepo.DeleteVideo(&videoDB)
+	err = videosUC.VideosRepo.DeleteVideo(videoDB)
 	if err != nil {
 		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
@@ -298,6 +303,23 @@ func (videosUC *VideosUC) DeleteMasterVideo(masterId int64, videoId int64) error
 		return fileError
 	}
 	return nil
+}
+
+func (videosUC *VideosUC) DeleteMasterVideo(masterId int64, videoId int64) error {
+	videoDB := models.VideoDB{
+		Id:       videoId,
+		MasterId: masterId,
+		Intro: false,
+	}
+	return videosUC.deleteVideo(&videoDB)
+}
+
+func (videosUC *VideosUC) DeleteMasterIntro(masterId int64) error {
+	videoDB := models.VideoDB{
+		MasterId: masterId,
+		Intro: true,
+	}
+	return videosUC.deleteVideo(&videoDB)
 }
 
 func (videosUC *VideosUC) getVideo (videoDB *models.VideoDB) ([]byte, error) {
@@ -359,50 +381,31 @@ func (videosUC *VideosUC) GetMasterIntro(masterId int64) ([]byte, error) {
 	return videosUC.getVideo(&videoDB)
 }
 
-func (videosUC *VideosUC) GetVideoDataById(videoData *models.VideoData, masterId int64) error {
-	if masterId == videosUC.useCases.errorId {
-		return &models.BadRequestError{Message: "incorrect master id", RequestId: masterId}
-	}
-	if videoData.Id == videosUC.useCases.errorId {
-		return &models.BadRequestError{Message: "incorrect video id", RequestId: videoData.Id}
-	}
-	videoDB := models.VideoDB{
-		Id:       videoData.Id,
-		MasterId: masterId,
-	}
-	masterDB := models.MasterDB{
-		UserId: masterId,
-	}
-	err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
+func (videosUC *VideosUC) getVideoData(videoDB *models.VideoDB, videoData *models.VideoData) error {
+	err := videosUC.validateMaster(videoDB.MasterId)
 	if err != nil {
-		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+		return err
 	}
-	if masterDB.Id == videosUC.useCases.errorId {
-		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: masterId}
-		logger.Errorf(absenceError.Error())
-		return absenceError
+	if videoDB.Intro {
+		err = videosUC.validateIntro(videoDB)
+	} else {
+		err = videosUC.validateVideo(videoDB)
 	}
-	err = videosUC.VideosRepo.GetVideoDataByIdAndMasterId(&videoDB)
 	if err != nil {
-		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+		return err
 	}
-	if videoDB.Name == "" {
-		absenceError := &models.BadRequestError{Message: "video doesn't exist or doesn't belong to this master", RequestId: videoData.Id}
-		logger.Errorf(absenceError.Error())
-		return absenceError
-	}
-
 	videoData.Name = videoDB.Name
 	videoData.FileExt = videoDB.Extension
 	videoData.Description = videoDB.Description
 	videoData.Uploaded = videoDB.Uploaded
+	videoData.Intro = videoDB.Intro
 
 	if videoDB.Theme != 0 {
 		err = videosUC.setTheme(videoData, videoDB.Theme)
 		if err != nil {
 			return err
 		}
-		err = videosUC.setSubThemes(videoData, &videoDB)
+		err = videosUC.setSubThemes(videoData, videoDB)
 		if err != nil {
 			return err
 		}
@@ -410,48 +413,53 @@ func (videosUC *VideosUC) GetVideoDataById(videoData *models.VideoData, masterId
 	return nil
 }
 
-func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId int64) error {
-	if masterId == videosUC.useCases.errorId {
-		return &models.BadRequestError{Message: "incorrect master id", RequestId: masterId}
-	}
-	if videoData.Id == videosUC.useCases.errorId {
-		return &models.BadRequestError{Message: "incorrect video id", RequestId: videoData.Id}
-	}
+func (videosUC *VideosUC) GetVideoDataById(videoData *models.VideoData, masterId int64) error {
 	videoDB := models.VideoDB{
 		Id:       videoData.Id,
 		MasterId: masterId,
+		Intro: false,
 	}
-	masterDB := models.MasterDB{
-		UserId: masterId,
+	return videosUC.getVideoData(&videoDB, videoData)
+}
+
+func (videosUC *VideosUC) GetIntroData(videoData *models.VideoData, masterId int64) error {
+	videoDB := models.VideoDB{
+		MasterId: masterId,
+		Intro: true,
 	}
-	err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
+	return videosUC.getVideoData(&videoDB, videoData)
+}
+
+func (videosUC *VideosUC) changeVideoData(videoDB *models.VideoDB, videoData *models.VideoData) error {
+	err := videosUC.validateMaster(videoDB.MasterId)
 	if err != nil {
 		return err
 	}
-	if masterDB.Id == videosUC.useCases.errorId {
-		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: masterId}
-		logger.Errorf(absenceError.Error())
-		return absenceError
+	if videoDB.Intro {
+		err = videosUC.validateIntro(videoDB)
+	} else {
+		err = videosUC.validateVideo(videoDB)
 	}
-	err = videosUC.VideosRepo.GetVideoDataByIdAndMasterId(&videoDB)
 	if err != nil {
-		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+		return err
 	}
-	if videoDB.Name == "" {
-		absenceError := &models.BadRequestError{Message: "video doesn't exist or doesn't belong to master", RequestId: videoData.Id}
-		logger.Errorf(absenceError.Error())
-		return absenceError
+	if videoData.FileExt != "" {
+		if videoData.FileExt != videoDB.Extension {
+			fileError := fmt.Errorf("video extension can't be changed")
+			logger.Errorf(fileError.Error())
+			return fileError
+		}
+	} else {
+		videoData.FileExt = videoDB.Extension
 	}
-
-	if videoData.FileExt != "" && videoData.FileExt != videoDB.Extension {
-		fileError := fmt.Errorf("video extension can't be changed")
-		logger.Errorf(fileError.Error())
-		return fileError
-	}
-	if !videoData.Uploaded.IsZero() && !videoDB.Uploaded.Equal(videoData.Uploaded) {
-		fileError := fmt.Errorf("video upload time can't be changed")
-		logger.Errorf(fileError.Error())
-		return fileError
+	if !videoData.Uploaded.IsZero() {
+		if !videoDB.Uploaded.Equal(videoData.Uploaded) {
+			fileError := fmt.Errorf("video upload time can't be changed")
+			logger.Errorf(fileError.Error())
+			return fileError
+		}
+	} else {
+		videoData.Uploaded = videoDB.Uploaded
 	}
 
 	if videoData.Name != "" {
@@ -459,21 +467,38 @@ func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId 
 	}
 	videoDB.Description = videoData.Description
 
-	err = videosUC.changeVideoTheme(videoData, &videoDB)
+	err = videosUC.changeVideoTheme(videoData, videoDB)
 	if err != nil {
 		return err
 	}
 
-	err = videosUC.VideosRepo.UpdateVideo(&videoDB)
+	err = videosUC.VideosRepo.UpdateVideo(videoDB)
 	if err != nil {
 		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
 
-	err = videosUC.changeVideoSubthemes(videoData, &videoDB)
+	err = videosUC.changeVideoSubthemes(videoData, videoDB)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (videosUC *VideosUC) ChangeIntroData(videoData *models.VideoData, masterId int64) error {
+	videoDB := models.VideoDB{
+		MasterId: masterId,
+		Intro: true,
+	}
+	return videosUC.changeVideoData(&videoDB, videoData)
+}
+
+func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId int64) error {
+	videoDB := models.VideoDB{
+		Id: videoData.Id,
+		MasterId: masterId,
+		Intro: false,
+	}
+	return videosUC.changeVideoData(&videoDB, videoData)
 }
 
 func (videosUC *VideosUC) changeVideoSubthemes(videoData *models.VideoData, videoDB *models.VideoDB) error {

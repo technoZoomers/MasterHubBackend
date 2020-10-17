@@ -93,11 +93,11 @@ func main() {
 	r.HandleFunc("/masters/{id}/videos/{videoId}/data", mhHandlers.VideosHandlers.ChangeVideoData).Methods("PUT")
 	r.HandleFunc("/masters/{id}/videos", mhHandlers.VideosHandlers.GetVideosByMasterId).Methods("GET")
 	r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.UploadIntro).Methods("POST")
-	//r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.ChangeIntro).Methods("PUT")
-	//r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.DeleteIntro).Methods("DELETE")
+	r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.ChangeIntro).Methods("PUT")
+	r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.DeleteIntro).Methods("DELETE")
 	r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.GetIntro).Methods("GET")
-	//r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.ChangeIntroData).Methods("PUT")
-	//r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.GetIntroData).Methods("GET")
+	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.ChangeIntroData).Methods("PUT")
+	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.GetIntroData).Methods("GET")
 
 	cors := handlers.CORS(handlers.AllowCredentials(), handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE"}))
 

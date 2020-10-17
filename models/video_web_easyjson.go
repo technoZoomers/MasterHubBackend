@@ -104,6 +104,8 @@ func easyjson93afa840DecodeGithubComTechnoZoomersMasterHubBackendModels1(in *jle
 		switch key {
 		case "id":
 			out.Id = int64(in.Int64())
+		case "intro":
+			out.Intro = bool(in.Bool())
 		case "name":
 			out.Name = string(in.String())
 		case "extension":
@@ -130,10 +132,21 @@ func easyjson93afa840EncodeGithubComTechnoZoomersMasterHubBackendModels1(out *jw
 	out.RawByte('{')
 	first := true
 	_ = first
-	{
+	if in.Id != 0 {
 		const prefix string = ",\"id\":"
+		first = false
 		out.RawString(prefix[1:])
 		out.Int64(int64(in.Id))
+	}
+	{
+		const prefix string = ",\"intro\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.Intro))
 	}
 	{
 		const prefix string = ",\"name\":"

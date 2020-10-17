@@ -2,11 +2,14 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"github.com/google/logger"
+	"github.com/gorilla/mux"
 	"github.com/technoZoomers/MasterHubBackend/models"
 	"github.com/technoZoomers/MasterHubBackend/useCases"
 	"github.com/technoZoomers/MasterHubBackend/utils"
 	"net/http"
+	"strconv"
 )
 
 type Handlers struct {
@@ -78,4 +81,16 @@ func (handlers *Handlers) handleError(writer http.ResponseWriter, err error) boo
 		return true
 	}
 	return false
+}
+
+func (handlers *Handlers) validateId(writer http.ResponseWriter, req *http.Request, idName string, entityName string) (bool, int64) {
+	idString := mux.Vars(req)[idName]
+	id, err := strconv.ParseInt(idString, 10, 64)
+	if err != nil {
+		parseError := fmt.Errorf("error getting %s id parameter: %v", entityName, err.Error())
+		logger.Errorf(parseError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(parseError.Error()))
+		return true, id
+	}
+	return false, id
 }
