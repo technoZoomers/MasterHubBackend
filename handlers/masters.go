@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"fmt"
 	"github.com/google/logger"
 	"github.com/gorilla/mux"
@@ -30,17 +29,7 @@ func (mh *MastersHandlers) GetMasterById(writer http.ResponseWriter, req *http.R
 	var master models.Master
 	master.UserId = masterId
 	err = mh.MastersUC.GetMasterById(&master)
-	if errors.As(err, &mh.handlers.badRequestError) {
-		logger.Error(err)
-		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
-		return
-	}
-	if err != nil {
-		logger.Error(err)
-		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(err.Error()))
-		return
-	}
-	utils.CreateAnswerMasterJson(writer, http.StatusOK, master)
+	mh.answerMaster(writer, master, err)
 }
 
 func (mh *MastersHandlers) ChangeMasterData(writer http.ResponseWriter, req *http.Request) {
@@ -67,15 +56,13 @@ func (mh *MastersHandlers) ChangeMasterData(writer http.ResponseWriter, req *htt
 		return
 	}
 	err = mh.MastersUC.ChangeMasterData(&master)
-	if errors.As(err, &mh.handlers.badRequestError) {
-		logger.Error(err)
-		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
-		return
-	}
-	if err != nil {
-		logger.Error(err)
-		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(err.Error()))
-		return
-	}
-	utils.CreateAnswerMasterJson(writer, http.StatusOK, master)
+	mh.answerMaster(writer, master, err)
 }
+
+func (mh *MastersHandlers) answerMaster(writer http.ResponseWriter, master models.Master, err error) {
+	sent := mh.handlers.handleErrorConflict(writer, err)
+	if !sent {
+		utils.CreateAnswerMasterJson(writer, http.StatusOK, master)
+	}
+}
+

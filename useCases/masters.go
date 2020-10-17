@@ -133,12 +133,7 @@ func (mastersUC *MastersUC) setTheme(master *models.Master, theme int64) error {
 	if err != nil {
 		return err
 	}
-	if themeDB.Name == "" {
-		absenceError := fmt.Errorf("theme doesn't exist")
-		logger.Errorf(absenceError.Error())
-		return absenceError
-	}
-	master.Theme.Id = theme
+	//master.Theme.Id = theme
 	master.Theme.Theme = themeDB.Name
 	return nil
 }
@@ -202,7 +197,7 @@ func (mastersUC *MastersUC) ChangeMasterData(master *models.Master) error {
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
 		if masterDBUsernameExist.Id != mastersUC.useCases.errorId && masterDBUsernameExist.Id != masterDB.Id {
-			absenceError := &models.BadRequestError{Message: "can't update master, username is already taken", RequestId: master.UserId}
+			absenceError := &models.ConflictError{Message: "can't update master, username is already taken", RequestId: master.UserId}
 			logger.Errorf(absenceError.Error())
 			return absenceError
 		}
@@ -219,11 +214,6 @@ func (mastersUC *MastersUC) ChangeMasterData(master *models.Master) error {
 	}
 	masterDB.Fullname = master.Fullname
 	masterDB.Description = master.Description
-
-	err = mastersUC.changeMastersLanguages(master, &masterDB)
-	if err != nil {
-		return  err
-	}
 
 	err = mastersUC.changeMastersTheme(master, &masterDB)
 	if err != nil {
@@ -244,8 +234,16 @@ func (mastersUC *MastersUC) ChangeMasterData(master *models.Master) error {
 	if err != nil {
 		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 	}
-	return nil
 
+	err = mastersUC.changeMastersLanguages(master, &masterDB)
+	if err != nil {
+		return  err
+	}
+
+	err = mastersUC.changeMastersSubthemes(master, &masterDB)
+	if err != nil {
+		return  err
+	}
 
 	return nil
 }
@@ -344,39 +342,17 @@ func (mastersUC *MastersUC) changeMastersLanguages(master *models.Master, master
 	return nil
 }
 
-func (mastersUC *MastersUC) changeMastersTheme(master *models.Master, masterDB *models.MasterDB) error {
+func (mastersUC *MastersUC) changeMastersSubthemes(master *models.Master, masterDB *models.MasterDB) error {
 	var err error
 
 	if master.Theme.Theme == "" {
-		masterDB.Theme = mastersUC.useCases.errorId
 		err = mastersUC.MastersRepo.DeleteMasterSubthemesById(masterDB.Id)
 		if err != nil {
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
+		return nil
 	}
 
-	var oldTheme models.ThemeDB
-	oldTheme.Id = masterDB.Theme
-	err = mastersUC.getTheme(&oldTheme)
-	if err != nil {
-		return err
-	}
-
-	if master.Theme.Theme != oldTheme.Name {
-		newThemeDB := models.ThemeDB{
-			Name: master.Theme.Theme,
-		}
-		err := mastersUC.ThemesRepo.GetThemeByName(&newThemeDB)
-		if err != nil {
-			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
-		}
-		if newThemeDB.Id == mastersUC.useCases.errorId {
-			fileError := &models.BadRequestError{Message: "cant't update master, theme doesn't exist", RequestId: master.UserId}
-			logger.Errorf(fileError.Error())
-			return fileError
-		}
-		masterDB.Theme = newThemeDB.Id
-	}
 	var newSubthemesIds []int64
 	for _, subtheme := range master.Theme.Subthemes {
 		subthemeDB := models.SubthemeDB{Name: subtheme}
@@ -406,6 +382,39 @@ func (mastersUC *MastersUC) changeMastersTheme(master *models.Master, masterDB *
 	if err != nil {
 		_ = mastersUC.MastersRepo.SetMasterSubthemesById(masterDB.Id, oldSubthemesIds)
 		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+	}
+	return nil
+}
+
+func (mastersUC *MastersUC) changeMastersTheme(master *models.Master, masterDB *models.MasterDB) error {
+	var err error
+
+	if master.Theme.Theme == "" {
+		masterDB.Theme = mastersUC.useCases.errorId
+		return nil
+	}
+
+	var oldTheme models.ThemeDB
+	oldTheme.Id = masterDB.Theme
+	err = mastersUC.getTheme(&oldTheme)
+	if err != nil {
+		return err
+	}
+
+	if master.Theme.Theme != oldTheme.Name {
+		newThemeDB := models.ThemeDB{
+			Name: master.Theme.Theme,
+		}
+		err := mastersUC.ThemesRepo.GetThemeByName(&newThemeDB)
+		if err != nil {
+			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+		}
+		if newThemeDB.Id == mastersUC.useCases.errorId {
+			fileError := &models.BadRequestError{Message: "cant't update master, theme doesn't exist", RequestId: master.UserId}
+			logger.Errorf(fileError.Error())
+			return fileError
+		}
+		masterDB.Theme = newThemeDB.Id
 	}
 	return nil
 }

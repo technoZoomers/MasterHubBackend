@@ -1,8 +1,12 @@
 package handlers
 
 import (
+	"errors"
+	"github.com/google/logger"
 	"github.com/technoZoomers/MasterHubBackend/models"
 	"github.com/technoZoomers/MasterHubBackend/useCases"
+	"github.com/technoZoomers/MasterHubBackend/utils"
+	"net/http"
 )
 
 type Handlers struct {
@@ -14,6 +18,7 @@ type Handlers struct {
 	VideosHandlers    *VideosHandlers
 	AvatarsHandlers   *AvatarsHandlers
 	badRequestError *models.BadRequestError
+	conflictError *models.ConflictError
 }
 
 func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useCases.MastersUCInterface, studentsUC useCases.StudentsUCInterface,
@@ -40,4 +45,28 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 		},
 	}}
 	return nil
+}
+
+func (handlers *Handlers) handleErrorConflict(writer http.ResponseWriter, err error) bool {
+	if errors.As(err, &handlers.conflictError) {
+		logger.Error(err)
+		utils.CreateErrorAnswerJson(writer, http.StatusConflict, models.CreateMessage(err.Error()))
+		return true
+	}
+	return handlers.handleError(writer, err)
+}
+
+
+func (handlers *Handlers) handleError(writer http.ResponseWriter, err error) bool {
+	if errors.As(err, &handlers.badRequestError) {
+		logger.Error(err)
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
+		return true
+	}
+	if err != nil {
+		logger.Error(err)
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(err.Error()))
+		return true
+	}
+	return false
 }

@@ -24,10 +24,38 @@ type VideosUC struct {
 type VideoConfig struct {
 	videosDir           string
 	videosDefaultName   string
-	videoFilenamePrefix string
+	videoPrefixMaster string
+	videoPrefixVideo string
+	videoPrefixIntro string
 }
 
-func (videosUC *VideosUC) NewMasterVideo(videoData *models.VideoData, file multipart.File, masterId int64) error {
+func (videosUC *VideosUC) createFilenameIntro(masterId int64) (string, error) {
+	introExists := models.VideoDB {
+		MasterId:masterId,
+	}
+	var filename string
+	err := videosUC.VideosRepo.GetIntroByMasterId(&introExists)
+	if err != nil {
+		return filename, fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+	}
+	if introExists.Id != videosUC.useCases.errorId {
+		return filename, &models.ConflictError{Message:"intro already exists", RequestId:masterId}
+	}
+	filename = fmt.Sprintf("%s%d%s", videosUC.videosConfig.videoPrefixMaster, masterId, videosUC.videosConfig.videoPrefixIntro)
+	return filename, nil
+}
+
+func (videosUC *VideosUC) createFilenameVideo(masterId int64) (string, error) {
+	var filename string
+	countVideo, err := videosUC.VideosRepo.CountVideos()
+	if err != nil {
+		return filename, fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+	}
+	filename = fmt.Sprintf("%s%d%s%d", videosUC.videosConfig.videoPrefixMaster, masterId, videosUC.videosConfig.videoPrefixVideo, countVideo+1)
+	return filename, nil
+}
+
+func (videosUC *VideosUC) validateMaster(masterId int64) error {
 	if masterId == videosUC.useCases.errorId {
 		return &models.BadRequestError{Message: "incorrect master id", RequestId: masterId}
 	}
@@ -43,25 +71,38 @@ func (videosUC *VideosUC) NewMasterVideo(videoData *models.VideoData, file multi
 		logger.Errorf(absenceError.Error())
 		return absenceError
 	}
+	return nil
+}
+
+func (videosUC *VideosUC) newVideo(videoData *models.VideoData, file multipart.File, masterId int64, intro bool) error {
+	err := videosUC.validateMaster(masterId)
+	if err != nil {
+		return err
+	}
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
 		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileReadError, err.Error())
 		logger.Errorf(fileError.Error())
 		return fileError
 	}
-
+	defer file.Close()
 	fileExtension, err := filetype.Match(fileBytes)
 	if err != nil {
 		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileReadExtensionError, err.Error())
 		logger.Errorf(fileError.Error())
 		return fileError
 	}
-	countVideo, err := videosUC.VideosRepo.CountVideos()
-	if err != nil {
-		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+
+	var filename string
+	if intro {
+		filename, err = videosUC.createFilenameIntro(masterId)
+	} else {
+		filename, err = videosUC.createFilenameVideo(masterId)
 	}
-	fileName := fmt.Sprintf("%s%d", videosUC.videosConfig.videoFilenamePrefix, countVideo+1)
-	newPath := fmt.Sprintf("%s%s.%s", videosUC.videosConfig.videosDir, fileName, fileExtension.Extension)
+	if err != nil {
+		return err
+	}
+	newPath := fmt.Sprintf("%s%s.%s", videosUC.videosConfig.videosDir, filename, fileExtension.Extension)
 	newFile, err := os.Create(newPath)
 	if err != nil {
 		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileCreateError, err.Error())
@@ -79,11 +120,11 @@ func (videosUC *VideosUC) NewMasterVideo(videoData *models.VideoData, file multi
 	}
 
 	videoDB := models.VideoDB{
-		Filename:  fileName,
+		Filename:  filename,
 		Extension: fileExtension.Extension,
 		MasterId:  masterId,
 		Name:      videosUC.videosConfig.videosDefaultName,
-		Intro:     false,
+		Intro:     intro,
 		Uploaded:  time.Now(),
 	}
 	err = videosUC.VideosRepo.InsertVideoData(&videoDB)
@@ -95,9 +136,17 @@ func (videosUC *VideosUC) NewMasterVideo(videoData *models.VideoData, file multi
 	videoData.Name = videoDB.Name
 	videoData.Uploaded = videoDB.Uploaded
 	videoData.Id = videoDB.Id
+	videoData.Intro = intro
 	videoData.FileExt = videoDB.Extension
 
 	return nil
+}
+
+func (videosUC *VideosUC) NewMasterVideo(videoData *models.VideoData, file multipart.File, masterId int64) error {
+	return videosUC.newVideo(videoData, file, masterId, false)
+}
+func (videosUC *VideosUC) NewMasterIntro(videoData *models.VideoData, file multipart.File, masterId int64) error {
+	return videosUC.newVideo(videoData, file, masterId, true)
 }
 
 func (videosUC *VideosUC) GetVideosByMasterId(masterId int64) ([]models.VideoData, error) {
@@ -218,7 +267,7 @@ func (videosUC *VideosUC) GetMasterVideo(masterId int64, videoId int64) ([]byte,
 		logger.Errorf(absenceError.Error())
 		return videoBytes, absenceError
 	}
-	err = videosUC.VideosRepo.GetVideoDataById(&videoDB)
+	err = videosUC.VideosRepo.GetVideoDataByIdAndMasterId(&videoDB)
 	if err != nil {
 		return videoBytes, fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
@@ -277,7 +326,7 @@ func (videosUC *VideosUC) GetVideoDataById(videoData *models.VideoData, masterId
 		logger.Errorf(absenceError.Error())
 		return absenceError
 	}
-	err = videosUC.VideosRepo.GetVideoDataById(&videoDB)
+	err = videosUC.VideosRepo.GetVideoDataByIdAndMasterId(&videoDB)
 	if err != nil {
 		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
@@ -328,7 +377,7 @@ func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId 
 		logger.Errorf(absenceError.Error())
 		return absenceError
 	}
-	err = videosUC.VideosRepo.GetVideoDataById(&videoDB)
+	err = videosUC.VideosRepo.GetVideoDataByIdAndMasterId(&videoDB)
 	if err != nil {
 		return fmt.Errorf("database internal error")
 	}
@@ -363,33 +412,24 @@ func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId 
 	if err != nil {
 		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
-	return nil
-}
 
-func (videosUC *VideosUC) changeVideoTheme(videoData *models.VideoData, videoDB *models.VideoDB) error {
-
-	var oldTheme models.ThemeDB
-	oldTheme.Id = videoDB.Theme
-	err := videosUC.getTheme(&oldTheme)
+	err = videosUC.changeVideoSubthemes(videoData, &videoDB)
 	if err != nil {
 		return err
 	}
+	return nil
+}
 
-	if videoData.Theme.Theme != oldTheme.Name {
-		newThemeDB := models.ThemeDB{
-			Name: videoData.Theme.Theme,
-		}
-		err := videosUC.ThemesRepo.GetThemeByName(&newThemeDB)
+func (videosUC *VideosUC) changeVideoSubthemes(videoData *models.VideoData, videoDB *models.VideoDB) error {
+	var err error
+	if videoData.Theme.Theme == "" {
+		err = videosUC.MastersRepo.DeleteMasterSubthemesById(videoDB.Id)
 		if err != nil {
 			return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 		}
-		if newThemeDB.Id == videosUC.useCases.errorId {
-			fileError := &models.BadRequestError{Message: "cant't update video, theme doesn't exist", RequestId: videoData.Id}
-			logger.Errorf(fileError.Error())
-			return fileError
-		}
-		videoDB.Theme = newThemeDB.Id
+		return nil
 	}
+
 	var newSubthemesIds []int64
 	for _, subtheme := range videoData.Theme.Subthemes {
 		subthemeDB := models.SubthemeDB{Name: subtheme}
@@ -419,6 +459,39 @@ func (videosUC *VideosUC) changeVideoTheme(videoData *models.VideoData, videoDB 
 	if err != nil {
 		_ = videosUC.VideosRepo.SetVideoSubthemesById(videoData.Id, oldSubthemesIds)
 		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+	}
+	return nil
+}
+
+
+func (videosUC *VideosUC) changeVideoTheme(videoData *models.VideoData, videoDB *models.VideoDB) error {
+
+	if videoData.Theme.Theme == "" {
+		videoDB.Theme = videosUC.useCases.errorId
+		return nil
+	}
+
+	var oldTheme models.ThemeDB
+	oldTheme.Id = videoDB.Theme
+	err := videosUC.getTheme(&oldTheme)
+	if err != nil {
+		return err
+	}
+
+	if videoData.Theme.Theme != oldTheme.Name {
+		newThemeDB := models.ThemeDB{
+			Name: videoData.Theme.Theme,
+		}
+		err := videosUC.ThemesRepo.GetThemeByName(&newThemeDB)
+		if err != nil {
+			return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+		}
+		if newThemeDB.Id == videosUC.useCases.errorId {
+			fileError := &models.BadRequestError{Message: "cant't update video, theme doesn't exist", RequestId: videoData.Id}
+			logger.Errorf(fileError.Error())
+			return fileError
+		}
+		videoDB.Theme = newThemeDB.Id
 	}
 	return nil
 }

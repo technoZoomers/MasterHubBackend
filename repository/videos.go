@@ -79,7 +79,7 @@ func (videosRepo *VideosRepo) GetVideosByMasterId(masterId int64) ([]models.Vide
 			logger.Errorf(dbError.Error())
 			return videos, dbError
 		}
-		videoDB.Theme = checkNullTheme(theme)
+		videoDB.Theme = checkNullValueInt64(theme)
 		videos = append(videos, videoDB)
 	}
 	err = videosRepo.repository.commitTransaction(transaction)
@@ -89,15 +89,7 @@ func (videosRepo *VideosRepo) GetVideosByMasterId(masterId int64) ([]models.Vide
 	return videos, nil
 }
 
-func checkNullTheme(theme sql.NullInt64) int64 {
-	if theme.Valid {
-		return theme.Int64
-	} else {
-		return 0
-	}
-}
-
-func (videosRepo *VideosRepo) GetVideoDataById(videoDB *models.VideoDB) error {
+func (videosRepo *VideosRepo) GetVideoDataByIdAndMasterId(videoDB *models.VideoDB) error {
 	var dbError error
 	transaction, err := videosRepo.repository.startTransaction()
 	if err != nil {
@@ -110,7 +102,28 @@ func (videosRepo *VideosRepo) GetVideoDataById(videoDB *models.VideoDB) error {
 		dbError = fmt.Errorf("failed to retrieve video: %v", err.Error())
 		logger.Errorf(dbError.Error())
 	}
-	videoDB.Theme = checkNullTheme(theme)
+	videoDB.Theme = checkNullValueInt64(theme)
+	err = videosRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (videosRepo *VideosRepo) GetIntroByMasterId(videoDB *models.VideoDB) error {
+	var dbError error
+	transaction, err := videosRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	row := transaction.QueryRow("SELECT * FROM videos WHERE intro=true and master_id=$1", videoDB.MasterId)
+	var theme sql.NullInt64
+	err = row.Scan(&videoDB.Id, &videoDB.MasterId, &videoDB.Filename, &videoDB.Extension, &videoDB.Name, &videoDB.Description, &videoDB.Intro, &theme, &videoDB.Uploaded)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve intro: %v", err.Error())
+		logger.Errorf(dbError.Error())
+	}
+	videoDB.Theme = checkNullValueInt64(theme)
 	err = videosRepo.repository.commitTransaction(transaction)
 	if err != nil {
 		return err

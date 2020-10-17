@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/google/logger"
 	"github.com/jackc/pgx"
@@ -27,18 +28,18 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 	if err != nil {
 		return err
 	}
-	err = repository.dropTables()
-	if err != nil {
-		return err
-	}
-	err = repository.createTables()
-	if err != nil {
-		return err
-	}
-	err = repository.fillTables()
-	if err != nil {
-		return err
-	}
+	//err = repository.dropTables()
+	//if err != nil {
+	//	return err
+	//}
+	//err = repository.createTables()
+	//if err != nil {
+	//	return err
+	//}
+	//err = repository.fillTables()
+	//if err != nil {
+	//	return err
+	//}
 	repository.StudentsRepo = &StudentsRepo{repository}
 	repository.MastersRepo = &MastersRepo{repository}
 	repository.UsersRepo = &UsersRepo{repository}
@@ -108,4 +109,21 @@ func (repository *Repository) rollbackTransaction(transaction *pgx.Tx) error {
 		return err
 	}
 	return err
+}
+
+func checkNullValueInt64(value sql.NullInt64) int64 {
+	if value.Valid {
+		return value.Int64
+	} else {
+		return 0
+	}
+}
+
+
+func checkNullValueString(value sql.NullString) string {
+	if value.Valid {
+		return value.String
+	} else {
+		return ""
+	}
 }

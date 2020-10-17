@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"fmt"
 	"github.com/google/logger"
 	"github.com/gorilla/mux"
@@ -19,12 +18,7 @@ type ThemesHandlers struct {
 
 func (th *ThemesHandlers) Get(writer http.ResponseWriter, req *http.Request) {
 	themes, err := th.ThemesUC.Get()
-	if err != nil {
-		logger.Error(err)
-		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(err.Error()))
-		return
-	}
-	utils.CreateAnswerThemesJson(writer, http.StatusOK, themes)
+	th.answerThemes(writer, themes, err)
 }
 
 func (th *ThemesHandlers) GetThemeById(writer http.ResponseWriter, req *http.Request) {
@@ -39,15 +33,19 @@ func (th *ThemesHandlers) GetThemeById(writer http.ResponseWriter, req *http.Req
 	var theme models.Theme
 	theme.Id = themeId
 	err = th.ThemesUC.GetThemeById(&theme)
-	if errors.As(err, &th.handlers.badRequestError) {
-		logger.Error(err)
-		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
-		return
+	th.answerTheme(writer, theme, err)
+}
+
+func (th *ThemesHandlers) answerTheme(writer http.ResponseWriter, theme models.Theme, err error) {
+	sent := th.handlers.handleError(writer, err)
+	if !sent {
+		utils.CreateAnswerThemeJson(writer, http.StatusOK, theme)
 	}
-	if err != nil {
-		logger.Error(err)
-		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(err.Error()))
-		return
+}
+
+func (th *ThemesHandlers) answerThemes(writer http.ResponseWriter, themes []models.Theme, err error) {
+	sent := th.handlers.handleError(writer, err)
+	if !sent {
+		utils.CreateAnswerThemesJson(writer, http.StatusOK, themes)
 	}
-	utils.CreateAnswerThemeJson(writer, http.StatusOK, theme)
 }

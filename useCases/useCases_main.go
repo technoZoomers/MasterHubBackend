@@ -37,9 +37,13 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 		VideosRepo:  videosRepo,
 		MastersRepo: mastersRepo,
 		ThemesRepo:  themesRepo,
-		videosConfig: VideoConfig{videosDefaultName: "noname",
+		videosConfig: VideoConfig{
+			videosDefaultName: "noname",
 			videosDir:           "./master_videos/",
-			videoFilenamePrefix: "master_video_"},
+			videoPrefixMaster: "master_",
+			videoPrefixVideo: "video_",
+			videoPrefixIntro: "intro",
+		},
 	}
 	useCases.AvatarsUC = &AvatarsUC{useCases, avatarsRepo}
 	useCases.errorMessages = ErrorMessagesUC{

@@ -73,7 +73,7 @@ CREATE TABLE videos (
     extension text NOT NULL, 
     name text DEFAULT 'noname',
     description text DEFAULT '',
-    intro boolean  DEFAULT false,
+    intro boolean DEFAULT false,
     theme int REFERENCES themes(id) ON DELETE SET NULL,
     uploaded TIMESTAMPTZ NOT NULL
 );

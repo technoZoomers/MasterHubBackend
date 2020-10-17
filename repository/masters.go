@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/google/logger"
 	"github.com/technoZoomers/MasterHubBackend/models"
@@ -16,13 +17,15 @@ func (mastersRepo *MastersRepo) GetMasterByUserId(master *models.MasterDB) error
 	if err != nil {
 		return err
 	}
+	var theme sql.NullInt64
 	row := transaction.QueryRow("SELECT * FROM masters WHERE user_id=$1", master.UserId)
-	err = row.Scan(&master.Id, &master.UserId, &master.Username, &master.Fullname, &master.Theme,
+	err = row.Scan(&master.Id, &master.UserId, &master.Username, &master.Fullname, &theme,
 		&master.Description, &master.Qualification, &master.EducationFormat, &master.AveragePrice)
 	if err != nil {
 		dbError = fmt.Errorf("failed to retrieve master: %v", err.Error())
 		logger.Errorf(dbError.Error())
 	}
+	master.Theme = checkNullValueInt64(theme)
 	err = mastersRepo.repository.commitTransaction(transaction)
 	if err != nil {
 		return err
