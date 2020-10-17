@@ -14,6 +14,7 @@ import (
 )
 
 type MastersHandlers struct {
+	handlers     *Handlers
 	MastersUC useCases.MastersUCInterface
 }
 
@@ -29,8 +30,7 @@ func (mh *MastersHandlers) GetMasterById(writer http.ResponseWriter, req *http.R
 	var master models.Master
 	master.UserId = masterId
 	err = mh.MastersUC.GetMasterById(&master)
-	var badReqError *models.BadRequestError
-	if errors.As(err, &badReqError) {
+	if errors.As(err, &mh.handlers.badRequestError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
 		return
@@ -67,8 +67,7 @@ func (mh *MastersHandlers) ChangeMasterData(writer http.ResponseWriter, req *htt
 		return
 	}
 	err = mh.MastersUC.ChangeMasterData(&master)
-	var badReqError *models.BadRequestError
-	if errors.As(err, &badReqError) {
+	if errors.As(err, &mh.handlers.badRequestError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
 		return

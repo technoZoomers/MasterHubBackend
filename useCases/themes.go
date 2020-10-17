@@ -5,7 +5,6 @@ import (
 	"github.com/google/logger"
 	"github.com/technoZoomers/MasterHubBackend/models"
 	"github.com/technoZoomers/MasterHubBackend/repository"
-	"github.com/technoZoomers/MasterHubBackend/utils"
 )
 
 type ThemesUC struct {
@@ -34,7 +33,7 @@ func (themesUC *ThemesUC) Get() (models.Themes, error) {
 }
 
 func (themesUC *ThemesUC) GetThemeById(theme *models.Theme) error {
-	if theme.Id == utils.ERROR_ID {
+	if theme.Id == themesUC.useCases.errorId {
 		return &models.BadRequestError{Message: "incorrect theme id", RequestId: theme.Id}
 	}
 	var themeDB models.ThemeDB

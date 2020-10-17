@@ -11,6 +11,7 @@ type UseCases struct {
 	VideosUC      *VideosUC
 	AvatarsUC     *AvatarsUC
 	errorMessages ErrorMessagesUC
+	errorId int64
 }
 
 func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repository.MastersRepoI, studentsRepo repository.StudentsRepoI,
@@ -22,8 +23,12 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 		MastersRepo:mastersRepo,
 		ThemesRepo:themesRepo,
 		LanguagesRepo:languagesRepo,
-	mastersConfig:MastersConfig{qualificationMap: map[int64]string{1: "self-educated", 2: "professional"},
-		educationFormatMap: map[int64]string{1: "online", 2: "live"}}}
+	mastersConfig:MastersConfig{
+			qualificationMap: map[int64]string{1: "self-educated", 2: "professional"},
+			educationFormatMap: map[int64]string{1: "online", 2: "live"},
+			qualificationMapBackwards: map[string]int64{"self-educated":1, "professional" :2},
+			educationFormatMapBackwards: map[string]int64{"online":1, "live":2},
+	}}
 	useCases.StudentsUC = &StudentsUC{useCases, studentsRepo}
 	useCases.ThemesUC = &ThemesUC{useCases, themesRepo}
 	useCases.LanguagesUC = &LanguagesUC{useCases, languagesRepo}
@@ -46,5 +51,6 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 			FileCreateError:        "error creating file",
 		},
 	}
+	useCases.errorId = 0
 	return nil
 }

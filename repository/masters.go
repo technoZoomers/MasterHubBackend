@@ -165,3 +165,84 @@ func (mastersRepo *MastersRepo) SetMasterSubthemesById(masterId int64, subthemes
 	}
 	return nil
 }
+
+func (mastersRepo *MastersRepo) DeleteMasterLanguagesById(masterId int64) error {
+	var dbError error
+	transaction, err := mastersRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	_, err = transaction.Exec("DELETE FROM masters_languages WHERE master_id=$1", masterId)
+	if err != nil {
+		dbError = fmt.Errorf("failed to delete languages: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		errRollback := mastersRepo.repository.rollbackTransaction(transaction)
+		if errRollback != nil {
+			return errRollback
+		}
+		return dbError
+	}
+	err = mastersRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (mastersRepo *MastersRepo) SetMasterLanguagesById(masterId int64, languages []int64) error {
+	if languages == nil || len(languages) == 0 {
+		return nil
+	}
+	var dbError error
+	transaction, err := mastersRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	var queryValues []interface{}
+	insertQuery := "INSERT INTO masters_languages (master_id, language_id) values "
+	queryValues = append(queryValues, masterId)
+	for i, subth := range languages {
+		insertQuery += fmt.Sprintf("($1, $%d),", i+2)
+		queryValues = append(queryValues, subth)
+	}
+	insertQuery = insertQuery[:len(insertQuery)-1]
+	_, err = transaction.Exec(insertQuery, queryValues...)
+	if err != nil {
+		dbError = fmt.Errorf("failed to insert languages: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		errRollback := mastersRepo.repository.rollbackTransaction(transaction)
+		if errRollback != nil {
+			return errRollback
+		}
+		return dbError
+	}
+	err = mastersRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (mastersRepo *MastersRepo) UpdateMaster(master *models.MasterDB) error {
+	var dbError error
+	transaction, err := mastersRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	_, err = transaction.Exec("UPDATE masters SET (username, fullname, theme, description, qualification, education_format) = ($1, $2, nullif($3, 0), $4, $5, $6) where id = $7",
+		master.Username, master.Fullname, master.Theme, master.Description, master.Qualification, master.EducationFormat, master.Id)
+	if err != nil {
+		dbError = fmt.Errorf("failed to update master: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		errRollback := mastersRepo.repository.rollbackTransaction(transaction)
+		if errRollback != nil {
+			return errRollback
+		}
+		return dbError
+	}
+	err = mastersRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}

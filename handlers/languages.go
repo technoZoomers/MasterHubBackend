@@ -9,6 +9,7 @@ import (
 )
 
 type LanguagesHandlers struct {
+	handlers     *Handlers
 	LanguagesUC useCases.LanguagesUCInterface
 }
 

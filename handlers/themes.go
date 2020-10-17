@@ -13,6 +13,7 @@ import (
 )
 
 type ThemesHandlers struct {
+	handlers     *Handlers
 	ThemesUC useCases.ThemesUCInterface
 }
 
@@ -38,8 +39,7 @@ func (th *ThemesHandlers) GetThemeById(writer http.ResponseWriter, req *http.Req
 	var theme models.Theme
 	theme.Id = themeId
 	err = th.ThemesUC.GetThemeById(&theme)
-	var badReqError *models.BadRequestError
-	if errors.As(err, &badReqError) {
+	if errors.As(err, &th.handlers.badRequestError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
 		return

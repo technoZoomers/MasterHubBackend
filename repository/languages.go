@@ -58,3 +58,22 @@ func (languagesRepo *LanguagesRepo) GetLanguageById(language *models.LanguageDB)
 	}
 	return nil
 }
+
+func (languagesRepo *LanguagesRepo) GetLanguageByName(language *models.LanguageDB) error {
+	var dbError error
+	transaction, err := languagesRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	row := transaction.QueryRow("SELECT id FROM languages WHERE name=$1", language.Name)
+	err = row.Scan(&language.Id)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve language: %v", err.Error())
+		logger.Errorf(dbError.Error())
+	}
+	err = languagesRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
