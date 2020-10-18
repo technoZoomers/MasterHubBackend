@@ -28,7 +28,20 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 	themesUC useCases.ThemesUCInterface, languagesUC useCases.LanguagesUCInterface,
 	videosUC useCases.VideosUCInterface, avatarsUC useCases.AvatarsUCInterface) error {
 	handlers.UsersHandlers = &UsersHandlers{handlers, usersUC}
-	handlers.MastersHandlers = &MastersHandlers{handlers, mastersUC}
+	handlers.MastersHandlers = &MastersHandlers{
+		handlers: handlers,
+		MastersUC: mastersUC,
+		MastersQueryKeys:MastersQueryKeys{
+			Subtheme:        "subtheme",
+			Theme:           "theme",
+			Qualification:   "qualification",
+			EducationFormat: "educationFormat",
+			Language:        "language",
+			Search: "search",
+			Limit: "limit",
+			Offset: "offset",
+		},
+	}
 	handlers.StudentsHandlers = &StudentsHandlers{handlers, studentsUC}
 	handlers.LanguagesHandlers = &LanguagesHandlers{handlers, languagesUC}
 	handlers.ThemesHandlers = &ThemesHandlers{handlers, themesUC}
@@ -96,7 +109,6 @@ func (handlers *Handlers) handleError(writer http.ResponseWriter, err error) boo
 	}
 	return false
 }
-
 func (handlers *Handlers) validateId(writer http.ResponseWriter, req *http.Request, idName string, entityName string) (bool, int64) {
 	idString := mux.Vars(req)[idName]
 	id, err := strconv.ParseInt(idString, 10, 64)

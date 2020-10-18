@@ -11,6 +11,14 @@ func (brError* BadRequestError) Error() string {
 	return fmt.Sprintf("%s with id: %d", brError.Message, brError.RequestId)
 }
 
+type BadQueryParameterError struct {
+	Parameter string
+}
+
+func (brError* BadQueryParameterError) Error() string {
+	return fmt.Sprintf("bad query with parameter: %s", brError.Parameter)
+}
+
 type ConflictError struct {
 	Message string
 	RequestId int64

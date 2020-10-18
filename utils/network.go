@@ -84,6 +84,15 @@ func CreateAnswerMasterJson(writer http.ResponseWriter, statusCode int, master m
 	createAnswerJson(writer, statusCode, marshalledMaster)
 }
 
+func CreateAnswerMastersJson(writer http.ResponseWriter, statusCode int, masters masterhub_models.Masters) {
+	marshalledMasters, err := json.Marshal(masters)
+	if err != nil {
+		jsonError := fmt.Errorf("error marshalling json: %v", err.Error())
+		logger.Error(jsonError)
+	}
+	createAnswerJson(writer, statusCode, marshalledMasters)
+}
+
 func CreateAnswerVideoDataJson(writer http.ResponseWriter, statusCode int, videoData masterhub_models.VideoData) {
 	marshalledVideoData, err := json.Marshal(videoData)
 	if err != nil {

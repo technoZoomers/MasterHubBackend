@@ -24,25 +24,11 @@ type MastersConfig struct {
 	educationFormatMapBackwards  map[string]int64
 }
 
-func (mastersUC *MastersUC) GetMasterById(master *models.Master) error {
-	if master.UserId == mastersUC.useCases.errorId {
-		return &models.BadRequestError{Message: "incorrect master id", RequestId: master.UserId}
-	}
-	var masterDB models.MasterDB
-	masterDB.UserId = master.UserId
-	err := mastersUC.MastersRepo.GetMasterByUserId(&masterDB)
-	if err != nil {
-		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
-	}
-	if masterDB.Id == mastersUC.useCases.errorId {
-		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: master.UserId}
-		logger.Errorf(absenceError.Error())
-		return absenceError
-	}
+func (mastersUC *MastersUC) matchMaster(masterDB *models.MasterDB, master *models.Master) error {
 	master.Username = masterDB.Username
 	master.Fullname = masterDB.Fullname
 	master.Description = masterDB.Description
-	err = mastersUC.setEducationFormat(master, masterDB.EducationFormat)
+	err := mastersUC.setEducationFormat(master, masterDB.EducationFormat)
 	if err != nil {
 		return err
 	}
@@ -58,11 +44,42 @@ func (mastersUC *MastersUC) GetMasterById(master *models.Master) error {
 	if err != nil {
 		return err
 	}
-	err = mastersUC.setSubThemes(master, &masterDB)
+	err = mastersUC.setSubThemes(master, masterDB)
 	if err != nil {
 		return err
 	}
-	err = mastersUC.setLanguages(master, &masterDB)
+	err = mastersUC.setLanguages(master, masterDB)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (mastersUC *MastersUC) validateMaster(masterDB *models.MasterDB, master *models.Master) error {
+	if master.UserId == mastersUC.useCases.errorId {
+		return &models.BadRequestError{Message: "incorrect master id", RequestId: master.UserId}
+	}
+	masterDB.UserId = master.UserId
+	err := mastersUC.MastersRepo.GetMasterByUserId(masterDB)
+	if err != nil {
+		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+	}
+	if masterDB.Id == mastersUC.useCases.errorId {
+		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: master.UserId}
+		logger.Errorf(absenceError.Error())
+		return absenceError
+	}
+	return nil
+}
+
+func (mastersUC *MastersUC) GetMasterById(master *models.Master) error {
+	var masterDB models.MasterDB
+	masterDB.UserId = master.UserId
+	err := mastersUC.validateMaster(&masterDB, master)
+	if err != nil {
+		return err
+	}
+	err = mastersUC.matchMaster(&masterDB, master)
 	if err != nil {
 		return err
 	}
@@ -417,4 +434,149 @@ func (mastersUC *MastersUC) changeMastersTheme(master *models.Master, masterDB *
 		masterDB.Theme = newThemeDB.Id
 	}
 	return nil
+}
+
+func (mastersUC *MastersUC) matchEducationFormat(educationFormat string) (int64, error) {
+	var edFormatInt int64 = 0
+	if educationFormat != "" {
+		edFormatInt = mastersUC.mastersConfig.qualificationMapBackwards[educationFormat]
+		if edFormatInt != mastersUC.useCases.errorId {
+			return edFormatInt, nil
+		}
+		badParamError := &models.BadQueryParameterError{Parameter:"educationFormat"}
+		logger.Errorf(badParamError.Error())
+		return edFormatInt, badParamError
+	}
+	return edFormatInt, nil
+}
+
+func (mastersUC *MastersUC) matchQualification(qualification string) (int64, error) {
+	var qualifiactionInt int64 = 0
+	if qualification != "" {
+		qualifiactionInt = mastersUC.mastersConfig.qualificationMapBackwards[qualification]
+		if qualifiactionInt != mastersUC.useCases.errorId {
+			return qualifiactionInt, nil
+		}
+		badParamError := &models.BadQueryParameterError{Parameter: "qualification"}
+		logger.Errorf(badParamError.Error())
+		return qualifiactionInt, badParamError
+	}
+	return qualifiactionInt, nil
+}
+
+func (mastersUC *MastersUC) matchTheme(theme string, queryDB *models.MastersQueryValuesDB) error {
+	if theme != "" {
+		themeDB := models.ThemeDB{
+			Name: theme,
+		}
+		err := mastersUC.ThemesRepo.GetThemeByName(&themeDB)
+		if err != nil {
+			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+		}
+		if themeDB.Id == mastersUC.useCases.errorId {
+			badParamError := &models.BadQueryParameterError{Parameter: "theme"}
+			logger.Errorf(badParamError.Error())
+			return badParamError
+		}
+		queryDB.Theme = append(queryDB.Theme, themeDB.Id)
+	}
+	return nil
+}
+
+func (mastersUC *MastersUC) matchSubthemes(subthemes []string, queryDB *models.MastersQueryValuesDB) error {
+	for _, subtheme := range subthemes {
+		subthemeDB := models.SubthemeDB{Name: subtheme}
+		err := mastersUC.ThemesRepo.GetSubthemeByName(&subthemeDB)
+		if err != nil {
+			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+		}
+		if subthemeDB.Id == mastersUC.useCases.errorId {
+			badParamError := &models.BadQueryParameterError{Parameter: "subtheme"}
+			logger.Errorf(badParamError.Error())
+			return badParamError
+		}
+		queryDB.Subtheme = append(queryDB.Subtheme, subthemeDB.Id)
+	}
+	return nil
+}
+
+func (mastersUC *MastersUC) matchLanguages(languages []string, queryDB *models.MastersQueryValuesDB) error {
+	for _, language := range languages {
+		languageDB := models.LanguageDB{Name: language}
+		err := mastersUC.LanguagesRepo.GetLanguageByName(&languageDB)
+		if err != nil {
+			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+		}
+		if languageDB.Id == mastersUC.useCases.errorId {
+			badParamError := &models.BadQueryParameterError{Parameter: "language"}
+			logger.Errorf(badParamError.Error())
+			return badParamError
+		}
+		queryDB.Language = append(queryDB.Language, languageDB.Id)
+	}
+	return nil
+}
+
+func (mastersUC *MastersUC) matchMasterQuery(query *models.MastersQueryValues, queryDB *models.MastersQueryValuesDB) error {
+	queryDB.Offset = query.Offset
+	queryDB.Limit = query.Limit
+	qualification, err := mastersUC.matchQualification(query.Qualification)
+	if err != nil {
+		return err
+	}
+	queryDB.Qualification = qualification
+	educationFormat, err := mastersUC.matchEducationFormat(query.EducationFormat)
+	if err != nil {
+		return err
+	}
+	queryDB.EducationFormat = educationFormat
+	queryDB.Theme = make([]int64, 0)
+	err = mastersUC.matchTheme(query.Theme, queryDB)
+	if err != nil {
+		return err
+	}
+	queryDB.Subtheme = make([]int64, 0)
+	err = mastersUC.matchSubthemes(query.Subtheme, queryDB)
+	if err != nil {
+		return err
+	}
+	queryDB.Language = make([]int64, 0)
+	err = mastersUC.matchLanguages(query.Language, queryDB)
+	if err != nil {
+		return err
+	}
+	if query.Search != "" {
+		searchThemeIds, err := mastersUC.ThemesRepo.SearchThemeIds(query.Search)
+		if err != nil {
+			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+		}
+		queryDB.Theme = append(queryDB.Theme, searchThemeIds...)
+		searchSubthemeIds, err := mastersUC.ThemesRepo.SearchSubthemeIds(query.Search)
+		if err != nil {
+			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+		}
+		queryDB.Subtheme = append(queryDB.Theme, searchSubthemeIds...)
+	}
+	return nil
+}
+
+func (mastersUC *MastersUC) Get(query models.MastersQueryValues) (models.Masters, error) {
+	var queryDB models.MastersQueryValuesDB
+	err := mastersUC.matchMasterQuery(&query, &queryDB)
+	if err != nil {
+		return nil, err
+	}
+	mastersDB, err := mastersUC.MastersRepo.GetMasters(queryDB)
+	masters := make([]models.Master, 0)
+	for _, masterDB := range mastersDB {
+		master := models.Master{
+			UserId: masterDB.UserId,
+		}
+		err = mastersUC.matchMaster(&masterDB, &master)
+		if err != nil {
+			return masters, err
+		}
+		masters = append(masters, master)
+	}
+	return masters, nil
 }

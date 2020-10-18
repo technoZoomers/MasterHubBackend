@@ -12,4 +12,5 @@ type MastersRepoI interface {
 	DeleteMasterLanguagesById(masterId int64) error
 	SetMasterLanguagesById(masterId int64, languages []int64) error
 	UpdateMaster(master *models.MasterDB) error
+	GetMasters(query models.MastersQueryValuesDB) ([]models.MasterDB, error)
 }

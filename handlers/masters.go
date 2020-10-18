@@ -8,11 +8,25 @@ import (
 	"github.com/technoZoomers/MasterHubBackend/useCases"
 	"github.com/technoZoomers/MasterHubBackend/utils"
 	"net/http"
+	"net/url"
+	"strconv"
 )
 
 type MastersHandlers struct {
 	handlers     *Handlers
 	MastersUC useCases.MastersUCInterface
+	MastersQueryKeys MastersQueryKeys
+}
+
+type MastersQueryKeys struct {
+	Subtheme string
+	Theme string
+	Qualification string
+	EducationFormat string
+	Language string
+	Search string
+	Limit string
+	Offset string
 }
 
 func (mh *MastersHandlers) validateMasterId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
@@ -53,10 +67,57 @@ func (mh *MastersHandlers) ChangeMasterData(writer http.ResponseWriter, req *htt
 	mh.answerMaster(writer, master, err)
 }
 
+func (mh *MastersHandlers) parseMastersQuery(query url.Values, mastersQuery *models.MastersQueryValues) error {
+	mastersQuery.Subtheme = query[mh.MastersQueryKeys.Subtheme]
+	mastersQuery.Theme = query.Get(mh.MastersQueryKeys.Theme)
+	mastersQuery.EducationFormat = query.Get(mh.MastersQueryKeys.EducationFormat)
+	mastersQuery.Qualification = query.Get(mh.MastersQueryKeys.Qualification)
+	mastersQuery.Language = query[mh.MastersQueryKeys.Subtheme]
+	mastersQuery.Search = query.Get(mh.MastersQueryKeys.Search)
+	limitString := query.Get(mh.MastersQueryKeys.Limit)
+	if limitString != "" {
+		limit, err := strconv.ParseInt(limitString, 10, 64)
+		if err != nil {
+			return fmt.Errorf("error parsing query parameter %s: %v", mh.MastersQueryKeys.Limit, err.Error())
+		}
+		mastersQuery.Limit = limit
+	}
+	offsetString := query.Get(mh.MastersQueryKeys.Offset)
+	if offsetString != "" {
+		offset, err := strconv.ParseInt(offsetString, 10, 64)
+		if err != nil {
+			return fmt.Errorf("error parsing query parameter %s: %v", mh.MastersQueryKeys.Offset, err.Error())
+		}
+		mastersQuery.Offset = offset
+	}
+	return nil
+}
+
+func (mh *MastersHandlers) Get(writer http.ResponseWriter, req *http.Request) {
+	query := req.URL.Query()
+	var mastersQuery models.MastersQueryValues
+	err := mh.parseMastersQuery(query, &mastersQuery)
+	if err != nil {
+		logger.Errorf(err.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
+		return
+	}
+	masters, err := mh.MastersUC.Get(mastersQuery)
+	mh.answerMasters(writer, masters, err)
+}
+
+
 func (mh *MastersHandlers) answerMaster(writer http.ResponseWriter, master models.Master, err error) {
 	sent := mh.handlers.handleErrorConflict(writer, err)
 	if !sent {
 		utils.CreateAnswerMasterJson(writer, http.StatusOK, master)
+	}
+}
+
+func (mh *MastersHandlers) answerMasters(writer http.ResponseWriter, masters models.Masters, err error) {
+	sent := mh.handlers.handleErrorConflict(writer, err)
+	if !sent {
+		utils.CreateAnswerMastersJson(writer, http.StatusOK, masters)
 	}
 }
 

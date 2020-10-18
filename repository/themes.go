@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/technoZoomers/MasterHubBackend/models"
+	"strings"
 )
 
 type ThemesRepo struct {
@@ -144,4 +145,42 @@ func (themesRepo *ThemesRepo) GetSubthemeByName(subtheme *models.SubthemeDB) err
 		return err
 	}
 	return nil
+}
+
+func (themesRepo *ThemesRepo) searchIds(query string, source string) ([]int64, error) {
+	var dbError error
+	themes := make([]int64, 0)
+	transaction, err := themesRepo.repository.startTransaction()
+	if err != nil {
+		return themes, err
+	}
+	rows, err := transaction.Query(fmt.Sprintf(`SELECT id FROM %s WHERE name LIKE '%%' || $1 || '%%'`, source), strings.ToLower(query))
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve %s: %v", source, err.Error())
+		logger.Errorf(dbError.Error())
+		return themes, dbError
+	}
+	for rows.Next() {
+		var themeFoundId int64
+		err = rows.Scan(&themeFoundId)
+		if err != nil {
+			dbError = fmt.Errorf("failed to retrieve one of the %s: %v", source, err)
+			logger.Errorf(dbError.Error())
+			return themes, dbError
+		}
+		themes = append(themes, themeFoundId)
+	}
+	err = themesRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return themes, err
+	}
+	return themes, nil
+}
+
+func (themesRepo *ThemesRepo) SearchThemeIds(query string) ([]int64, error) {
+	return themesRepo.searchIds(query, "themes")
+}
+
+func (themesRepo *ThemesRepo) SearchSubthemeIds(query string) ([]int64, error) {
+	return themesRepo.searchIds(query, "subthemes")
 }
