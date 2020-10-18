@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"github.com/google/logger"
 	"github.com/gorilla/mux"
@@ -64,44 +65,29 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 }
 
 func (handlers *Handlers) handleErrorConflict(writer http.ResponseWriter, err error) bool {
-	if _, ok := err.(*models.ConflictError); ok {
+	if errors.As(err, &handlers.conflictError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusConflict, models.CreateMessage(err.Error()))
 		return true
 	}
-	//if errors.As(err, &handlers.conflictError) {
-	//	logger.Error(err)
-	//	utils.CreateErrorAnswerJson(writer, http.StatusConflict, models.CreateMessage(err.Error()))
-	//	return true
-	//}
 	return handlers.handleError(writer, err)
 }
 
 func (handlers *Handlers) handleErrorNoContent(writer http.ResponseWriter, err error) bool {
-	if _, ok := err.(*models.NoContentError); ok {
+	if errors.As(err, &handlers.noContentError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusNoContent, models.CreateMessage(err.Error()))
 		return true
 	}
-	//if errors.As(err, &handlers.noContentError) {
-	//	logger.Error(err)
-	//	utils.CreateErrorAnswerJson(writer, http.StatusNoContent, models.CreateMessage(err.Error()))
-	//	return true
-	//}
 	return handlers.handleError(writer, err)
 }
 
 func (handlers *Handlers) handleError(writer http.ResponseWriter, err error) bool {
-	if _, ok := err.(*models.BadRequestError); ok {
+	if errors.As(err, &handlers.badRequestError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
 		return true
 	}
-	//if errors.As(err, &handlers.badRequestError) {
-	//	logger.Error(err)
-	//	utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
-	//	return true
-	//}
 	if err != nil {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(err.Error()))
@@ -109,6 +95,7 @@ func (handlers *Handlers) handleError(writer http.ResponseWriter, err error) boo
 	}
 	return false
 }
+
 func (handlers *Handlers) validateId(writer http.ResponseWriter, req *http.Request, idName string, entityName string) (bool, int64) {
 	idString := mux.Vars(req)[idName]
 	id, err := strconv.ParseInt(idString, 10, 64)
