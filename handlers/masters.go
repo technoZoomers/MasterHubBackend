@@ -115,7 +115,7 @@ func (mh *MastersHandlers) answerMaster(writer http.ResponseWriter, master model
 }
 
 func (mh *MastersHandlers) answerMasters(writer http.ResponseWriter, masters models.Masters, err error) {
-	sent := mh.handlers.handleErrorConflict(writer, err)
+	sent := mh.handlers.handleErrorBadQueryParameter(writer, err)
 	if !sent {
 		utils.CreateAnswerMastersJson(writer, http.StatusOK, masters)
 	}

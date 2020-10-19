@@ -264,18 +264,6 @@ func (mastersRepo *MastersRepo) GetMasters(query models.MastersQueryValuesDB) ([
 	selectQuery := "SELECT id, user_id, username, fullname, theme, description, qualification, education_format, avg_price FROM " +
 		"(SELECT row_number() over (ORDER BY id) as select_id, * FROM masters "
 
-
-	if len(query.Subtheme) > 0 {
-		selectQuery += "  INNER JOIN (SELECT DISTINCT master_id FROM masters_subthemes WHERE subtheme_id in ("
-		for _, subth := range query.Subtheme {
-			queryCount++
-			selectQuery += fmt.Sprintf("$%d,", queryCount)
-			queryValues = append(queryValues, subth)
-		}
-		selectQuery = selectQuery[:len(selectQuery)-1]
-		selectQuery += ")) as s on s.master_id = id"
-	}
-
 	if len(query.Language) > 0 {
 		selectQuery += " INNER JOIN (SELECT DISTINCT master_id FROM masters_languages WHERE language_id in ("
 		for _, lang := range query.Language {
@@ -286,16 +274,52 @@ func (mastersRepo *MastersRepo) GetMasters(query models.MastersQueryValuesDB) ([
 		selectQuery = selectQuery[:len(selectQuery)-1]
 		selectQuery += ")) as l on l.master_id = id"
 	}
-	if len(query.Theme) > 0 {
-		selectQuery += " WHERE theme in ("
-		for _, th := range query.Theme {
+
+	if len(query.Subtheme) > 0 {
+		selectQuery += "  INNER JOIN (SELECT DISTINCT master_id FROM masters_subthemes WHERE subtheme_id in ("
+		for _, subth := range query.Subtheme {
 			queryCount++
 			selectQuery += fmt.Sprintf("$%d,", queryCount)
-			queryValues = append(queryValues, th)
+			queryValues = append(queryValues, subth)
 		}
 		selectQuery = selectQuery[:len(selectQuery)-1]
-		selectQuery += ")"
+		selectQuery += ")) as s on s.master_id = id"
+	} else {
+		if len(query.Theme) > 0 {
+			selectQuery += " WHERE theme in ("
+			for _, th := range query.Theme {
+				queryCount++
+				selectQuery += fmt.Sprintf("$%d,", queryCount)
+				queryValues = append(queryValues, th)
+			}
+			selectQuery = selectQuery[:len(selectQuery)-1]
+			selectQuery += ")"
+		}
+
 	}
+
+	if query.Qualification != 0 {
+		if len(query.Theme) > 0 {
+			selectQuery += " AND "
+		} else {
+			selectQuery += " WHERE "
+		}
+		queryCount++
+		selectQuery += fmt.Sprintf("qualification=$%d", queryCount)
+		queryValues = append(queryValues, query.Qualification)
+	}
+
+	if query.EducationFormat != 0 {
+		if len(query.Theme) > 0 || query.Qualification != 0{
+			selectQuery += " AND "
+		} else {
+			selectQuery += " WHERE "
+		}
+		queryCount++
+		selectQuery += fmt.Sprintf("education_format=$%d", queryCount)
+		queryValues = append(queryValues, query.EducationFormat)
+	}
+
 	selectQuery += ") as i"
 	if query.Limit == 0 {
 		if query.Offset != 0 {

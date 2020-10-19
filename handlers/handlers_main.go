@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"fmt"
 	"github.com/google/logger"
 	"github.com/gorilla/mux"
@@ -23,6 +22,7 @@ type Handlers struct {
 	badRequestError *models.BadRequestError
 	conflictError *models.ConflictError
 	noContentError *models.NoContentError
+	badQueryParameterError *models.BadQueryParameterError
 }
 
 func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useCases.MastersUCInterface, studentsUC useCases.StudentsUCInterface,
@@ -64,30 +64,59 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 	return nil
 }
 
-func (handlers *Handlers) handleErrorConflict(writer http.ResponseWriter, err error) bool {
-	if errors.As(err, &handlers.conflictError) {
-		logger.Error(err)
-		utils.CreateErrorAnswerJson(writer, http.StatusConflict, models.CreateMessage(err.Error()))
-		return true
-	}
-	return handlers.handleError(writer, err)
-}
-
-func (handlers *Handlers) handleErrorNoContent(writer http.ResponseWriter, err error) bool {
-	if errors.As(err, &handlers.noContentError) {
-		logger.Error(err)
-		utils.CreateErrorAnswerJson(writer, http.StatusNoContent, models.CreateMessage(err.Error()))
-		return true
-	}
-	return handlers.handleError(writer, err)
-}
-
-func (handlers *Handlers) handleError(writer http.ResponseWriter, err error) bool {
-	if errors.As(err, &handlers.badRequestError) {
+func (handlers *Handlers) handleErrorBadQueryParameter(writer http.ResponseWriter, err error) bool {
+	if _, ok := err.(*models.BadQueryParameterError); ok {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
 		return true
 	}
+	//if errors.As(err, &handlers.badQueryParameterError) {
+	//	logger.Error(err)
+	//	utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
+	//	return true
+	//}
+	return handlers.handleError(writer, err)
+}
+
+func (handlers *Handlers) handleErrorConflict(writer http.ResponseWriter, err error) bool {
+	if _, ok := err.(*models.ConflictError); ok {
+		logger.Error(err)
+		utils.CreateErrorAnswerJson(writer, http.StatusConflict, models.CreateMessage(err.Error()))
+		return true
+	}
+	//if errors.As(err, &handlers.conflictError) {
+	//	logger.Error(err)
+	//	utils.CreateErrorAnswerJson(writer, http.StatusConflict, models.CreateMessage(err.Error()))
+	//	return true
+	//}
+	return handlers.handleError(writer, err)
+}
+
+func (handlers *Handlers) handleErrorNoContent(writer http.ResponseWriter, err error) bool {
+	if _, ok := err.(*models.NoContentError); ok {
+		logger.Error(err)
+		utils.CreateErrorAnswerJson(writer, http.StatusNoContent, models.CreateMessage(err.Error()))
+		return true
+	}
+	//if errors.As(err, &handlers.noContentError) {
+	//	logger.Error(err)
+	//	utils.CreateErrorAnswerJson(writer, http.StatusNoContent, models.CreateMessage(err.Error()))
+	//	return true
+	//}
+	return handlers.handleError(writer, err)
+}
+
+func (handlers *Handlers) handleError(writer http.ResponseWriter, err error) bool {
+	if _, ok := err.(*models.BadRequestError); ok {
+		logger.Error(err)
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
+		return true
+	}
+	//if errors.As(err, &handlers.badRequestError) {
+	//	logger.Error(err)
+	//	utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
+	//	return true
+	//}
 	if err != nil {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(err.Error()))

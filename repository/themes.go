@@ -147,14 +147,28 @@ func (themesRepo *ThemesRepo) GetSubthemeByName(subtheme *models.SubthemeDB) err
 	return nil
 }
 
-func (themesRepo *ThemesRepo) searchIds(query string, source string) ([]int64, error) {
+func (themesRepo *ThemesRepo) searchIds(query string, source string, themeIds []int64, queryType string) ([]int64, error) {
 	var dbError error
 	themes := make([]int64, 0)
 	transaction, err := themesRepo.repository.startTransaction()
 	if err != nil {
 		return themes, err
 	}
-	rows, err := transaction.Query(fmt.Sprintf(`SELECT id FROM %s WHERE name LIKE '%%' || $1 || '%%'`, source), strings.ToLower(query))
+	var queryValues []interface{}
+	queryValues = append(queryValues, strings.ToLower(query))
+	queryString := fmt.Sprintf(`SELECT id FROM %s WHERE name LIKE '%%' || $1 || '%%'`, source)
+	if source == "subthemes" && len(themeIds) > 0 {
+		queryString += fmt.Sprintf(" %s theme_id in (", queryType)
+		queryCount := 1
+		for _, th := range themeIds {
+			queryCount++
+			queryString += fmt.Sprintf("$%d,", queryCount)
+			queryValues = append(queryValues, th)
+		}
+		queryString = queryString[:len(queryString)-1]
+		queryString += ")"
+	}
+	rows, err := transaction.Query(queryString, queryValues...)
 	if err != nil {
 		dbError = fmt.Errorf("failed to retrieve %s: %v", source, err.Error())
 		logger.Errorf(dbError.Error())
@@ -178,9 +192,17 @@ func (themesRepo *ThemesRepo) searchIds(query string, source string) ([]int64, e
 }
 
 func (themesRepo *ThemesRepo) SearchThemeIds(query string) ([]int64, error) {
-	return themesRepo.searchIds(query, "themes")
+	return themesRepo.searchIds(query, "themes", []int64{}, "")
 }
 
 func (themesRepo *ThemesRepo) SearchSubthemeIds(query string) ([]int64, error) {
-	return themesRepo.searchIds(query, "subthemes")
+	return themesRepo.searchIds(query, "subthemes", []int64{}, "")
+}
+
+func (themesRepo *ThemesRepo) SearchSubthemeIdsAndThemes(query string, themeIds []int64) ([]int64, error) {
+	return themesRepo.searchIds(query, "subthemes", themeIds, "AND")
+}
+
+func (themesRepo *ThemesRepo) SearchSubthemeIdsOrThemes(query string, themeIds []int64) ([]int64, error) {
+	return themesRepo.searchIds(query, "subthemes", themeIds, "OR")
 }

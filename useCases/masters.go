@@ -530,6 +530,8 @@ func (mastersUC *MastersUC) matchMasterQuery(query *models.MastersQueryValues, q
 		return err
 	}
 	queryDB.EducationFormat = educationFormat
+	queryDB.Language = make([]int64, 0)
+	err = mastersUC.matchLanguages(query.Language, queryDB)
 	queryDB.Theme = make([]int64, 0)
 	err = mastersUC.matchTheme(query.Theme, queryDB)
 	if err != nil {
@@ -540,22 +542,30 @@ func (mastersUC *MastersUC) matchMasterQuery(query *models.MastersQueryValues, q
 	if err != nil {
 		return err
 	}
-	queryDB.Language = make([]int64, 0)
-	err = mastersUC.matchLanguages(query.Language, queryDB)
+
 	if err != nil {
 		return err
 	}
 	if query.Search != "" {
-		searchThemeIds, err := mastersUC.ThemesRepo.SearchThemeIds(query.Search)
-		if err != nil {
-			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+		if query.Theme == "" {
+			searchThemeIds, err := mastersUC.ThemesRepo.SearchThemeIds(query.Search)
+			if err != nil {
+				return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+			}
+			queryDB.Theme = append(queryDB.Theme, searchThemeIds...)
+			searchSubthemeIds, err := mastersUC.ThemesRepo.SearchSubthemeIdsOrThemes(query.Search, queryDB.Theme)
+			if err != nil {
+				return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+			}
+			queryDB.Subtheme = append(queryDB.Subtheme, searchSubthemeIds...)
+		} else {
+			searchSubthemeIds, err := mastersUC.ThemesRepo.SearchSubthemeIdsAndThemes(query.Search, queryDB.Theme)
+			if err != nil {
+				return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+			}
+			queryDB.Subtheme = append(queryDB.Subtheme, searchSubthemeIds...)
 		}
-		queryDB.Theme = append(queryDB.Theme, searchThemeIds...)
-		searchSubthemeIds, err := mastersUC.ThemesRepo.SearchSubthemeIds(query.Search)
-		if err != nil {
-			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
-		}
-		queryDB.Subtheme = append(queryDB.Theme, searchSubthemeIds...)
+
 	}
 	return nil
 }
