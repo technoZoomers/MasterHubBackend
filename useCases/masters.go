@@ -543,9 +543,6 @@ func (mastersUC *MastersUC) matchMasterQuery(query *models.MastersQueryValues, q
 		return err
 	}
 
-	if err != nil {
-		return err
-	}
 	if query.Search != "" {
 		if query.Theme == "" {
 			searchThemeIds, err := mastersUC.ThemesRepo.SearchThemeIds(query.Search)
@@ -572,12 +569,16 @@ func (mastersUC *MastersUC) matchMasterQuery(query *models.MastersQueryValues, q
 
 func (mastersUC *MastersUC) Get(query models.MastersQueryValues) (models.Masters, error) {
 	var queryDB models.MastersQueryValuesDB
+	masters := make([]models.Master, 0)
 	err := mastersUC.matchMasterQuery(&query, &queryDB)
 	if err != nil {
-		return nil, err
+		return masters, err
+	}
+	if query.Search != "" && len(queryDB.Subtheme) == 0 {
+		return masters, err
 	}
 	mastersDB, err := mastersUC.MastersRepo.GetMasters(queryDB)
-	masters := make([]models.Master, 0)
+
 	for _, masterDB := range mastersDB {
 		master := models.Master{
 			UserId: masterDB.UserId,
