@@ -37,7 +37,7 @@ func main() {
 		Database: utils.DBName,
 		Host:     "localhost",
 		User:     "alexis",
-		Password: "sinope27",
+		Password: "alexis",
 	})
 
 	//config, err := pgx.ParseConnectionString(os.Getenv("DATABASE_URL"))

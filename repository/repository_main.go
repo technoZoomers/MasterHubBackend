@@ -28,18 +28,18 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 	if err != nil {
 		return err
 	}
-	//err = repository.dropTables()
-	//if err != nil {
-	//	return err
-	//}
-	//err = repository.createTables()
-	//if err != nil {
-	//	return err
-	//}
-	//err = repository.fillTables()
-	//if err != nil {
-	//	return err
-	//}
+	err = repository.dropTables()
+	if err != nil {
+		return err
+	}
+	err = repository.createTables()
+	if err != nil {
+		return err
+	}
+	err = repository.fillTables()
+	if err != nil {
+		return err
+	}
 	repository.StudentsRepo = &StudentsRepo{repository}
 	repository.MastersRepo = &MastersRepo{repository}
 	repository.UsersRepo = &UsersRepo{repository}

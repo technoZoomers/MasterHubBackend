@@ -39,7 +39,7 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 		ThemesRepo:  themesRepo,
 		videosConfig: VideoConfig{
 			videosDefaultName: "noname",
-			videosDir:           "./master_videos/",
+			videosDir:           "/master_videos/",
 			videoPrefixMaster: "master_",
 			videoPrefixVideo: "_video_",
 			videoPrefixIntro: "_intro",
