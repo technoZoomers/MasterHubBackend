@@ -49,6 +49,8 @@ func main() {
 		logger.Fatalf("Couldn't initialize database: %v", err)
 	}
 
+
+
 	//usecases initialization
 
 	mhuseCases := useCases.UseCases{}
