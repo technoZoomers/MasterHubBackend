@@ -37,23 +37,23 @@ func main() {
 		Database: utils.DBName,
 		Host:     "localhost",
 		User:     "alexis",
-		Password: "sinope27",
+		Password: "alexis",
 	})
 
 	//config, err := pgx.ParseConnectionString(os.Getenv("DATABASE_URL"))
 	//if err != nil {
 	//	logger.Fatalf("Couldn't initialize database: %v", err)
 	//}
-	//err = repository.Init(config)
+	//err = repo.Init(config)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize database: %v", err)
 	}
 
 	//usecases initialization
 
-	useCases := useCases.UseCases{}
+	mhuseCases := useCases.UseCases{}
 
-	err = useCases.Init(repo.UsersRepo, repo.MastersRepo, repo.StudentsRepo, repo.ThemesRepo, repo.LanguagesRepo,
+	err = mhuseCases.Init(repo.UsersRepo, repo.MastersRepo, repo.StudentsRepo, repo.ThemesRepo, repo.LanguagesRepo,
 		repo.VideosRepo, repo.AvatarsRepo)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize useCases: %v", err)
@@ -63,8 +63,8 @@ func main() {
 
 	mhHandlers := masterHub_handlers.Handlers{}
 
-	err = mhHandlers.Init(useCases.UsersUC, useCases.MastersUC, useCases.StudentsUC, useCases.ThemesUC, useCases.LanguagesUC,
-		useCases.VideosUC, useCases.AvatarsUC)
+	err = mhHandlers.Init(mhuseCases.UsersUC, mhuseCases.MastersUC, mhuseCases.StudentsUC, mhuseCases.ThemesUC, mhuseCases.LanguagesUC,
+		mhuseCases.VideosUC, mhuseCases.AvatarsUC)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize handlers: %v", err)
 	}
@@ -83,14 +83,21 @@ func main() {
 	r.HandleFunc("/themes/{id}", mhHandlers.ThemesHandlers.GetThemeById).Methods("GET")
 
 	//masters
-
+	r.HandleFunc("/masters", mhHandlers.MastersHandlers.Get).Methods("GET")
 	r.HandleFunc("/masters/{id}", mhHandlers.MastersHandlers.GetMasterById).Methods("GET")
 	r.HandleFunc("/masters/{id}", mhHandlers.MastersHandlers.ChangeMasterData).Methods("PUT")
 	r.HandleFunc("/masters/{id}/videos/create", mhHandlers.VideosHandlers.Upload).Methods("POST")
 	r.HandleFunc("/masters/{id}/videos/{videoId}", mhHandlers.VideosHandlers.GetVideoById).Methods("GET")
+	r.HandleFunc("/masters/{id}/videos/{videoId}", mhHandlers.VideosHandlers.DeleteVideoById).Methods("DELETE")
 	r.HandleFunc("/masters/{id}/videos/{videoId}/data", mhHandlers.VideosHandlers.GetVideoDataById).Methods("GET")
 	r.HandleFunc("/masters/{id}/videos/{videoId}/data", mhHandlers.VideosHandlers.ChangeVideoData).Methods("PUT")
 	r.HandleFunc("/masters/{id}/videos", mhHandlers.VideosHandlers.GetVideosByMasterId).Methods("GET")
+	r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.UploadIntro).Methods("POST")
+	r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.ChangeIntro).Methods("PUT")
+	r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.DeleteIntro).Methods("DELETE")
+	r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.GetIntro).Methods("GET")
+	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.ChangeIntroData).Methods("PUT")
+	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.GetIntroData).Methods("GET")
 
 	cors := handlers.CORS(handlers.AllowCredentials(), handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE"}))
 

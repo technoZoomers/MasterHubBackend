@@ -43,8 +43,8 @@ CREATE TABLE masters (
     id SERIAL NOT NULL PRIMARY KEY,
     user_id int NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     username text NOT NULL UNIQUE ,
-    fullname text NOT NULL,
-    theme int NOT NULL REFERENCES themes(id) ON DELETE SET NULL,
+    fullname text NOT NULL DEFAULT '',
+    theme int REFERENCES themes(id) ON DELETE SET NULL,
     description text DEFAULT '',
     qualification int NOT NULL CHECK (qualification = 1 OR qualification = 2),
     education_format int NOT NULL CHECK (education_format >=1 AND education_format <= 3),
@@ -73,7 +73,7 @@ CREATE TABLE videos (
     extension text NOT NULL, 
     name text DEFAULT 'noname',
     description text DEFAULT '',
-    intro boolean  DEFAULT false,
+    intro boolean DEFAULT false,
     theme int REFERENCES themes(id) ON DELETE SET NULL,
     uploaded TIMESTAMPTZ NOT NULL
 );
@@ -105,13 +105,34 @@ INSERT INTO subthemes (name, theme_id) values
     ('make up', 12), ('hairstyling', 12);
 
 INSERT INTO users (email, password, type, created) values ('spiro@mail.ru', '1234', 0, '2020-10-03T13:54:00+00:00');
-INSERT INTO masters (user_id, username, fullname, theme, description, qualification, education_format, avg_price) values (1, 'reyamusic', 'Reya Fountain', 1, 'Hi! I''m a flutist', 1, 2, 0);
-INSERT INTO masters_subthemes (master_id, subtheme_id) values (1, 1);
+INSERT INTO masters (user_id, username, fullname, theme, description, qualification, education_format, avg_price) values (1, 'reyamusic', 'Reya Fountain', 2, 'Hi! I''m a flutist', 1, 2, 0);
+INSERT INTO masters_subthemes (master_id, subtheme_id) values (1, 3);
 INSERT INTO masters_languages (master_id, language_id) values (1, 1), (1, 2);
 
 INSERT INTO users (email, password, type, created) values ('sportsman@mail.ru', '123', 0, '2020-10-03T14:54:00+00:00');
 INSERT INTO masters (user_id, username, fullname, theme, description, qualification, education_format, avg_price) values (2, 'alexsportsman', 'Alex Baranoff', 3, 'Hi! I''m a sportsman', 2, 2, 0);
 INSERT INTO masters_subthemes (master_id, subtheme_id) values (2, 5), (2, 6);
 INSERT INTO masters_languages (master_id, language_id) values (2, 1), (2, 2);
+
+INSERT INTO users (email, password, type, created) values ('interestinguser@mail.ru', '123', 0, '2020-10-13T13:55:00+00:00');
+INSERT INTO masters (user_id, username, fullname, theme, description, qualification, education_format, avg_price) values (3, 'interesting', 'Mary Cool', 6, '', 1, 2, 0);
+INSERT INTO masters_subthemes (master_id, subtheme_id) values (3, 18), (3, 20);
+INSERT INTO masters_languages (master_id, language_id) values (3, 1), (3, 3);
+
+INSERT INTO users (email, password, type, created) values ('roy_aaa@gmail.com', '123', 0, '2020-10-14T11:15:00+00:00');
+INSERT INTO masters (user_id, username, fullname, theme, description, qualification, education_format, avg_price) values (4, 'royanderson', 'Roy Anderson', 6, '', 2, 1, 0);
+INSERT INTO masters_subthemes (master_id, subtheme_id) values (4, 18), (4, 21);
+INSERT INTO masters_languages (master_id, language_id) values (4, 1), (4, 2);
+
+
+INSERT INTO users (email, password, type, created) values ('cookmaster@gmail.com', '123', 0, '2020-10-15T15:46:00+00:00');
+INSERT INTO masters (user_id, username, fullname, theme, description, qualification, education_format, avg_price) values (5, 'cookmaster', 'Jacob Terrier', 6, '', 2, 2, 0);
+INSERT INTO masters_subthemes (master_id, subtheme_id) values (5, 21), (5, 22);
+INSERT INTO masters_languages (master_id, language_id) values (5, 1), (5, 4);
+
+INSERT INTO users (email, password, type, created) values ('musefan@gmail.com', '123', 0, '2020-10-10T12:30:00+00:00');
+INSERT INTO masters (user_id, username, fullname, theme, description, qualification, education_format, avg_price) values (6, 'musefan', 'Ali Torcher', 2, 'I love Muse', 2, 1, 0);
+INSERT INTO masters_subthemes (master_id, subtheme_id) values (6, 2), (6, 3);
+INSERT INTO masters_languages (master_id, language_id) values (6, 1), (6, 2);
 
 `

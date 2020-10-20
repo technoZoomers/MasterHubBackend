@@ -143,14 +143,20 @@ func easyjson1d9cf3aaEncodeGithubComTechnoZoomersMasterHubBackendModels1(out *jw
 	out.RawByte('{')
 	first := true
 	_ = first
-	{
+	if in.Id != 0 {
 		const prefix string = ",\"id\":"
+		first = false
 		out.RawString(prefix[1:])
 		out.Int64(int64(in.Id))
 	}
 	{
 		const prefix string = ",\"theme\":"
-		out.RawString(prefix)
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
 		out.String(string(in.Theme))
 	}
 	{

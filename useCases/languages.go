@@ -12,7 +12,6 @@ type LanguagesUC struct {
 }
 
 func (languagesUC *LanguagesUC) Get() (models.Languages, error) {
-	languages := make(models.Languages, 0)
 	languages, err := languagesUC.LanguagesRepo.GetAllLanguages()
 	if err != nil {
 		return languages, fmt.Errorf(languagesUC.useCases.errorMessages.DbError)
