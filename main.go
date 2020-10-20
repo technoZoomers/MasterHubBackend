@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/google/logger"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -19,8 +18,6 @@ func main() {
 	// logger initialization
 	utils.LoggerSetup()
 	defer utils.LoggerClose()
-
-	fmt.Println("HELLO_WORLD")
 
 	//files, err := ioutil.ReadDir(".")
 	//if err != nil {
@@ -110,8 +107,8 @@ func main() {
 		//Addr:         ":" + os.Getenv("PORT"),
 		Addr:         utils.PortNum,
 		Handler:      cors(r),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  120 * time.Second,
+		WriteTimeout: 120 * time.Second,
 	}
 
 	err = server.ListenAndServe()
