@@ -106,7 +106,7 @@ func main() {
 	r.HandleFunc("/videos", mhHandlers.VideosHandlers.Get).Methods("GET")
 
 
-	cors := handlers.CORS(handlers.AllowCredentials(), handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE", "OPTIONS"}))
+	cors := handlers.CORS(handlers.AllowCredentials(), handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS"}), handlers.AllowedOrigins([]string{"*"}))
 
 	// server initialization
 
