@@ -40,13 +40,15 @@ func (mastersUC *MastersUC) matchMaster(masterDB *models.MasterDB, master *model
 	if err != nil {
 		return err
 	}
-	err = mastersUC.setTheme(master, masterDB.Theme)
-	if err != nil {
-		return err
-	}
-	err = mastersUC.setSubThemes(master, masterDB)
-	if err != nil {
-		return err
+	if masterDB.Theme != mastersUC.useCases.errorId {
+		err = mastersUC.setTheme(master, masterDB.Theme)
+		if err != nil {
+			return err
+		}
+		err = mastersUC.setSubThemes(master, masterDB)
+		if err != nil {
+			return err
+		}
 	}
 	err = mastersUC.setLanguages(master, masterDB)
 	if err != nil {
@@ -439,7 +441,7 @@ func (mastersUC *MastersUC) changeMastersTheme(master *models.Master, masterDB *
 func (mastersUC *MastersUC) matchEducationFormat(educationFormat string) (int64, error) {
 	var edFormatInt int64 = 0
 	if educationFormat != "" {
-		edFormatInt = mastersUC.mastersConfig.qualificationMapBackwards[educationFormat]
+		edFormatInt = mastersUC.mastersConfig.educationFormatMapBackwards[educationFormat]
 		if edFormatInt != mastersUC.useCases.errorId {
 			return edFormatInt, nil
 		}
@@ -578,7 +580,9 @@ func (mastersUC *MastersUC) Get(query models.MastersQueryValues) (models.Masters
 		return masters, err
 	}
 	mastersDB, err := mastersUC.MastersRepo.GetMasters(queryDB)
-
+	if err != nil {
+		return masters, fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+	}
 	for _, masterDB := range mastersDB {
 		master := models.Master{
 			UserId: masterDB.UserId,

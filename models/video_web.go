@@ -10,6 +10,7 @@ type VideoData struct {
 	FileExt     string    `json:"extension"`
 	Description string    `json:"description,omitempty"`
 	Theme       Theme     `json:"theme,omitempty"`
+	Rating int64 `json:"rating"`
 	Uploaded    time.Time `json:"uploaded"`
 }
 

@@ -167,6 +167,7 @@ func (videosUC *VideosUC) newVideo(videoData *models.VideoData, file multipart.F
 	videoData.Id = videoDB.Id
 	videoData.Intro = intro
 	videoData.FileExt = videoDB.Extension
+	videoData.Rating = 0
 
 	return nil
 }
@@ -194,6 +195,27 @@ func (videosUC *VideosUC) ChangeMasterIntro(videoData *models.VideoData, file mu
 	return nil
 }
 
+func (videosUC *VideosUC) matchVideo (videoDB *models.VideoDB, video *models.VideoData) error {
+	video.Id = videoDB.Id
+	video.Name = videoDB.Name
+	video.FileExt = videoDB.Extension
+	video.Description = videoDB.Description
+	video.Uploaded = videoDB.Uploaded
+	video.Intro = videoDB.Intro
+	video.Rating = videoDB.Rating
+	if videoDB.Theme != videosUC.useCases.errorId {
+		err := videosUC.setTheme(video, videoDB.Theme)
+		if err != nil {
+			return err
+		}
+		err = videosUC.setSubThemes(video, videoDB)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (videosUC *VideosUC) GetVideosByMasterId(masterId int64) ([]models.VideoData, error) {
 	var videos []models.VideoData
 	var videosDB []models.VideoDB
@@ -207,23 +229,10 @@ func (videosUC *VideosUC) GetVideosByMasterId(masterId int64) ([]models.VideoDat
 	}
 
 	for _, videoDB := range videosDB {
-		video := models.VideoData{
-			Id:          videoDB.Id,
-			Name:        videoDB.Name,
-			FileExt:     videoDB.Extension,
-			Description: videoDB.Description,
-			Uploaded:    videoDB.Uploaded,
-			Intro: videoDB.Intro,
-		}
-		if videoDB.Theme != videosUC.useCases.errorId {
-			err = videosUC.setTheme(&video, videoDB.Theme)
-			if err != nil {
-				return videos, err
-			}
-			err = videosUC.setSubThemes(&video, &videoDB)
-			if err != nil {
-				return videos, err
-			}
+		var video models.VideoData
+		err = videosUC.matchVideo(&videoDB, &video)
+		if err != nil {
+			return videos, err
 		}
 
 		videos = append(videos, video)
@@ -246,7 +255,7 @@ func (videosUC *VideosUC) setTheme(video *models.VideoData, theme int64) error {
 	if err != nil {
 		return err
 	}
-	video.Theme.Id = theme
+	//video.Theme.Id = theme
 	video.Theme.Theme = themeDB.Name
 	return nil
 }
@@ -394,21 +403,9 @@ func (videosUC *VideosUC) getVideoData(videoDB *models.VideoDB, videoData *model
 	if err != nil {
 		return err
 	}
-	videoData.Name = videoDB.Name
-	videoData.FileExt = videoDB.Extension
-	videoData.Description = videoDB.Description
-	videoData.Uploaded = videoDB.Uploaded
-	videoData.Intro = videoDB.Intro
-
-	if videoDB.Theme != 0 {
-		err = videosUC.setTheme(videoData, videoDB.Theme)
-		if err != nil {
-			return err
-		}
-		err = videosUC.setSubThemes(videoData, videoDB)
-		if err != nil {
-			return err
-		}
+	err = videosUC.matchVideo(videoDB, videoData)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -442,6 +439,15 @@ func (videosUC *VideosUC) changeVideoData(videoDB *models.VideoDB, videoData *mo
 	}
 	if err != nil {
 		return err
+	}
+	if videoData.Rating != videosUC.useCases.errorId  {
+		if videoData.Rating != videoDB.Rating {
+			fileError := fmt.Errorf("video rating can't be changed")
+			logger.Errorf(fileError.Error())
+			return fileError
+		}
+	} else {
+		videoData.Rating = videoDB.Rating
 	}
 	if videoData.FileExt != "" {
 		if videoData.FileExt != videoDB.Extension {
@@ -575,4 +581,79 @@ func (videosUC *VideosUC) changeVideoTheme(videoData *models.VideoData, videoDB 
 		videoDB.Theme = newThemeDB.Id
 	}
 	return nil
+}
+
+func (videosUC *VideosUC) matchTheme(theme string, queryDB *models.VideosQueryValuesDB) error {
+	if theme != "" {
+		themeDB := models.ThemeDB{
+			Name: theme,
+		}
+		err := videosUC.ThemesRepo.GetThemeByName(&themeDB)
+		if err != nil {
+			return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+		}
+		if themeDB.Id == videosUC.useCases.errorId {
+			badParamError := &models.BadQueryParameterError{Parameter: "theme"}
+			logger.Errorf(badParamError.Error())
+			return badParamError
+		}
+		queryDB.Theme = append(queryDB.Theme, themeDB.Id)
+	}
+	return nil
+}
+
+func (videosUC *VideosUC) matchSubthemes(subthemes []string, queryDB *models.VideosQueryValuesDB) error {
+	for _, subtheme := range subthemes {
+		subthemeDB := models.SubthemeDB{Name: subtheme}
+		err := videosUC.ThemesRepo.GetSubthemeByName(&subthemeDB)
+		if err != nil {
+			return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+		}
+		if subthemeDB.Id == videosUC.useCases.errorId {
+			badParamError := &models.BadQueryParameterError{Parameter: "subtheme"}
+			logger.Errorf(badParamError.Error())
+			return badParamError
+		}
+		queryDB.Subtheme = append(queryDB.Subtheme, subthemeDB.Id)
+	}
+	return nil
+}
+
+func (videosUC *VideosUC) matchVideosQuery(query *models.VideosQueryValues, queryDB *models.VideosQueryValuesDB) error {
+	queryDB.Offset = query.Offset
+	queryDB.Limit = query.Limit
+	queryDB.Old = query.Old
+	queryDB.Popular = query.Popular
+	err := videosUC.matchTheme(query.Theme, queryDB)
+	if err != nil {
+		return err
+	}
+	queryDB.Subtheme = make([]int64, 0)
+	err = videosUC.matchSubthemes(query.Subtheme, queryDB)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (videosUC *VideosUC) Get(query models.VideosQueryValues) (models.VideosData, error) {
+	var queryDB models.VideosQueryValuesDB
+	videos := make([]models.VideoData, 0)
+	err := videosUC.matchVideosQuery(&query, &queryDB)
+	if err != nil {
+		return videos, err
+	}
+	videosDB, err := videosUC.VideosRepo.GetVideos(queryDB)
+	if err != nil {
+		return videos, fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+	}
+	for _, videoDB := range videosDB {
+		var videoData models.VideoData
+		err = videosUC.matchVideo(&videoDB, &videoData)
+		if err != nil {
+			return videos, err
+		}
+		videos = append(videos, videoData)
+	}
+	return videos, nil
 }

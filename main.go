@@ -27,6 +27,7 @@ func main() {
 	//	fmt.Println(f.Name())
 	//}
 
+
 	//database initialization
 
 	repo := repository.Repository{
@@ -101,7 +102,11 @@ func main() {
 	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.ChangeIntroData).Methods("PUT")
 	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.GetIntroData).Methods("GET")
 
-	cors := handlers.CORS(handlers.AllowCredentials(), handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE"}))
+	//videos
+	r.HandleFunc("/videos", mhHandlers.VideosHandlers.Get).Methods("GET")
+
+
+	cors := handlers.CORS(handlers.AllowCredentials(), handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE", "OPTIONS"}))
 
 	// server initialization
 

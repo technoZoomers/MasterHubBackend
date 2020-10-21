@@ -114,6 +114,8 @@ func easyjson93afa840DecodeGithubComTechnoZoomersMasterHubBackendModels1(in *jle
 			out.Description = string(in.String())
 		case "theme":
 			(out.Theme).UnmarshalEasyJSON(in)
+		case "rating":
+			out.Rating = int64(in.Int64())
 		case "uploaded":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.Uploaded).UnmarshalJSON(data))
@@ -167,6 +169,11 @@ func easyjson93afa840EncodeGithubComTechnoZoomersMasterHubBackendModels1(out *jw
 		const prefix string = ",\"theme\":"
 		out.RawString(prefix)
 		(in.Theme).MarshalEasyJSON(out)
+	}
+	{
+		const prefix string = ",\"rating\":"
+		out.RawString(prefix)
+		out.Int64(int64(in.Rating))
 	}
 	{
 		const prefix string = ",\"uploaded\":"

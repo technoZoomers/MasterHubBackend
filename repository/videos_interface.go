@@ -13,4 +13,5 @@ type VideosRepoI interface {
 	UpdateVideo(video *models.VideoDB) error
 	DeleteVideo(video *models.VideoDB) error
 	GetIntroByMasterId(video *models.VideoDB) error
+	GetVideos(query models.VideosQueryValuesDB) ([]models.VideoDB, error)
 }

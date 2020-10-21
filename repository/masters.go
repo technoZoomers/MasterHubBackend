@@ -334,6 +334,7 @@ func (mastersRepo *MastersRepo) GetMasters(query models.MastersQueryValuesDB) ([
 		selectQuery += fmt.Sprintf(" AND $%d", queryCount)
 		queryValues = append(queryValues, query.Offset+1, query.Offset+query.Limit)
 	}
+
 	rows, err := transaction.Query(selectQuery, queryValues...)
 	if err != nil {
 		dbError = fmt.Errorf("failed to retrieve masters: %v", err.Error())

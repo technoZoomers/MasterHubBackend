@@ -9,12 +9,24 @@ import (
 	"github.com/technoZoomers/MasterHubBackend/utils"
 	"mime/multipart"
 	"net/http"
+	"net/url"
+	"strconv"
 )
 
 type VideosHandlers struct {
 	handlers     *Handlers
 	VideosUC useCases.VideosUCInterface
 	VideoParseConfig VideoParseConfig
+	VideosQueryKeys VideosQueryKeys
+}
+
+type VideosQueryKeys struct {
+	Subtheme string
+	Theme string
+	Popular string
+	Old string
+	Limit string
+	Offset string
 }
 
 type VideoParseConfig struct {
@@ -231,6 +243,63 @@ func (vh *VideosHandlers) ChangeIntroData(writer http.ResponseWriter, req *http.
 	vh.answerIntroPut(writer, videoData, http.StatusOK, err)
 }
 
+
+func (vh *VideosHandlers) parseVideosQuery(query url.Values, videosQuery *models.VideosQueryValues) error {
+	videosQuery.Subtheme = query[vh.VideosQueryKeys.Subtheme]
+	videosQuery.Theme = query.Get(vh.VideosQueryKeys.Theme)
+	popularString := query.Get(vh.VideosQueryKeys.Popular)
+	if popularString != "" {
+		popular, err := strconv.ParseBool(popularString)
+		if err != nil {
+			return fmt.Errorf("error parsing query parameter %s: %v", vh.VideosQueryKeys.Popular, err.Error())
+		}
+		videosQuery.Popular = popular
+	} else {
+		videosQuery.Popular = false
+	}
+	oldString := query.Get(vh.VideosQueryKeys.Old)
+	if oldString != "" {
+		old, err := strconv.ParseBool(oldString)
+		if err != nil {
+			return fmt.Errorf("error parsing query parameter %s: %v", vh.VideosQueryKeys.Old, err.Error())
+		}
+		videosQuery.Old = old
+	} else {
+		videosQuery.Old = false
+	}
+	limitString := query.Get(vh.VideosQueryKeys.Limit)
+	if limitString != "" {
+		limit, err := strconv.ParseInt(limitString, 10, 64)
+		if err != nil {
+			return fmt.Errorf("error parsing query parameter %s: %v", vh.VideosQueryKeys.Limit, err.Error())
+		}
+		videosQuery.Limit = limit
+	}
+	offsetString := query.Get(vh.VideosQueryKeys.Offset)
+	if offsetString != "" {
+		offset, err := strconv.ParseInt(offsetString, 10, 64)
+		if err != nil {
+			return fmt.Errorf("error parsing query parameter %s: %v", vh.VideosQueryKeys, err.Error())
+		}
+		videosQuery.Offset = offset
+	}
+	return nil
+}
+
+func (vh *VideosHandlers) Get(writer http.ResponseWriter, req *http.Request) {
+	query := req.URL.Query()
+	var videosQuery models.VideosQueryValues
+	err := vh.parseVideosQuery(query, &videosQuery)
+	if err != nil {
+		logger.Errorf(err.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
+		return
+	}
+	videos, err := vh.VideosUC.Get(videosQuery)
+	vh.answerVideosQuery(writer, videos, err)
+}
+
+
 func (vh *VideosHandlers) answerIntroPost(writer http.ResponseWriter, videoData models.VideoData, statusCode int, err error) {
 	sent := vh.handlers.handleErrorConflict(writer, err)
 	if !sent {
@@ -254,6 +323,13 @@ func (vh *VideosHandlers) answerVideo(writer http.ResponseWriter, videoData mode
 
 func (vh *VideosHandlers) answerVideos(writer http.ResponseWriter, videoData []models.VideoData, err error) {
 	sent := vh.handlers.handleError(writer, err)
+	if !sent {
+		utils.CreateAnswerVideosDataJson(writer, http.StatusOK, videoData)
+	}
+}
+
+func (vh *VideosHandlers) answerVideosQuery(writer http.ResponseWriter, videoData []models.VideoData, err error) {
+	sent := vh.handlers.handleErrorBadQueryParameter(writer, err)
 	if !sent {
 		utils.CreateAnswerVideosDataJson(writer, http.StatusOK, videoData)
 	}

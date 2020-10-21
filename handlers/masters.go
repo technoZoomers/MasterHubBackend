@@ -72,7 +72,7 @@ func (mh *MastersHandlers) parseMastersQuery(query url.Values, mastersQuery *mod
 	mastersQuery.Theme = query.Get(mh.MastersQueryKeys.Theme)
 	mastersQuery.EducationFormat = query.Get(mh.MastersQueryKeys.EducationFormat)
 	mastersQuery.Qualification = query.Get(mh.MastersQueryKeys.Qualification)
-	mastersQuery.Language = query[mh.MastersQueryKeys.Subtheme]
+	mastersQuery.Language = query[mh.MastersQueryKeys.Language]
 	mastersQuery.Search = query.Get(mh.MastersQueryKeys.Search)
 	limitString := query.Get(mh.MastersQueryKeys.Limit)
 	if limitString != "" {

@@ -73,7 +73,8 @@ func (videosRepo *VideosRepo) GetVideosByMasterId(masterId int64) ([]models.Vide
 	for rows.Next() {
 		var videoDB models.VideoDB
 		var theme sql.NullInt64
-		err = rows.Scan(&videoDB.Id, &videoDB.MasterId, &videoDB.Filename, &videoDB.Extension, &videoDB.Name, &videoDB.Description, &videoDB.Intro, &theme, &videoDB.Uploaded)
+		err = rows.Scan(&videoDB.Id, &videoDB.MasterId, &videoDB.Filename, &videoDB.Extension, &videoDB.Name, &videoDB.Description,
+			&videoDB.Intro, &videoDB.Rating,  &theme, &videoDB.Uploaded)
 		if err != nil {
 			dbError = fmt.Errorf("failed to retrieve video data: %v", err)
 			logger.Errorf(dbError.Error())
@@ -97,7 +98,8 @@ func (videosRepo *VideosRepo) GetVideoDataByIdAndMasterId(videoDB *models.VideoD
 	}
 	row := transaction.QueryRow("SELECT * FROM videos WHERE id=$1 and master_id=$2", videoDB.Id, videoDB.MasterId)
 	var theme sql.NullInt64
-	err = row.Scan(&videoDB.Id, &videoDB.MasterId, &videoDB.Filename, &videoDB.Extension, &videoDB.Name, &videoDB.Description, &videoDB.Intro, &theme, &videoDB.Uploaded)
+	err = row.Scan(&videoDB.Id, &videoDB.MasterId, &videoDB.Filename, &videoDB.Extension, &videoDB.Name, &videoDB.Description,
+		&videoDB.Intro, &videoDB.Rating, &theme, &videoDB.Uploaded)
 	if err != nil {
 		dbError = fmt.Errorf("failed to retrieve video: %v", err.Error())
 		logger.Errorf(dbError.Error())
@@ -118,7 +120,8 @@ func (videosRepo *VideosRepo) GetIntroByMasterId(videoDB *models.VideoDB) error 
 	}
 	row := transaction.QueryRow("SELECT * FROM videos WHERE intro=true and master_id=$1", videoDB.MasterId)
 	var theme sql.NullInt64
-	err = row.Scan(&videoDB.Id, &videoDB.MasterId, &videoDB.Filename, &videoDB.Extension, &videoDB.Name, &videoDB.Description, &videoDB.Intro, &theme, &videoDB.Uploaded)
+	err = row.Scan(&videoDB.Id, &videoDB.MasterId, &videoDB.Filename, &videoDB.Extension, &videoDB.Name, &videoDB.Description, &videoDB.Intro,
+		&videoDB.Rating, &theme, &videoDB.Uploaded)
 	if err != nil {
 		dbError = fmt.Errorf("failed to retrieve intro: %v", err.Error())
 		logger.Errorf(dbError.Error())
@@ -262,4 +265,105 @@ func (videosRepo *VideosRepo) DeleteVideo(video *models.VideoDB) error {
 		return err
 	}
 	return nil
+}
+func (videosRepo *VideosRepo) addThemesToQuery(query models.VideosQueryValuesDB, selectQuery string, queryValues *[]interface{}, queryCount int) (string, int) {
+	if len(query.Subtheme) > 0 {
+		selectQuery += "  INNER JOIN (SELECT DISTINCT video_id FROM videos_subthemes WHERE subtheme_id in ("
+		for _, subth := range query.Subtheme {
+			queryCount++
+			selectQuery += fmt.Sprintf("$%d,", queryCount)
+			*queryValues = append(*queryValues, subth)
+		}
+		selectQuery = selectQuery[:len(selectQuery)-1]
+		selectQuery += ")) as s on s.video_id = id"
+	} else {
+		if len(query.Theme) > 0 {
+			selectQuery += " WHERE theme in ("
+			for _, th := range query.Theme {
+				queryCount++
+				selectQuery += fmt.Sprintf("$%d,", queryCount)
+				*queryValues = append(*queryValues, th)
+			}
+			selectQuery = selectQuery[:len(selectQuery)-1]
+			selectQuery += ")"
+		}
+
+	}
+	return selectQuery, queryCount
+}
+
+func (videosRepo *VideosRepo) GetVideos(query models.VideosQueryValuesDB) ([]models.VideoDB, error) {
+	var dbError error
+	videos := make([]models.VideoDB, 0)
+	transaction, err := videosRepo.repository.startTransaction()
+	if err != nil {
+		return videos, err
+	}
+
+	var queryValues []interface{}
+	queryCount := 0
+	var selectQuery string
+	if query.Limit == 0 && query.Offset == 0 {
+		selectQuery = "SELECT * FROM videos"
+		selectQuery, queryCount = videosRepo.addThemesToQuery(query, selectQuery, &queryValues, queryCount)
+		selectQuery += " ORDER BY"
+		if query.Popular {
+			selectQuery += " rating DESC,"
+		}
+		if query.Old {
+			selectQuery += " uploaded"
+		} else {
+			selectQuery += " uploaded DESC"
+		}
+	} else {
+		selectQuery = "SELECT id, master_id, filename, extension, name, description, intro, rating, theme, uploaded FROM " +
+			"(SELECT row_number() over (ORDER BY "
+		if query.Popular {
+			selectQuery += " rating DESC,"
+		}
+		if query.Old {
+			selectQuery += " uploaded) "
+		} else {
+			selectQuery += " uploaded DESC)"
+		}
+		selectQuery += " as select_id, * FROM videos"
+
+		selectQuery, queryCount = videosRepo.addThemesToQuery(query, selectQuery, &queryValues, queryCount)
+		selectQuery += ") as i"
+		if query.Limit == 0 {
+			queryCount++
+			selectQuery += fmt.Sprintf(" WHERE i.select_id > $%d", queryCount)
+			queryValues = append(queryValues, query.Offset)
+		}else {
+			queryCount++
+			selectQuery += fmt.Sprintf(" WHERE i.select_id BETWEEN $%d", queryCount)
+			queryCount++
+			selectQuery += fmt.Sprintf(" AND $%d", queryCount)
+			queryValues = append(queryValues, query.Offset+1, query.Offset+query.Limit)
+		}
+	}
+	rows, err := transaction.Query(selectQuery, queryValues...)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve videos: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return videos, dbError
+	}
+	for rows.Next() {
+		var theme sql.NullInt64
+		var videoFound models.VideoDB
+		err = rows.Scan(&videoFound.Id, &videoFound.MasterId, &videoFound.Filename, &videoFound.Extension, &videoFound.Name, &videoFound.Description,
+			&videoFound.Intro, &videoFound.Rating,  &theme, &videoFound.Uploaded)
+		if err != nil {
+			dbError = fmt.Errorf("failed to retrieve video: %v", err)
+			logger.Errorf(dbError.Error())
+			return videos, dbError
+		}
+		videoFound.Theme = checkNullValueInt64(theme)
+		videos = append(videos, videoFound)
+	}
+	err = videosRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return videos, err
+	}
+	return videos, nil
 }

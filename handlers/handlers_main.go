@@ -61,7 +61,15 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 			"video/x-msvideo":          true,
 			"application/octet-stream": true,
 		},
-	}}
+	},
+		VideosQueryKeys:VideosQueryKeys{
+			Subtheme:        "subtheme",
+			Theme:           "theme",
+			Old: "old",
+			Popular: "popular",
+			Limit: "limit",
+			Offset: "offset",
+		},}
 	return nil
 }
 

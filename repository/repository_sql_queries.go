@@ -74,6 +74,7 @@ CREATE TABLE videos (
     name text DEFAULT 'noname',
     description text DEFAULT '',
     intro boolean DEFAULT false,
+	rating int DEFAULT 0,
     theme int REFERENCES themes(id) ON DELETE SET NULL,
     uploaded TIMESTAMPTZ NOT NULL
 );
@@ -134,5 +135,15 @@ INSERT INTO users (email, password, type, created) values ('musefan@gmail.com', 
 INSERT INTO masters (user_id, username, fullname, theme, description, qualification, education_format, avg_price) values (6, 'musefan', 'Ali Torcher', 2, 'I love Muse', 2, 1, 0);
 INSERT INTO masters_subthemes (master_id, subtheme_id) values (6, 2), (6, 3);
 INSERT INTO masters_languages (master_id, language_id) values (6, 1), (6, 2);
+
+INSERT INTO videos (master_id, filename, extension, intro, uploaded, rating, theme) VALUES (1, 'master_1_video_1', 'webm', false, '2020-10-10T12:30:00+00:00', 112, 1) ,
+                                                                             (2, 'master_2_video_2', 'webm', false, '2020-10-10T12:31:00+00:00', 10, 1) ,
+                                                                             (1, 'master_1_video_3', 'webm', false, '2020-10-10T12:32:00+00:00', 200, 2) ,
+                                                                             (1, 'master_1_video_4', 'webm', false, '2020-10-10T12:33:00+00:00', 4, 10) ,
+                                                                             (2, 'master_2_video_5', 'webm', false, '2020-10-10T12:34:00+00:00', 0, 2) ,
+                                                                             (2, 'master_2_video_6', 'webm', false, '2020-10-10T12:35:00+00:00', 1, 2) ,
+                                                                             (3, 'master_3_video_7', 'webm', false, '2020-10-10T12:36:00+00:00', 143, 3) ,
+                                                                             (1, 'master_1_intro', 'webm', true, '2020-10-10T12:37:00+00:00', 10, 3) ,
+                                                                             (2, 'master_2_intro', 'webm', true, '2020-10-10T12:38:00+00:00', 1, 6);
 
 `

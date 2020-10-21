@@ -18,4 +18,5 @@ type VideosUCInterface interface {
 	GetIntroData(videoData *models.VideoData, masterId int64) error
 	ChangeVideoData(videoData *models.VideoData, masterId int64) error
 	ChangeIntroData(videoData *models.VideoData, masterId int64) error
+	Get(query models.VideosQueryValues) (models.VideosData, error)
 }
