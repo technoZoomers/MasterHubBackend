@@ -197,6 +197,7 @@ func (videosUC *VideosUC) ChangeMasterIntro(videoData *models.VideoData, file mu
 
 func (videosUC *VideosUC) matchVideo (videoDB *models.VideoDB, video *models.VideoData) error {
 	video.Id = videoDB.Id
+	video.MasterId = videoDB.MasterId
 	video.Name = videoDB.Name
 	video.FileExt = videoDB.Extension
 	video.Description = videoDB.Description

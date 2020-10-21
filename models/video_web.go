@@ -5,6 +5,7 @@ import "time"
 //easyjson:json
 type VideoData struct {
 	Id          int64     `json:"id,omitempty"`
+	MasterId int64 `json:"master_id"`
 	Intro 		bool      `json:"intro"`
 	Name        string    `json:"name"`
 	FileExt     string    `json:"extension"`
