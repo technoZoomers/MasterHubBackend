@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/google/logger"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -27,6 +28,7 @@ func main() {
 	//	fmt.Println(f.Name())
 	//}
 
+	fmt.Println("WHAT THE FUCK")
 
 	//database initialization
 
