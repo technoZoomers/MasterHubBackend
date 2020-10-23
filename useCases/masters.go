@@ -278,7 +278,7 @@ func (mastersUC *MastersUC) changeMastersEducationFormat(master *models.Master, 
 		}
 		return nil
 	case 1:
-		newEdFormat := mastersUC.mastersConfig.qualificationMapBackwards[master.EducationFormat[0]]
+		newEdFormat := mastersUC.mastersConfig.educationFormatMapBackwards[master.EducationFormat[0]]
 		if newEdFormat != mastersUC.useCases.errorId {
 			if masterDB.EducationFormat != newEdFormat {
 				masterDB.EducationFormat = newEdFormat
@@ -286,11 +286,11 @@ func (mastersUC *MastersUC) changeMastersEducationFormat(master *models.Master, 
 			return nil
 		}
 	case 2:
-		newEdFormatFirst := mastersUC.mastersConfig.qualificationMapBackwards[master.EducationFormat[0]]
+		newEdFormatFirst := mastersUC.mastersConfig.educationFormatMapBackwards[master.EducationFormat[0]]
 		if newEdFormatFirst == mastersUC.useCases.errorId {
 			break
 		}
-		newEdFormatSecond := mastersUC.mastersConfig.qualificationMapBackwards[master.EducationFormat[1]]
+		newEdFormatSecond := mastersUC.mastersConfig.educationFormatMapBackwards[master.EducationFormat[1]]
 		if newEdFormatSecond == mastersUC.useCases.errorId {
 			break
 		}
