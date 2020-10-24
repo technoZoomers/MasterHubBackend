@@ -102,7 +102,7 @@ func easyjsonDbb80089DecodeGithubComTechnoZoomersMasterHubBackendModels1(in *jle
 			continue
 		}
 		switch key {
-		case "userId":
+		case "user_id":
 			out.UserId = int64(in.Int64())
 		case "username":
 			out.Username = string(in.String())
@@ -137,7 +137,7 @@ func easyjsonDbb80089DecodeGithubComTechnoZoomersMasterHubBackendModels1(in *jle
 			out.Description = string(in.String())
 		case "qualification":
 			out.Qualification = string(in.String())
-		case "educationFormat":
+		case "education_format":
 			if in.IsNull() {
 				in.Skip()
 				out.EducationFormat = nil
@@ -160,7 +160,7 @@ func easyjsonDbb80089DecodeGithubComTechnoZoomersMasterHubBackendModels1(in *jle
 				}
 				in.Delim(']')
 			}
-		case "avgPrice":
+		case "avg_price":
 			easyjsonDbb80089DecodeGithubComTechnoZoomersMasterHubBackendModels2(in, &out.AveragePrice)
 		default:
 			in.SkipRecursive()
@@ -177,7 +177,7 @@ func easyjsonDbb80089EncodeGithubComTechnoZoomersMasterHubBackendModels1(out *jw
 	first := true
 	_ = first
 	{
-		const prefix string = ",\"userId\":"
+		const prefix string = ",\"user_id\":"
 		out.RawString(prefix[1:])
 		out.Int64(int64(in.UserId))
 	}
@@ -223,7 +223,7 @@ func easyjsonDbb80089EncodeGithubComTechnoZoomersMasterHubBackendModels1(out *jw
 		out.String(string(in.Qualification))
 	}
 	{
-		const prefix string = ",\"educationFormat\":"
+		const prefix string = ",\"education_format\":"
 		out.RawString(prefix)
 		if in.EducationFormat == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
@@ -239,7 +239,7 @@ func easyjsonDbb80089EncodeGithubComTechnoZoomersMasterHubBackendModels1(out *jw
 		}
 	}
 	{
-		const prefix string = ",\"avgPrice\":"
+		const prefix string = ",\"avg_price\":"
 		out.RawString(prefix)
 		easyjsonDbb80089EncodeGithubComTechnoZoomersMasterHubBackendModels2(out, in.AveragePrice)
 	}

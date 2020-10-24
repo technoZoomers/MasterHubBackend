@@ -20,6 +20,7 @@ type Handlers struct {
 	ThemesHandlers    *ThemesHandlers
 	VideosHandlers    *VideosHandlers
 	AvatarsHandlers   *AvatarsHandlers
+	ChatsHandlers *ChatsHandlers
 	badRequestError *models.BadRequestError
 	conflictError *models.ConflictError
 	noContentError *models.NoContentError
@@ -28,7 +29,8 @@ type Handlers struct {
 
 func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useCases.MastersUCInterface, studentsUC useCases.StudentsUCInterface,
 	themesUC useCases.ThemesUCInterface, languagesUC useCases.LanguagesUCInterface,
-	videosUC useCases.VideosUCInterface, avatarsUC useCases.AvatarsUCInterface) error {
+	videosUC useCases.VideosUCInterface, avatarsUC useCases.AvatarsUCInterface,
+	chatsUC useCases.ChatsUCInterface) error {
 	handlers.UsersHandlers = &UsersHandlers{handlers, usersUC}
 	handlers.MastersHandlers = &MastersHandlers{
 		handlers: handlers,
@@ -69,7 +71,16 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 			Popular: "popular",
 			Limit: "limit",
 			Offset: "offset",
-		},}
+		}}
+	handlers.ChatsHandlers = &ChatsHandlers{
+		handlers: handlers,
+		ChatsUC: chatsUC,
+		ChatsQueryKeys: ChatsQueryKeys{
+			Type: "type",
+			Limit: "limit",
+			Offset: "offset",
+		},
+	}
 	return nil
 }
 

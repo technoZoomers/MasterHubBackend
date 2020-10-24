@@ -59,7 +59,7 @@ func main() {
 	mhuseCases := useCases.UseCases{}
 
 	err = mhuseCases.Init(repo.UsersRepo, repo.MastersRepo, repo.StudentsRepo, repo.ThemesRepo, repo.LanguagesRepo,
-		repo.VideosRepo, repo.AvatarsRepo)
+		repo.VideosRepo, repo.AvatarsRepo, repo.ChatsRepo)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize useCases: %v", err)
 	}
@@ -69,7 +69,7 @@ func main() {
 	mhHandlers := masterHub_handlers.Handlers{}
 
 	err = mhHandlers.Init(mhuseCases.UsersUC, mhuseCases.MastersUC, mhuseCases.StudentsUC, mhuseCases.ThemesUC, mhuseCases.LanguagesUC,
-		mhuseCases.VideosUC, mhuseCases.AvatarsUC)
+		mhuseCases.VideosUC, mhuseCases.AvatarsUC, mhuseCases.ChatsUC)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize handlers: %v", err)
 	}
@@ -77,6 +77,9 @@ func main() {
 	// router initialization
 
 	r := mux.NewRouter()
+
+	// users
+	r.HandleFunc("/users/{id}/chats", mhHandlers.ChatsHandlers.GetChatsByUserId).Methods("GET")
 
 	//languages
 
@@ -86,6 +89,10 @@ func main() {
 
 	r.HandleFunc("/themes", mhHandlers.ThemesHandlers.Get).Methods("GET")
 	r.HandleFunc("/themes/{id}", mhHandlers.ThemesHandlers.GetThemeById).Methods("GET")
+
+	// students
+	r.HandleFunc("/students/{id}/chats", mhHandlers.ChatsHandlers.CreateChatRequest).Methods("POST")
+
 
 	//masters
 	r.HandleFunc("/masters", mhHandlers.MastersHandlers.Get).Methods("GET")
@@ -103,6 +110,7 @@ func main() {
 	r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.GetIntro).Methods("GET")
 	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.ChangeIntroData).Methods("PUT")
 	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.GetIntroData).Methods("GET")
+	//r.HandleFunc("/masters/{id}/chats/{chatId}", mhHandlers.ChatsHandlers.ChangeChatStatus).Methods("PUT")
 
 	//videos
 	r.HandleFunc("/videos", mhHandlers.VideosHandlers.Get).Methods("GET")

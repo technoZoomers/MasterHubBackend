@@ -10,13 +10,14 @@ type UseCases struct {
 	LanguagesUC   *LanguagesUC
 	VideosUC      *VideosUC
 	AvatarsUC     *AvatarsUC
+	ChatsUC *ChatsUC
 	errorMessages ErrorMessagesUC
 	errorId int64
 }
 
 func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repository.MastersRepoI, studentsRepo repository.StudentsRepoI,
 	themesRepo repository.ThemesRepoI, languagesRepo repository.LanguagesRepoI,
-	videosRepo repository.VideosRepoI, avatarsRepo repository.AvatarsRepoI) error {
+	videosRepo repository.VideosRepoI, avatarsRepo repository.AvatarsRepoI, chatsRepo repository.ChatsRepoI) error {
 	useCases.UsersUC = &UsersUC{useCases, usersRepo}
 	useCases.MastersUC = &MastersUC{
 		useCases:useCases,
@@ -46,6 +47,36 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 		},
 	}
 	useCases.AvatarsUC = &AvatarsUC{useCases, avatarsRepo}
+	useCases.ChatsUC = &ChatsUC{
+		useCases: useCases,
+		MastersRepo: mastersRepo,
+		StudentsRepo: studentsRepo,
+		ChatsRepo: chatsRepo,
+		chatsConfig: ChatsConfig{
+			userMap: map[string]int64{
+				"master" : 1,
+				"student" : 2,
+			},
+			userMapBackwards: map[int64]string{
+				 1 : "master",
+				 2: "student",
+			},
+			chatTypes: map[string]int64{
+				"unseen" : 1,
+				"approved" : 2,
+				"disapproved" : 3,
+				"deleted by master" : 4,
+				"deleted by student" : 5,
+			},
+			chatTypesBackwards: map[int64]string{
+				1: "unseen",
+				2: "approved",
+				3: "disapproved",
+				4: "deleted by master",
+				5: "deleted by student",
+			},
+	},
+	}
 	useCases.errorMessages = ErrorMessagesUC{
 		DbError: "database internal error",
 		FileErrors: FileErrors{

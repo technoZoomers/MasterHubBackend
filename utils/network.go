@@ -110,3 +110,21 @@ func CreateAnswerVideosDataJson(writer http.ResponseWriter, statusCode int, vide
 	}
 	createAnswerJson(writer, statusCode, marshalledVideosData)
 }
+
+func CreateAnswerChatJson(writer http.ResponseWriter, statusCode int, chat masterhub_models.Chat) {
+	marshalledChat, err := json.Marshal(chat)
+	if err != nil {
+		jsonError := fmt.Errorf("error marshalling json: %v", err.Error())
+		logger.Error(jsonError)
+	}
+	createAnswerJson(writer, statusCode, marshalledChat)
+}
+
+func CreateAnswerChatsJson(writer http.ResponseWriter, statusCode int, chats masterhub_models.Chats) {
+	marshalledChats, err := json.Marshal(chats)
+	if err != nil {
+		jsonError := fmt.Errorf("error marshalling json: %v", err.Error())
+		logger.Error(jsonError)
+	}
+	createAnswerJson(writer, statusCode, marshalledChats)
+}

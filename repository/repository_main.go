@@ -17,6 +17,7 @@ type Repository struct {
 	LanguagesRepo *LanguagesRepo
 	VideosRepo    *VideosRepo
 	AvatarsRepo   *AvatarsRepo
+	ChatsRepo *ChatsRepo
 }
 
 func (repository *Repository) Init(config pgx.ConnConfig) error {
@@ -47,6 +48,12 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 	repository.ThemesRepo = &ThemesRepo{repository}
 	repository.VideosRepo = &VideosRepo{repository}
 	repository.AvatarsRepo = &AvatarsRepo{repository}
+	repository.ChatsRepo = &ChatsRepo{
+		repository: repository,
+		userMap: map[string]int64{
+			"master" : 1,
+			"student" : 2,
+		}}
 	return nil
 }
 
