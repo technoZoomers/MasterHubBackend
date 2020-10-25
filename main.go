@@ -110,7 +110,7 @@ func main() {
 	r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.GetIntro).Methods("GET")
 	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.ChangeIntroData).Methods("PUT")
 	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.GetIntroData).Methods("GET")
-	//r.HandleFunc("/masters/{id}/chats/{chatId}", mhHandlers.ChatsHandlers.ChangeChatStatus).Methods("PUT")
+	r.HandleFunc("/masters/{id}/chats/{chatId}", mhHandlers.ChatsHandlers.ChangeChatStatus).Methods("PUT")
 
 	//videos
 	r.HandleFunc("/videos", mhHandlers.VideosHandlers.Get).Methods("GET")

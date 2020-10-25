@@ -26,6 +26,22 @@ type ChatsConfig struct {
 	chatTypesBackwards  map[int64]string
 }
 
+func (chatsUC *ChatsUC) validateChat(chatExists *models.ChatDB, chatId int64) error {
+	if chatId == chatsUC.useCases.errorId {
+		return &models.BadRequestError{Message: "incorrect chat id", RequestId: chatExists.Id}
+	}
+	err := chatsUC.ChatsRepo.GetChatById(chatExists, chatId)
+	if err != nil {
+		return fmt.Errorf(chatsUC.useCases.errorMessages.DbError)
+	}
+	if chatExists.Id == chatsUC.useCases.errorId {
+		absenceError := &models.BadRequestError{Message: "chat doesn't exist", RequestId: chatId}
+		logger.Errorf(absenceError.Error())
+		return absenceError
+	}
+	return nil
+}
+
 func (chatsUC *ChatsUC) validateMaster(masterId int64) error {
 	if masterId == chatsUC.useCases.errorId {
 		return &models.BadRequestError{Message: "incorrect master id", RequestId: masterId}
@@ -137,7 +153,7 @@ func (chatsUC *ChatsUC) CreateChatRequest(chatRequest *models.Chat, studentId in
 	err = chatsUC.validateMaster(chatRequest.MasterId)
 	if err != nil {
 		return err
-	} // TODO: check if chat exists
+	}
 	if chatRequest.StudentId != studentId {
 		accessError := &models.BadRequestError{Message: "can't create other student's chat", RequestId: studentId}
 		logger.Errorf(accessError.Error())
@@ -149,12 +165,92 @@ func (chatsUC *ChatsUC) CreateChatRequest(chatRequest *models.Chat, studentId in
 		MasterId:  chatRequest.MasterId,
 		Created:  time.Now(),
 	}
+	err = chatsUC.ChatsRepo.GetChatByStudentIdAndMasterId(&chatDB)
+	if err != nil {
+		return fmt.Errorf(chatsUC.useCases.errorMessages.DbError)
+	}
+	if chatDB.Id != chatsUC.useCases.errorId {
+		existsError := &models.BadRequestError{Message: "chat already exists", RequestId: chatDB.Id}
+		logger.Errorf(existsError.Error())
+		return existsError
+	}
 	err = chatsUC.ChatsRepo.InsertChatRequest(&chatDB)
 	if err != nil {
 		return fmt.Errorf(chatsUC.useCases.errorMessages.DbError)
 	}
-	chatRequest.Type = chatDB.Type
-	chatRequest.Created = chatDB.Created
-	chatRequest.Id = chatDB.Id
+	err = chatsUC.matchChat(&chatDB, chatRequest)
+	if err != nil {
+		return err
+	}
 	return  nil
+}
+
+func (chatsUC *ChatsUC) ChangeChatStatus(chat *models.Chat, masterId int64, chatId int64) error {
+	if chat.Id == chatsUC.useCases.errorId {
+		chat.Id = chatId
+	} else {
+		if chat.Id != chatId {
+			matchError := &models.BadRequestError{Message: "chat id doesn't match", RequestId: chat.Id}
+			logger.Errorf(matchError.Error())
+			return matchError
+		}
+	}
+	if chat.MasterId == chatsUC.useCases.errorId {
+		chat.MasterId = masterId
+	} else {
+		if chat.MasterId != masterId {
+			matchError := &models.BadRequestError{Message: "can't change other masters's chat status", RequestId: chat.Id}
+			logger.Errorf(matchError.Error())
+			return matchError
+		}
+	}
+	if chat.Type != chatsUC.chatsConfig.chatTypes["approved"] &&
+		chat.Type != chatsUC.chatsConfig.chatTypes["disapproved"] {
+		reqError := &models.BadRequestError{Message: "wrong chat type provided", RequestId: chat.Id}
+		logger.Errorf(reqError.Error())
+		return reqError
+	}
+	var chatExists models.ChatDB
+	err := chatsUC.validateChat(&chatExists, chat.Id)
+	if err != nil {
+		return err
+	}
+	if chat.StudentId != chatsUC.useCases.errorId {
+		if chatExists.StudentId != chat.StudentId {
+			if chat.MasterId != masterId {
+				reqError := &models.BadRequestError{Message: "can't change chat's student", RequestId: chat.Id}
+				logger.Errorf(reqError.Error())
+				return reqError
+			}
+		}
+	} else {
+		chat.StudentId = chatExists.StudentId
+	}
+	if chatExists.MasterId != chat.MasterId {
+		if chat.MasterId != masterId {
+			reqError := &models.BadRequestError{Message: "can't change chat's master", RequestId: chat.Id}
+			logger.Errorf(reqError.Error())
+			return reqError
+		}
+	}
+	if chatExists.Type != chatsUC.chatsConfig.chatTypes["unseen"] {
+		reqError := &models.BadRequestError{Message: "can't change chat's type", RequestId: chat.Id}
+		logger.Errorf(reqError.Error())
+		return reqError
+	}
+	if !chat.Created.IsZero() {
+		if !chatExists.Created.Equal(chat.Created) {
+			requestError := fmt.Errorf("chat creation time can't be changed")
+			logger.Errorf(requestError.Error())
+			return requestError
+		}
+	} else {
+		chat.Created = chatExists.Created
+	}
+	chatExists.Type = chat.Type
+	err = chatsUC.ChatsRepo.ChangeChatType(&chatExists)
+	if err != nil {
+		return err
+	}
+	return nil
 }

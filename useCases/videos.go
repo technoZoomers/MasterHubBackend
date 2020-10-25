@@ -443,27 +443,27 @@ func (videosUC *VideosUC) changeVideoData(videoDB *models.VideoDB, videoData *mo
 	}
 	if videoData.Rating != videosUC.useCases.errorId  {
 		if videoData.Rating != videoDB.Rating {
-			fileError := fmt.Errorf("video rating can't be changed")
-			logger.Errorf(fileError.Error())
-			return fileError
+			requestError := fmt.Errorf("video rating can't be changed") //TODO: refactor error type
+			logger.Errorf(requestError.Error())
+			return requestError
 		}
 	} else {
 		videoData.Rating = videoDB.Rating
 	}
 	if videoData.FileExt != "" {
 		if videoData.FileExt != videoDB.Extension {
-			fileError := fmt.Errorf("video extension can't be changed")
-			logger.Errorf(fileError.Error())
-			return fileError
+			requestError := fmt.Errorf("video extension can't be changed")
+			logger.Errorf(requestError.Error())
+			return requestError
 		}
 	} else {
 		videoData.FileExt = videoDB.Extension
 	}
 	if !videoData.Uploaded.IsZero() {
 		if !videoDB.Uploaded.Equal(videoData.Uploaded) {
-			fileError := fmt.Errorf("video upload time can't be changed")
-			logger.Errorf(fileError.Error())
-			return fileError
+			requestError := fmt.Errorf("video upload time can't be changed")
+			logger.Errorf(requestError.Error())
+			return requestError
 		}
 	} else {
 		videoData.Uploaded = videoDB.Uploaded
@@ -499,7 +499,16 @@ func (videosUC *VideosUC) ChangeIntroData(videoData *models.VideoData, masterId 
 	return videosUC.changeVideoData(&videoDB, videoData)
 }
 
-func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId int64) error {
+func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId int64, videoId int64) error {
+	if videoData.Id == videosUC.useCases.errorId {
+		videoData.Id = videoId
+	} else {
+		if videoData.Id != videoId {
+			matchError := &models.BadRequestError{Message: "video id doesn't match", RequestId: videoData.Id}
+			logger.Errorf(matchError.Error())
+			return matchError
+		}
+	}
 	videoDB := models.VideoDB{
 		Id: videoData.Id,
 		MasterId: masterId,

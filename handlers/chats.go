@@ -28,12 +28,16 @@ func (ch *ChatsHandlers) validateStudentId(writer http.ResponseWriter, req *http
 	return ch.handlers.validateId(writer, req, "id", "student")
 }
 
+func (ch *ChatsHandlers) validateMasterId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
+	return ch.handlers.validateId(writer, req, "id", "master")
+}
+
 func (ch *ChatsHandlers) validateUserId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
 	return ch.handlers.validateId(writer, req, "id", "user")
 }
 
 func (ch *ChatsHandlers) validateChatId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
-	return ch.handlers.validateId(writer, req, "id", "chat")
+	return ch.handlers.validateId(writer, req, "chatId", "chat")
 }
 
 func (ch *ChatsHandlers) parseChatsQuery(query url.Values, chatsQuery *models.ChatsQueryValues) error {
@@ -100,27 +104,27 @@ func (ch *ChatsHandlers) CreateChatRequest(writer http.ResponseWriter, req *http
 }
 
 
-//func (ch *ChatsHandlers) CreateChatStatus(writer http.ResponseWriter, req *http.Request) {
-//	var err error
-//	sent, studentId := ch.validateStudentId(writer, req)
-//	if sent {
-//		return
-//	}
-//	sent, chatId := ch.validateChatId(writer, req)
-//	if sent {
-//		return
-//	}
-//	var chatRequest models.Chat
-//	err = json.UnmarshalFromReader(req.Body, &chatRequest)
-//	if err != nil {
-//		jsonError := fmt.Errorf("error unmarshaling json: %v", err.Error())
-//		logger.Errorf(jsonError.Error())
-//		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(jsonError.Error()))
-//		return
-//	}
-//	err = ch.ChatsUC.CreateChatRequest(&chatRequest, studentId)
-//	ch.answerChat(writer, chatRequest, http.StatusCreated, err)
-//}
+func (ch *ChatsHandlers) ChangeChatStatus(writer http.ResponseWriter, req *http.Request) {
+	var err error
+	sent, masterId := ch.validateMasterId(writer, req)
+	if sent {
+		return
+	}
+	sent, chatId := ch.validateChatId(writer, req)
+	if sent {
+		return
+	}
+	var chatRequest models.Chat
+	err = json.UnmarshalFromReader(req.Body, &chatRequest)
+	if err != nil {
+		jsonError := fmt.Errorf("error unmarshaling json: %v", err.Error())
+		logger.Errorf(jsonError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(jsonError.Error()))
+		return
+	}
+	err = ch.ChatsUC.ChangeChatStatus(&chatRequest, masterId, chatId)
+	ch.answerChat(writer, chatRequest, http.StatusCreated, err)
+}
 
 func (ch *ChatsHandlers) answerChatsQuery(writer http.ResponseWriter, chats []models.Chat, err error) {
 	sent := ch.handlers.handleErrorBadQueryParameter(writer, err)

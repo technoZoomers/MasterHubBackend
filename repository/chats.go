@@ -118,3 +118,64 @@ func  (chatsRepo *ChatsRepo) InsertChatRequest(chat *models.ChatDB) error {
 	}
 	return nil
 }
+
+func (chatsRepo *ChatsRepo) GetChatByStudentIdAndMasterId(chat *models.ChatDB) error {
+	var dbError error
+	transaction, err := chatsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	row := transaction.QueryRow("SELECT * FROM chats WHERE user_id_student=$1 AND user_id_master=$2", chat.StudentId, chat.MasterId)
+	err = row.Scan(&chat.Id, &chat.MasterId, &chat.StudentId, &chat.Type, &chat.Created)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve chat: %v", err.Error())
+		logger.Errorf(dbError.Error())
+	}
+	err = chatsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (chatsRepo *ChatsRepo) GetChatById(chat *models.ChatDB, chatId int64) error { //TODO: refactor!!!
+	var dbError error
+	transaction, err := chatsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	row := transaction.QueryRow("SELECT * FROM chats WHERE id=$1", chatId)
+	err = row.Scan(&chat.Id, &chat.MasterId, &chat.StudentId, &chat.Type, &chat.Created)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve chat: %v", err.Error())
+		logger.Errorf(dbError.Error())
+	}
+	err = chatsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (chatsRepo *ChatsRepo) ChangeChatType(chat *models.ChatDB) error {
+	var dbError error
+	transaction, err := chatsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	_, err = transaction.Exec("UPDATE chats SET type = $1 WHERE id=$2", chat.Type, chat.Id)
+	if err != nil {
+		dbError = fmt.Errorf("failed to update chat type: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		errRollback := chatsRepo.repository.rollbackTransaction(transaction)
+		if errRollback != nil {
+			return errRollback
+		}
+		return dbError
+	}
+	err = chatsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
