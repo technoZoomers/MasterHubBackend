@@ -115,6 +115,8 @@ func main() {
 	//videos
 	r.HandleFunc("/videos", mhHandlers.VideosHandlers.Get).Methods("GET")
 
+	//chats
+	r.HandleFunc("/chats/{id}/messages", mhHandlers.ChatsHandlers.GetMessagesByChatId).Methods("GET")
 
 	cors := handlers.CORS(handlers.AllowCredentials(),handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}), handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS"}), handlers.AllowedOrigins([]string{"*"}))
 

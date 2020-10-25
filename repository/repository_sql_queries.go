@@ -2,7 +2,6 @@ package repository
 
 const TABLES_DROPPING = `
 DROP TABLE IF EXISTS messages;
-DROP TABLE IF EXISTS info_messages;
 DROP TABLE IF EXISTS chats;
 DROP TABLE IF EXISTS videos_subthemes;
 DROP TABLE IF EXISTS videos;
@@ -103,15 +102,11 @@ CREATE TABLE chats (
     created TIMESTAMPTZ NOT NULL
 );
 
-CREATE TABLE info_messages (
-    id SERIAL NOT NULL PRIMARY KEY,
-    chat_id int NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
-    text text NOT NULL
-);
 
 CREATE TABLE messages (
     id SERIAL NOT NULL PRIMARY KEY,
-    user_id int NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+    info boolean DEFAULT false,
+    user_id int REFERENCES users(id) ON DELETE SET NULL,
     chat_id int NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
     text text NOT NULL,
     created TIMESTAMPTZ NOT NULL
@@ -220,4 +215,10 @@ INSERT INTO messages (user_id, chat_id, text, created) values (7, 1, 'random tex
                                                               (9, 3, 'random text 7', '2020-10-24T12:46:00+00:00'),
                                                               (10, 4, 'random text 8', '2020-10-24T12:47:00+00:00'),
                                                               (11, 5, 'random text 9', '2020-10-24T12:48:00+00:00');
+
+
+INSERT INTO messages (info, chat_id, text, created) values (true, 1, 'videocall 1', '2020-10-23T12:47:00+00:00'),
+                                                          (true, 1, 'videocall 2', '2020-10-24T12:40:01+00:00'),
+                                                          (true, 3,  'videocall 3', '2020-10-24T12:48:00+00:00'),
+                                                          (true, 4, 'videocall 4', '2020-10-24T12:49:00+00:00');
 `

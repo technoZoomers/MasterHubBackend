@@ -128,3 +128,12 @@ func CreateAnswerChatsJson(writer http.ResponseWriter, statusCode int, chats mas
 	}
 	createAnswerJson(writer, statusCode, marshalledChats)
 }
+
+func CreateAnswerMessagesJson(writer http.ResponseWriter, statusCode int, messages masterhub_models.Messages) {
+	marshalledMessages, err := json.Marshal(messages)
+	if err != nil {
+		jsonError := fmt.Errorf("error marshalling json: %v", err.Error())
+		logger.Error(jsonError)
+	}
+	createAnswerJson(writer, statusCode, marshalledMessages)
+}

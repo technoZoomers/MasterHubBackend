@@ -80,6 +80,22 @@ func (chatsUC *ChatsUC) validateStudent(studentId int64) error {
 	return nil
 }
 
+func (chatsUC *ChatsUC) matchMessage (messageDB *models.MessageDB, message *models.Message) error {
+	message.Id = messageDB.Id
+	if messageDB.UserId != chatsUC.useCases.errorId {
+		message.AuthorId = messageDB.UserId
+	}
+	message.ChatId = messageDB.ChatId
+	message.Created = messageDB.Created
+	message.Text = messageDB.Text
+	if messageDB.Info {
+		message.Type = 2 //TODO: refactor types!!!
+	} else {
+		message.Type = 1
+	}
+	return nil
+}
+
 func (chatsUC *ChatsUC) matchChat (chatDB *models.ChatDB, chat *models.Chat) error {
 	chat.Id = chatDB.Id
 	chat.Type = chatDB.Type
@@ -253,4 +269,26 @@ func (chatsUC *ChatsUC) ChangeChatStatus(chat *models.Chat, masterId int64, chat
 		return err
 	}
 	return nil
+}
+
+func (chatsUC *ChatsUC) GetMessagesByChatId(chatId int64) (models.Messages, error) {
+	messages := make([]models.Message, 0)
+	var chatExists models.ChatDB
+	err := chatsUC.validateChat(&chatExists, chatId)
+	if err != nil {
+		return messages, err
+	}
+	messagesDB, err := chatsUC.ChatsRepo.GetMessagesByChatId(chatId)
+	if err != nil {
+		return messages, fmt.Errorf(chatsUC.useCases.errorMessages.DbError)
+	}
+	for _, messageDB := range messagesDB {
+			var message models.Message
+			err = chatsUC.matchMessage(&messageDB, &message)
+			if err != nil {
+				return messages, err
+			}
+			messages = append(messages, message)
+	}
+	return messages, nil
 }

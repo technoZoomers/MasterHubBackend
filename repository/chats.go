@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/google/logger"
 	"github.com/technoZoomers/MasterHubBackend/models"
@@ -178,4 +179,35 @@ func (chatsRepo *ChatsRepo) ChangeChatType(chat *models.ChatDB) error {
 		return err
 	}
 	return nil
+}
+func(chatsRepo *ChatsRepo) GetMessagesByChatId(chatId int64) ([]models.MessageDB, error) {
+	var dbError error
+	messages := make([]models.MessageDB, 0)
+	transaction, err := chatsRepo.repository.startTransaction()
+	if err != nil {
+		return messages, err
+	}
+	rows, err := transaction.Query(`SELECT * FROM messages WHERE chat_id = $1`, chatId)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve messages: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return messages, dbError
+	}
+	for rows.Next() {
+		var userId sql.NullInt64
+		var messageFound models.MessageDB
+		err = rows.Scan(&messageFound.Id, &messageFound.Info, &userId, &messageFound.ChatId, &messageFound.Text, &messageFound.Created)
+		if err != nil {
+			dbError = fmt.Errorf("failed to retrieve message: %v", err)
+			logger.Errorf(dbError.Error())
+			return messages, dbError
+		}
+		messageFound.UserId = checkNullValueInt64(userId)
+		messages = append(messages, messageFound)
+	}
+	err = chatsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return messages, err
+	}
+	return messages, nil
 }

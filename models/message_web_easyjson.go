@@ -26,7 +26,7 @@ func easyjson83e04af4DecodeGithubComTechnoZoomersMasterHubBackendModels(in *jlex
 		in.Delim('[')
 		if *out == nil {
 			if !in.IsDelim(']') {
-				*out = make(Messages, 0, 1)
+				*out = make(Messages, 0, 0)
 			} else {
 				*out = Messages{}
 			}
@@ -108,6 +108,8 @@ func easyjson83e04af4DecodeGithubComTechnoZoomersMasterHubBackendModels1(in *jle
 			out.Type = int64(in.Int64())
 		case "author_id":
 			out.AuthorId = int64(in.Int64())
+		case "chat_id":
+			out.ChatId = int64(in.Int64())
 		case "text":
 			out.Text = string(in.String())
 		case "created":
@@ -142,6 +144,11 @@ func easyjson83e04af4EncodeGithubComTechnoZoomersMasterHubBackendModels1(out *jw
 		const prefix string = ",\"author_id\":"
 		out.RawString(prefix)
 		out.Int64(int64(in.AuthorId))
+	}
+	{
+		const prefix string = ",\"chat_id\":"
+		out.RawString(prefix)
+		out.Int64(int64(in.ChatId))
 	}
 	{
 		const prefix string = ",\"text\":"

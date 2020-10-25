@@ -8,4 +8,5 @@ type ChatsRepoI interface {
 	GetChatByStudentIdAndMasterId(chat *models.ChatDB) error
 	GetChatById(chat *models.ChatDB, chatId int64) error
 	ChangeChatType(chat *models.ChatDB) error
+	GetMessagesByChatId(chatId int64) ([]models.MessageDB, error)
 }

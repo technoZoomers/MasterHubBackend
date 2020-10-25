@@ -39,7 +39,9 @@ func (ch *ChatsHandlers) validateUserId(writer http.ResponseWriter, req *http.Re
 func (ch *ChatsHandlers) validateChatId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
 	return ch.handlers.validateId(writer, req, "chatId", "chat")
 }
-
+func (ch *ChatsHandlers) validateChatIdSimple(writer http.ResponseWriter, req *http.Request) (bool, int64) {
+	return ch.handlers.validateId(writer, req, "id", "chat")
+}
 func (ch *ChatsHandlers) parseChatsQuery(query url.Values, chatsQuery *models.ChatsQueryValues) error {
 	offsetString := query.Get(ch.ChatsQueryKeys.Offset)
 	if offsetString != "" {
@@ -126,6 +128,15 @@ func (ch *ChatsHandlers) ChangeChatStatus(writer http.ResponseWriter, req *http.
 	ch.answerChat(writer, chatRequest, http.StatusCreated, err)
 }
 
+func (ch *ChatsHandlers) GetMessagesByChatId(writer http.ResponseWriter, req *http.Request) {
+	sent, chatId := ch.validateChatIdSimple(writer, req)
+	if sent {
+		return
+	}
+	messages, err := ch.ChatsUC.GetMessagesByChatId(chatId)
+	ch.answerMessages(writer, messages, err)
+}
+
 func (ch *ChatsHandlers) answerChatsQuery(writer http.ResponseWriter, chats []models.Chat, err error) {
 	sent := ch.handlers.handleErrorBadQueryParameter(writer, err)
 	if !sent {
@@ -133,6 +144,12 @@ func (ch *ChatsHandlers) answerChatsQuery(writer http.ResponseWriter, chats []mo
 	}
 }
 
+func (ch *ChatsHandlers) answerMessages(writer http.ResponseWriter, messages []models.Message, err error) {
+	sent := ch.handlers.handleError(writer, err)
+	if !sent {
+		utils.CreateAnswerMessagesJson(writer, http.StatusOK, messages)
+	}
+}
 func (ch *ChatsHandlers) answerChat(writer http.ResponseWriter, chat models.Chat, statusCode int, err error) {
 	sent := ch.handlers.handleError(writer, err)
 	if !sent {
