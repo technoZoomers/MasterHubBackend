@@ -2,7 +2,6 @@ package repository
 
 const TABLES_DROPPING = `
 DROP TABLE IF EXISTS messages;
-DROP TABLE IF EXISTS info_messages;
 DROP TABLE IF EXISTS chats;
 DROP TABLE IF EXISTS videos_subthemes;
 DROP TABLE IF EXISTS videos;

@@ -13,14 +13,14 @@ import (
 )
 
 type ChatsHandlers struct {
-	handlers     *Handlers
-	ChatsUC useCases.ChatsUCInterface
+	handlers       *Handlers
+	ChatsUC        useCases.ChatsUCInterface
 	ChatsQueryKeys ChatsQueryKeys
 }
 
 type ChatsQueryKeys struct {
-	Type string
-	Limit string
+	Type   string
+	Limit  string
 	Offset string
 }
 
@@ -47,7 +47,7 @@ func (ch *ChatsHandlers) parseChatsQuery(query url.Values, chatsQuery *models.Ch
 	if offsetString != "" {
 		offset, err := strconv.ParseInt(offsetString, 10, 64)
 		if err != nil {
-			return fmt.Errorf("error parsing query parameter %s: %v",ch.ChatsQueryKeys.Offset, err.Error())
+			return fmt.Errorf("error parsing query parameter %s: %v", ch.ChatsQueryKeys.Offset, err.Error())
 		}
 		chatsQuery.Offset = offset
 	}
@@ -104,7 +104,6 @@ func (ch *ChatsHandlers) CreateChatRequest(writer http.ResponseWriter, req *http
 	err = ch.ChatsUC.CreateChatRequest(&chatRequest, studentId)
 	ch.answerChat(writer, chatRequest, http.StatusCreated, err)
 }
-
 
 func (ch *ChatsHandlers) ChangeChatStatus(writer http.ResponseWriter, req *http.Request) {
 	var err error

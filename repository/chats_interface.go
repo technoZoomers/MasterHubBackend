@@ -9,4 +9,5 @@ type ChatsRepoI interface {
 	GetChatById(chat *models.ChatDB, chatId int64) error
 	ChangeChatType(chat *models.ChatDB) error
 	GetMessagesByChatId(chatId int64) ([]models.MessageDB, error)
+	InsertMessage(message *models.MessageDB) error
 }

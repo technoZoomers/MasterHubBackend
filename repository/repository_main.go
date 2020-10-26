@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/jackc/pgx"
+	"github.com/technoZoomers/MasterHubBackend/models"
 )
 
 type Repository struct {
@@ -18,6 +19,7 @@ type Repository struct {
 	VideosRepo    *VideosRepo
 	AvatarsRepo   *AvatarsRepo
 	ChatsRepo *ChatsRepo
+	WebsocketsRepo *WebsocketsRepo
 }
 
 func (repository *Repository) Init(config pgx.ConnConfig) error {
@@ -54,6 +56,13 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 			"master" : 1,
 			"student" : 2,
 		}}
+	repository.WebsocketsRepo = &WebsocketsRepo{
+		repository: repository,
+		userConnMap: make(map[int64]string),
+		clientsMap:          make(map[string]*models.WebsocketConnection),
+		NewClients:    make(chan *models.WebsocketConnection),
+		DroppedClients: make(chan *models.WebsocketConnection),
+		Messages:    make(chan models.WebsocketMessage)}
 	return nil
 }
 

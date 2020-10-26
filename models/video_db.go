@@ -11,6 +11,6 @@ type VideoDB struct {
 	Description string
 	Intro       bool
 	Theme       int64
-	Rating int64
+	Rating      int64
 	Uploaded    time.Time
 }

@@ -14,23 +14,23 @@ import (
 )
 
 type VideosHandlers struct {
-	handlers     *Handlers
-	VideosUC useCases.VideosUCInterface
+	handlers         *Handlers
+	VideosUC         useCases.VideosUCInterface
 	VideoParseConfig VideoParseConfig
-	VideosQueryKeys VideosQueryKeys
+	VideosQueryKeys  VideosQueryKeys
 }
 
 type VideosQueryKeys struct {
 	Subtheme string
-	Theme string
-	Popular string
-	Old string
-	Limit string
-	Offset string
+	Theme    string
+	Popular  string
+	Old      string
+	Limit    string
+	Offset   string
 }
 
 type VideoParseConfig struct {
-	FormDataKey string
+	FormDataKey  string
 	VideoFormats map[string]bool
 }
 
@@ -50,7 +50,7 @@ func (vh *VideosHandlers) UploadIntro(writer http.ResponseWriter, req *http.Requ
 	vh.uploadVideo(writer, req, true)
 }
 
-func (vh *VideosHandlers) getFileFromFormData (writer http.ResponseWriter, req *http.Request) (bool, multipart.File, error) {
+func (vh *VideosHandlers) getFileFromFormData(writer http.ResponseWriter, req *http.Request) (bool, multipart.File, error) {
 	file, fileHeader, err := req.FormFile(vh.VideoParseConfig.FormDataKey)
 	if err != nil {
 		parseError := fmt.Errorf("error parsing video: %v", err.Error())
@@ -67,7 +67,7 @@ func (vh *VideosHandlers) getFileFromFormData (writer http.ResponseWriter, req *
 	return false, file, err
 }
 
-func (vh *VideosHandlers) uploadVideo (writer http.ResponseWriter, req *http.Request, intro bool) {
+func (vh *VideosHandlers) uploadVideo(writer http.ResponseWriter, req *http.Request, intro bool) {
 	var err error
 	var videoData models.VideoData
 	sent, masterId := vh.validateMasterId(writer, req)
@@ -117,15 +117,15 @@ func (vh *VideosHandlers) getVideo(writer http.ResponseWriter, req *http.Request
 	}
 }
 
-func (vh *VideosHandlers) GetVideoById (writer http.ResponseWriter, req *http.Request) {
+func (vh *VideosHandlers) GetVideoById(writer http.ResponseWriter, req *http.Request) {
 	vh.getVideo(writer, req, false)
 }
 
-func (vh *VideosHandlers) GetIntro (writer http.ResponseWriter, req *http.Request) {
+func (vh *VideosHandlers) GetIntro(writer http.ResponseWriter, req *http.Request) {
 	vh.getVideo(writer, req, true)
 }
 
-func (vh *VideosHandlers) ChangeIntro (writer http.ResponseWriter, req *http.Request) {
+func (vh *VideosHandlers) ChangeIntro(writer http.ResponseWriter, req *http.Request) {
 	var err error
 	var videoData models.VideoData
 	sent, masterId := vh.validateMasterId(writer, req)
@@ -140,7 +140,7 @@ func (vh *VideosHandlers) ChangeIntro (writer http.ResponseWriter, req *http.Req
 	vh.answerIntroPut(writer, videoData, http.StatusOK, err)
 }
 
-func (vh *VideosHandlers) deleteVideo (writer http.ResponseWriter, req *http.Request, intro bool) {
+func (vh *VideosHandlers) deleteVideo(writer http.ResponseWriter, req *http.Request, intro bool) {
 	var err error
 	sent, masterId := vh.validateMasterId(writer, req)
 	if sent {
@@ -158,11 +158,11 @@ func (vh *VideosHandlers) deleteVideo (writer http.ResponseWriter, req *http.Req
 	vh.answerEmpty(writer, http.StatusOK, err)
 }
 
-func (vh *VideosHandlers) DeleteVideoById (writer http.ResponseWriter, req *http.Request) {
+func (vh *VideosHandlers) DeleteVideoById(writer http.ResponseWriter, req *http.Request) {
 	vh.deleteVideo(writer, req, false)
 }
 
-func (vh *VideosHandlers) DeleteIntro (writer http.ResponseWriter, req *http.Request) {
+func (vh *VideosHandlers) DeleteIntro(writer http.ResponseWriter, req *http.Request) {
 	vh.deleteVideo(writer, req, true)
 }
 
@@ -237,7 +237,6 @@ func (vh *VideosHandlers) ChangeIntroData(writer http.ResponseWriter, req *http.
 	vh.answerIntroPut(writer, videoData, http.StatusOK, err)
 }
 
-
 func (vh *VideosHandlers) parseVideosQuery(query url.Values, videosQuery *models.VideosQueryValues) error {
 	videosQuery.Subtheme = query[vh.VideosQueryKeys.Subtheme]
 	videosQuery.Theme = query.Get(vh.VideosQueryKeys.Theme)
@@ -292,7 +291,6 @@ func (vh *VideosHandlers) Get(writer http.ResponseWriter, req *http.Request) {
 	videos, err := vh.VideosUC.Get(videosQuery)
 	vh.answerVideosQuery(writer, videos, err)
 }
-
 
 func (vh *VideosHandlers) answerIntroPost(writer http.ResponseWriter, videoData models.VideoData, statusCode int, err error) {
 	sent := vh.handlers.handleErrorConflict(writer, err)

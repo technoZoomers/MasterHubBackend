@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 	"github.com/technoZoomers/MasterHubBackend/models"
 	"github.com/technoZoomers/MasterHubBackend/useCases"
 	"github.com/technoZoomers/MasterHubBackend/utils"
@@ -13,37 +14,38 @@ import (
 )
 
 type Handlers struct {
-	UsersHandlers     *UsersHandlers
-	MastersHandlers   *MastersHandlers
-	StudentsHandlers  *StudentsHandlers
-	LanguagesHandlers *LanguagesHandlers
-	ThemesHandlers    *ThemesHandlers
-	VideosHandlers    *VideosHandlers
-	AvatarsHandlers   *AvatarsHandlers
-	ChatsHandlers *ChatsHandlers
-	badRequestError *models.BadRequestError
-	conflictError *models.ConflictError
-	noContentError *models.NoContentError
+	UsersHandlers          *UsersHandlers
+	MastersHandlers        *MastersHandlers
+	StudentsHandlers       *StudentsHandlers
+	LanguagesHandlers      *LanguagesHandlers
+	ThemesHandlers         *ThemesHandlers
+	VideosHandlers         *VideosHandlers
+	AvatarsHandlers        *AvatarsHandlers
+	ChatsHandlers          *ChatsHandlers
+	WSHandlers             *WSHandlers
+	badRequestError        *models.BadRequestError
+	conflictError          *models.ConflictError
+	noContentError         *models.NoContentError
 	badQueryParameterError *models.BadQueryParameterError
 }
 
 func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useCases.MastersUCInterface, studentsUC useCases.StudentsUCInterface,
 	themesUC useCases.ThemesUCInterface, languagesUC useCases.LanguagesUCInterface,
 	videosUC useCases.VideosUCInterface, avatarsUC useCases.AvatarsUCInterface,
-	chatsUC useCases.ChatsUCInterface) error {
+	chatsUC useCases.ChatsUCInterface, wsUC useCases.WebsocketsUCInterface) error {
 	handlers.UsersHandlers = &UsersHandlers{handlers, usersUC}
 	handlers.MastersHandlers = &MastersHandlers{
-		handlers: handlers,
+		handlers:  handlers,
 		MastersUC: mastersUC,
-		MastersQueryKeys:MastersQueryKeys{
+		MastersQueryKeys: MastersQueryKeys{
 			Subtheme:        "subtheme",
 			Theme:           "theme",
 			Qualification:   "qualification",
 			EducationFormat: "educationFormat",
 			Language:        "language",
-			Search: "search",
-			Limit: "limit",
-			Offset: "offset",
+			Search:          "search",
+			Limit:           "limit",
+			Offset:          "offset",
 		},
 	}
 	handlers.StudentsHandlers = &StudentsHandlers{handlers, studentsUC}
@@ -51,35 +53,47 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 	handlers.ThemesHandlers = &ThemesHandlers{handlers, themesUC}
 	handlers.AvatarsHandlers = &AvatarsHandlers{handlers, avatarsUC}
 	handlers.VideosHandlers = &VideosHandlers{
-		handlers:handlers,
-		VideosUC:videosUC,
-	VideoParseConfig:VideoParseConfig{
-		FormDataKey:  "video",
-		VideoFormats: map[string]bool{
-			"video/webm":               true,
-			"audio/ogg":                true,
-			"video/mp4":                true,
-			"video/quicktime":          true,
-			"video/x-msvideo":          true,
-			"application/octet-stream": true,
+		handlers: handlers,
+		VideosUC: videosUC,
+		VideoParseConfig: VideoParseConfig{
+			FormDataKey: "video",
+			VideoFormats: map[string]bool{
+				"video/webm":               true,
+				"audio/ogg":                true,
+				"video/mp4":                true,
+				"video/quicktime":          true,
+				"video/x-msvideo":          true,
+				"application/octet-stream": true,
+			},
 		},
-	},
-		VideosQueryKeys:VideosQueryKeys{
-			Subtheme:        "subtheme",
-			Theme:           "theme",
-			Old: "old",
-			Popular: "popular",
-			Limit: "limit",
-			Offset: "offset",
+		VideosQueryKeys: VideosQueryKeys{
+			Subtheme: "subtheme",
+			Theme:    "theme",
+			Old:      "old",
+			Popular:  "popular",
+			Limit:    "limit",
+			Offset:   "offset",
 		}}
 	handlers.ChatsHandlers = &ChatsHandlers{
 		handlers: handlers,
-		ChatsUC: chatsUC,
+		ChatsUC:  chatsUC,
 		ChatsQueryKeys: ChatsQueryKeys{
-			Type: "type",
-			Limit: "limit",
+			Type:   "type",
+			Limit:  "limit",
 			Offset: "offset",
 		},
+	}
+	handlers.WSHandlers = &WSHandlers{
+		handlers: handlers,
+		ChatsUC: chatsUC,
+		upgrader: websocket.Upgrader{
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
+			CheckOrigin: func(r *http.Request) bool { // TODO: fix this
+				return true
+			},
+		},
+		WebsocketsUC: wsUC,
 	}
 	return nil
 }

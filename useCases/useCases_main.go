@@ -11,13 +11,15 @@ type UseCases struct {
 	VideosUC      *VideosUC
 	AvatarsUC     *AvatarsUC
 	ChatsUC *ChatsUC
+	WebsocketsUC *WebsocketsUC
 	errorMessages ErrorMessagesUC
 	errorId int64
 }
 
 func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repository.MastersRepoI, studentsRepo repository.StudentsRepoI,
 	themesRepo repository.ThemesRepoI, languagesRepo repository.LanguagesRepoI,
-	videosRepo repository.VideosRepoI, avatarsRepo repository.AvatarsRepoI, chatsRepo repository.ChatsRepoI) error {
+	videosRepo repository.VideosRepoI, avatarsRepo repository.AvatarsRepoI, chatsRepo repository.ChatsRepoI,
+	wsRepo repository.WebsocketsRepo) error {
 	useCases.UsersUC = &UsersUC{useCases, usersRepo}
 	useCases.MastersUC = &MastersUC{
 		useCases:useCases,
@@ -77,6 +79,12 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 			},
 	},
 	}
+	useCases.WebsocketsUC = &WebsocketsUC{
+		useCases: useCases,
+		WebsocketsRepo :wsRepo,
+		ChatsRepo : chatsRepo,
+	}
+	go useCases.WebsocketsUC.Start()
 	useCases.errorMessages = ErrorMessagesUC{
 		DbError: "database internal error",
 		FileErrors: FileErrors{

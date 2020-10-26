@@ -211,3 +211,28 @@ func(chatsRepo *ChatsRepo) GetMessagesByChatId(chatId int64) ([]models.MessageDB
 	}
 	return messages, nil
 }
+
+func (chatsRepo *ChatsRepo) InsertMessage(message *models.MessageDB) error {
+	var dbError error
+	transaction, err := chatsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	row := transaction.QueryRow("INSERT INTO messages (info, user_id, chat_id, text, created) values ($1, $2, $3, $4, $5) returning id",
+		message.Info, message.UserId, message.ChatId, message.Text, message.Created)
+	err = row.Scan(&message.Id)
+	if err != nil {
+		dbError = fmt.Errorf("failed to insert chat: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		errRollback := chatsRepo.repository.rollbackTransaction(transaction)
+		if errRollback != nil {
+			return errRollback
+		}
+		return dbError
+	}
+	err = chatsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}

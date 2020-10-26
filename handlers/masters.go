@@ -13,20 +13,20 @@ import (
 )
 
 type MastersHandlers struct {
-	handlers     *Handlers
-	MastersUC useCases.MastersUCInterface
+	handlers         *Handlers
+	MastersUC        useCases.MastersUCInterface
 	MastersQueryKeys MastersQueryKeys
 }
 
 type MastersQueryKeys struct {
-	Subtheme string
-	Theme string
-	Qualification string
+	Subtheme        string
+	Theme           string
+	Qualification   string
 	EducationFormat string
-	Language string
-	Search string
-	Limit string
-	Offset string
+	Language        string
+	Search          string
+	Limit           string
+	Offset          string
 }
 
 func (mh *MastersHandlers) validateMasterId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
@@ -106,7 +106,6 @@ func (mh *MastersHandlers) Get(writer http.ResponseWriter, req *http.Request) {
 	mh.answerMasters(writer, masters, err)
 }
 
-
 func (mh *MastersHandlers) answerMaster(writer http.ResponseWriter, master models.Master, err error) {
 	sent := mh.handlers.handleErrorConflict(writer, err)
 	if !sent {
@@ -120,4 +119,3 @@ func (mh *MastersHandlers) answerMasters(writer http.ResponseWriter, masters mod
 		utils.CreateAnswerMastersJson(writer, http.StatusOK, masters)
 	}
 }
-

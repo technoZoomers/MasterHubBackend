@@ -8,7 +8,7 @@ import (
 )
 
 type ThemesHandlers struct {
-	handlers     *Handlers
+	handlers *Handlers
 	ThemesUC useCases.ThemesUCInterface
 }
 

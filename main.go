@@ -59,7 +59,7 @@ func main() {
 	mhuseCases := useCases.UseCases{}
 
 	err = mhuseCases.Init(repo.UsersRepo, repo.MastersRepo, repo.StudentsRepo, repo.ThemesRepo, repo.LanguagesRepo,
-		repo.VideosRepo, repo.AvatarsRepo, repo.ChatsRepo)
+		repo.VideosRepo, repo.AvatarsRepo, repo.ChatsRepo, *repo.WebsocketsRepo)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize useCases: %v", err)
 	}
@@ -69,7 +69,7 @@ func main() {
 	mhHandlers := masterHub_handlers.Handlers{}
 
 	err = mhHandlers.Init(mhuseCases.UsersUC, mhuseCases.MastersUC, mhuseCases.StudentsUC, mhuseCases.ThemesUC, mhuseCases.LanguagesUC,
-		mhuseCases.VideosUC, mhuseCases.AvatarsUC, mhuseCases.ChatsUC)
+		mhuseCases.VideosUC, mhuseCases.AvatarsUC, mhuseCases.ChatsUC, mhuseCases.WebsocketsUC)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize handlers: %v", err)
 	}
@@ -80,6 +80,7 @@ func main() {
 
 	// users
 	r.HandleFunc("/users/{id}/chats", mhHandlers.ChatsHandlers.GetChatsByUserId).Methods("GET")
+	r.HandleFunc("/users/{id}/interactions", mhHandlers.WSHandlers.UpgradeConnection)
 
 	//languages
 
