@@ -33,7 +33,7 @@ func (wsHandlers *WSHandlers) UpgradeConnection (writer http.ResponseWriter, req
 		UserId:userId,
 		Connection: connection,
 	}
-	go wsHandlers.listenClient(websocketConnection)
+	wsHandlers.listenClient(websocketConnection)
 }
 
 func (wsHandlers *WSHandlers) listenClient(clientConn *models.WebsocketConnection) {
@@ -48,15 +48,10 @@ func (wsHandlers *WSHandlers) listenClient(clientConn *models.WebsocketConnectio
 		var wsMessage models.WebsocketMessage
 		err = wsMessage.UnmarshalJSON(message)
 		if err != nil {
-			parseError := fmt.Errorf("error parsing message from ws: %v", err.Error())
-			logger.Errorf(parseError.Error())
 			wsHandlers.WebsocketsUC.RemoveClient(clientConn)
 		}
-		if clientConn.UserId != wsMessage.Message.AuthorId {
-			requestError := fmt.Errorf("request forgery from ws: %v", err.Error())
-			logger.Errorf(requestError.Error())
-			wsHandlers.WebsocketsUC.RemoveClient(clientConn)
+		if clientConn.UserId == wsMessage.Message.AuthorId {
+			wsHandlers.WebsocketsUC.SendMessage(wsMessage)
 		}
-		wsHandlers.WebsocketsUC.SendMessage(wsMessage)
 	}
 }

@@ -6,6 +6,7 @@ require (
 	github.com/cockroachdb/apd v1.1.0 // indirect
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/google/logger v1.1.0
+	github.com/google/uuid v1.1.2
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
@@ -14,8 +15,7 @@ require (
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/lib/pq v1.8.0 // indirect
 	github.com/mailru/easyjson v0.7.6
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/shopspring/decimal v1.2.0
+	go.mongodb.org/mongo-driver v1.4.2
 	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0 // indirect
-	golang.org/x/text v0.3.3 // indirect
 )

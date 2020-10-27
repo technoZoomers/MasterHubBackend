@@ -2,6 +2,7 @@ package useCases
 
 type ErrorMessagesUC struct {
 	DbError    string
+	InternalServerError string
 	FileErrors FileErrors
 }
 

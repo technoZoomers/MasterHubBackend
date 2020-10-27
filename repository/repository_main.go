@@ -1,15 +1,21 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"github.com/google/logger"
 	"github.com/jackc/pgx"
 	"github.com/technoZoomers/MasterHubBackend/models"
+	"github.com/technoZoomers/MasterHubBackend/utils"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
 )
 
 type Repository struct {
 	DbConnections int
+	mongoDB *mongo.Database
 	pool          *pgx.ConnPool
 	UsersRepo     *UsersRepo
 	StudentsRepo  *StudentsRepo
@@ -20,6 +26,7 @@ type Repository struct {
 	AvatarsRepo   *AvatarsRepo
 	ChatsRepo *ChatsRepo
 	WebsocketsRepo *WebsocketsRepo
+	CookiesRepo *CookiesRepo
 }
 
 func (repository *Repository) Init(config pgx.ConnConfig) error {
@@ -63,6 +70,50 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 		NewClients:    make(chan *models.WebsocketConnection),
 		DroppedClients: make(chan *models.WebsocketConnection),
 		Messages:    make(chan models.WebsocketMessage)}
+	repository.CookiesRepo = &CookiesRepo{
+		repository: repository,
+		userKey: "user",
+		cookieKey: "cookie",
+		collectionName: "cookies",
+	}
+	//err = repository.InitMongoDB(config.Host)
+	//if err != nil {
+	//	return err
+	//}
+	return nil
+}
+
+func (repository *Repository) InitMongoDB (host string) error {
+	clientOptions := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:27017", host))
+	client, err := mongo.Connect(context.TODO(), clientOptions)
+	if err != nil {
+		dbError := fmt.Errorf("can't connect to mongodb: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return err
+	}
+	err = client.Ping(context.TODO(), nil)
+	if err != nil {
+		dbError := fmt.Errorf("can't ping mongodb: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return err
+	}
+	repository.mongoDB = client.Database(utils.DBName)
+	//err = repository.dropCollections()
+	//if err != nil {
+	//	return err
+	//}
+	return nil
+}
+
+// mongo collection drop
+
+func (repository *Repository) dropCollections() error {
+	err := repository.mongoDB.Collection(repository.CookiesRepo.collectionName).Drop(context.TODO())
+	if err != nil {
+		dbError := fmt.Errorf("can't drop cookies collection: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return err
+	}
 	return nil
 }
 

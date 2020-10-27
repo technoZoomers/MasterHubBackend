@@ -27,6 +27,9 @@ type Handlers struct {
 	conflictError          *models.ConflictError
 	noContentError         *models.NoContentError
 	badQueryParameterError *models.BadQueryParameterError
+	contextUserKey string
+	contextCookieKey string
+	cookieString string
 }
 
 func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useCases.MastersUCInterface, studentsUC useCases.StudentsUCInterface,
@@ -95,6 +98,9 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 		},
 		WebsocketsUC: wsUC,
 	}
+	handlers.cookieString = "user_session"
+	handlers.contextCookieKey = "cookie_key"
+	handlers.contextUserKey = "user_key"
 	return nil
 }
 

@@ -10,6 +10,7 @@ import (
 type UsersUC struct {
 	useCases  *UseCases
 	UsersRepo repository.UsersRepoI
+	CookiesRepo repository.CookiesRepoI
 }
 
 func (usersUC *UsersUC) GetUserById(user *models.User) error {
@@ -60,5 +61,49 @@ func (usersUC *UsersUC) Login(user *models.User) error {
 	user.Id = userDB.Id
 	user.Type = userDB.Type
 	user.Created = userDB.Created
+	return nil
+}
+
+func (usersUC *UsersUC) GetUserByCookie(cookieValue string, user *models.User) error {
+	var cookieDB models.CookieDB
+	var userDB models.UserDB
+	err := usersUC.CookiesRepo.GetUserByCookie(cookieValue, &cookieDB)
+	if err != nil {
+		return fmt.Errorf(usersUC.useCases.errorMessages.DbError)
+	}
+	if cookieDB.User == usersUC.useCases.errorId {
+		absenceError := &models.BadRequestError{Message: "no user with this cookie exists"}
+		logger.Errorf(absenceError.Error())
+		return absenceError
+	}
+	err = usersUC.UsersRepo.GetUserById(&userDB, cookieDB.User)
+	if err != nil {
+		return fmt.Errorf(usersUC.useCases.errorMessages.DbError)
+	}
+	if userDB.Id == usersUC.useCases.errorId {
+		absenceError := &models.BadRequestError{Message: "user was deleted"}
+		logger.Errorf(absenceError.Error())
+		return absenceError
+	}
+	usersUC.matchUser(&userDB, user)
+	return nil
+}
+
+func (usersUC *UsersUC) InsertCookie(userId int64, cookieValue string) error {
+	var cookieInfo models.CookieDB
+	cookieInfo.User = userId
+	cookieInfo.Cookie = cookieValue
+	err := usersUC.CookiesRepo.InsertCookie(&cookieInfo)
+	if err != nil {
+		return fmt.Errorf(usersUC.useCases.errorMessages.DbError)
+	}
+	return nil
+}
+
+func (usersUC *UsersUC) DeleteCookie(cookieValue string) error {
+	err := usersUC.CookiesRepo.DeleteCookie(cookieValue)
+	if err != nil {
+		return fmt.Errorf(usersUC.useCases.errorMessages.DbError)
+	}
 	return nil
 }

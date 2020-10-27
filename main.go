@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx"
 	masterHub_handlers "github.com/technoZoomers/MasterHubBackend/handlers"
+	"github.com/technoZoomers/MasterHubBackend/middleware"
 	"github.com/technoZoomers/MasterHubBackend/repository"
 	"github.com/technoZoomers/MasterHubBackend/useCases"
 	"github.com/technoZoomers/MasterHubBackend/utils"
@@ -39,6 +40,7 @@ func main() {
 	err := repo.Init(pgx.ConnConfig{
 		Database: utils.DBName,
 		Host:     "213.219.214.220",
+		//Host: "localhost",
 		User:     "alexis",
 		Password: "alexis",
 	})
@@ -59,7 +61,7 @@ func main() {
 	mhuseCases := useCases.UseCases{}
 
 	err = mhuseCases.Init(repo.UsersRepo, repo.MastersRepo, repo.StudentsRepo, repo.ThemesRepo, repo.LanguagesRepo,
-		repo.VideosRepo, repo.AvatarsRepo, repo.ChatsRepo, *repo.WebsocketsRepo)
+		repo.VideosRepo, repo.AvatarsRepo, repo.ChatsRepo, *repo.WebsocketsRepo, repo.CookiesRepo)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize useCases: %v", err)
 	}
@@ -74,14 +76,28 @@ func main() {
 		logger.Fatalf("Couldn't initialize handlers: %v", err)
 	}
 
+	// middlewares initialization
+
+	mhMiddlewares := middleware.Middlewares{}
+
+	err = mhMiddlewares.Init(mhuseCases.UsersUC)
+	if err != nil {
+		logger.Fatalf("Couldn't initialize middlewares: %v", err)
+	}
+
 	// router initialization
 
 	r := mux.NewRouter()
 
 	// users
-	r.HandleFunc("/users/login", mhHandlers.UsersHandlers.Login).Methods("POST")
+	r.Handle("/users", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.UsersHandlers.CheckAuth, false)).Methods("GET")
+	//r.Handle("/users/login", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.UsersHandlers.Login, true)).Methods("POST")
+	//r.Handle("/users/{id}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.UsersHandlers.GetUserById, true)).Methods("GET")
+	//r.Handle("/users/{id}/chats", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.GetChatsByUserId, true)).Methods("GET")
+	r.HandleFunc("/users/login",mhHandlers.UsersHandlers.Login).Methods("POST")
 	r.HandleFunc("/users/{id}", mhHandlers.UsersHandlers.GetUserById).Methods("GET")
 	r.HandleFunc("/users/{id}/chats", mhHandlers.ChatsHandlers.GetChatsByUserId).Methods("GET")
+
 	r.HandleFunc("/users/{id}/interactions", mhHandlers.WSHandlers.UpgradeConnection)
 
 
