@@ -23,6 +23,7 @@ func (usersUC *UsersUC) GetUserById(user *models.User) error {
 	return nil
 }
 func (usersUC *UsersUC) matchUser(userDB *models.UserDB, user *models.User) {
+	user.Id = userDB.Id
 	user.Email = userDB.Email
 	user.Password = userDB.Password // TODO: HASH
 	user.Type = userDB.Type

@@ -58,6 +58,10 @@ func (ch *ChatsHandlers) GetChatsByUserId(writer http.ResponseWriter, req *http.
 	if sent {
 		return
 	}
+	sent = ch.handlers.checkUserAuth(writer, req, userId)
+	if sent {
+		return
+	}
 	var chatsQuery models.ChatsQueryValues
 	err := ch.parseChatsQuery(query, &chatsQuery)
 	if err != nil {
@@ -72,6 +76,10 @@ func (ch *ChatsHandlers) GetChatsByUserId(writer http.ResponseWriter, req *http.
 func (ch *ChatsHandlers) CreateChatRequest(writer http.ResponseWriter, req *http.Request) {
 	var err error
 	sent, studentId := ch.handlers.validateStudentId(writer, req)
+	if sent {
+		return
+	}
+	sent = ch.handlers.checkUserAuth(writer, req, studentId)
 	if sent {
 		return
 	}
@@ -93,6 +101,10 @@ func (ch *ChatsHandlers) ChangeChatStatus(writer http.ResponseWriter, req *http.
 	if sent {
 		return
 	}
+	sent = ch.handlers.checkUserAuth(writer, req, masterId)
+	if sent {
+		return
+	}
 	sent, chatId := ch.handlers.validateChatId(writer, req)
 	if sent {
 		return
@@ -111,6 +123,10 @@ func (ch *ChatsHandlers) ChangeChatStatus(writer http.ResponseWriter, req *http.
 
 func (ch *ChatsHandlers) GetMessagesByChatId(writer http.ResponseWriter, req *http.Request) {
 	sent, chatId := ch.handlers.validateChatIdSimple(writer, req)
+	if sent {
+		return
+	}
+	sent = ch.handlers.checkChatAuth(writer, req, chatId)
 	if sent {
 		return
 	}

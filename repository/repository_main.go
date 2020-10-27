@@ -76,10 +76,10 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 		cookieKey: "cookie",
 		collectionName: "cookies",
 	}
-	//err = repository.InitMongoDB(config.Host)
-	//if err != nil {
-	//	return err
-	//}
+	err = repository.InitMongoDB(config.Host)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -30,6 +30,8 @@ type Handlers struct {
 	contextUserKey string
 	contextCookieKey string
 	cookieString string
+	contextAuthorisedKey string
+
 }
 
 func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useCases.MastersUCInterface, studentsUC useCases.StudentsUCInterface,
@@ -101,6 +103,7 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 	handlers.cookieString = "user_session"
 	handlers.contextCookieKey = "cookie_key"
 	handlers.contextUserKey = "user_key"
+	handlers.contextAuthorisedKey = "auth_key"
 	return nil
 }
 
@@ -182,4 +185,62 @@ func (handlers *Handlers) validateThemeId(writer http.ResponseWriter, req *http.
 
 func (handlers *Handlers) validateVideoId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
 	return handlers.validateId(writer, req, "videoId", "video")
+}
+
+func (handlers *Handlers) checkNoAuth(writer http.ResponseWriter, r *http.Request) bool {
+	auth, ok := r.Context().Value(handlers.contextAuthorisedKey).(bool)
+	if !ok {
+		internalError := fmt.Errorf("error getting value from context")
+		logger.Errorf(internalError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(internalError.Error()))
+		return true
+	}
+	if auth {
+		authError := fmt.Errorf("user already logged in")
+		logger.Errorf(authError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusForbidden, models.CreateMessage(authError.Error()))
+		return true
+	}
+	return false
+}
+
+func (handlers *Handlers) checkUserAuth(writer http.ResponseWriter, r *http.Request, userId int64) bool {
+	user, ok := r.Context().Value(handlers.contextUserKey).(models.User)
+	if !ok {
+		internalError := fmt.Errorf("error getting value from context")
+		logger.Errorf(internalError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(internalError.Error()))
+		return true
+	}
+	if user.Id != userId {
+		authError := fmt.Errorf("can't get another users info")
+		logger.Errorf(authError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusForbidden, models.CreateMessage(authError.Error()))
+		return true
+	}
+	return false
+}
+
+func (handlers *Handlers) checkChatAuth(writer http.ResponseWriter, r *http.Request, chatId int64) bool {
+	user, ok := r.Context().Value(handlers.contextUserKey).(models.User)
+	if !ok {
+		internalError := fmt.Errorf("error getting value from context")
+		logger.Errorf(internalError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(internalError.Error()))
+		return true
+	}
+	err := handlers.ChatsHandlers.ChatsUC.CheckChatByUserId(chatId, user.Id)
+	if err != nil {
+		if errors.As(err, &handlers.badRequestError) {
+			authError := fmt.Errorf("can't get chat with user id and chat id")
+			logger.Errorf(authError.Error())
+			utils.CreateErrorAnswerJson(writer, http.StatusForbidden, models.CreateMessage(authError.Error()))
+			return true
+		} else {
+			logger.Errorf(err.Error())
+			utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(err.Error()))
+			return true
+		}
+	}
+	return false
 }

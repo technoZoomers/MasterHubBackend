@@ -19,16 +19,20 @@ func (authMiddleware *AuthMidleware) Auth(httpHandler http.HandlerFunc, passNext
 	return http.HandlerFunc(func(writer http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 		cookie, err := req.Cookie(authMiddleware.middlewares.cookieString)
+		fmt.Println(cookie)
 		if err != nil {
+			ctx = context.WithValue(ctx, authMiddleware.middlewares.contextAuthorisedKey, false)
 			authMiddleware.passNext(passNext, httpHandler, writer, req, ctx)
 			return
 		}
 		var user models.User
 		err = authMiddleware.UserUC.GetUserByCookie(cookie.Value, &user)
 		if err != nil {
+			ctx = context.WithValue(ctx, authMiddleware.middlewares.contextAuthorisedKey, false)
 			authMiddleware.passNext(passNext, httpHandler, writer, req, ctx)
 			return
 		}
+		ctx = context.WithValue(ctx, authMiddleware.middlewares.contextAuthorisedKey, true)
 		ctx = context.WithValue(ctx, authMiddleware.middlewares.contextUserKey, user)
 		ctx = context.WithValue(ctx, authMiddleware.middlewares.contextCookieKey, cookie.Value)
 

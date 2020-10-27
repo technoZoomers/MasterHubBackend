@@ -66,6 +66,10 @@ func (vh *VideosHandlers) uploadVideo(writer http.ResponseWriter, req *http.Requ
 	if sent {
 		return
 	}
+	sent = vh.handlers.checkUserAuth(writer, req, masterId)
+	if sent {
+		return
+	}
 	sent, file, err := vh.getFileFromFormData(writer, req)
 	if sent {
 		return
@@ -124,6 +128,10 @@ func (vh *VideosHandlers) ChangeIntro(writer http.ResponseWriter, req *http.Requ
 	if sent {
 		return
 	}
+	sent = vh.handlers.checkUserAuth(writer, req, masterId)
+	if sent {
+		return
+	}
 	sent, file, err := vh.getFileFromFormData(writer, req)
 	if sent {
 		return
@@ -135,6 +143,10 @@ func (vh *VideosHandlers) ChangeIntro(writer http.ResponseWriter, req *http.Requ
 func (vh *VideosHandlers) deleteVideo(writer http.ResponseWriter, req *http.Request, intro bool) {
 	var err error
 	sent, masterId := vh.handlers.validateMasterId(writer, req)
+	if sent {
+		return
+	}
+	sent = vh.handlers.checkUserAuth(writer, req, masterId)
 	if sent {
 		return
 	}
@@ -194,6 +206,10 @@ func (vh *VideosHandlers) ChangeVideoData(writer http.ResponseWriter, req *http.
 	if sent {
 		return
 	}
+	sent = vh.handlers.checkUserAuth(writer, req, masterId)
+	if sent {
+		return
+	}
 	sent, videoId := vh.handlers.validateVideoId(writer, req)
 	if sent {
 		return
@@ -213,6 +229,10 @@ func (vh *VideosHandlers) ChangeVideoData(writer http.ResponseWriter, req *http.
 func (vh *VideosHandlers) ChangeIntroData(writer http.ResponseWriter, req *http.Request) {
 	var err error
 	sent, masterId := vh.handlers.validateMasterId(writer, req)
+	if sent {
+		return
+	}
+	sent = vh.handlers.checkUserAuth(writer, req, masterId)
 	if sent {
 		return
 	}

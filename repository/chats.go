@@ -158,6 +158,27 @@ func (chatsRepo *ChatsRepo) GetChatById(chat *models.ChatDB, chatId int64) error
 	return nil
 }
 
+func (chatsRepo *ChatsRepo) GetChatByIdAndMasterOrStudentId(chat *models.ChatDB, chatId int64, userId int64) error { //TODO: refactor!!!
+	var dbError error
+	transaction, err := chatsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	row := transaction.QueryRow("SELECT * FROM chats WHERE id = $1 AND (user_id_master=$2 OR user_id_student = $2)", chatId, userId)
+	err = row.Scan(&chat.Id, &chat.MasterId, &chat.StudentId, &chat.Type, &chat.Created)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve chat: %v", err.Error())
+		logger.Errorf(dbError.Error())
+	}
+	err = chatsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+
+
 func (chatsRepo *ChatsRepo) ChangeChatType(chat *models.ChatDB) error {
 	var dbError error
 	transaction, err := chatsRepo.repository.startTransaction()

@@ -273,11 +273,11 @@ func (chatsUC *ChatsUC) ChangeChatStatus(chat *models.Chat, masterId int64, chat
 
 func (chatsUC *ChatsUC) GetMessagesByChatId(chatId int64) (models.Messages, error) {
 	messages := make([]models.Message, 0)
-	var chatExists models.ChatDB
-	err := chatsUC.validateChat(&chatExists, chatId)
-	if err != nil {
-		return messages, err
-	}
+	//var chatExists models.ChatDB
+	//err := chatsUC.validateChat(&chatExists, chatId)
+	//if err != nil {
+	//	return messages, err
+	//}
 	messagesDB, err := chatsUC.ChatsRepo.GetMessagesByChatId(chatId)
 	if err != nil {
 		return messages, fmt.Errorf(chatsUC.useCases.errorMessages.DbError)
@@ -291,4 +291,21 @@ func (chatsUC *ChatsUC) GetMessagesByChatId(chatId int64) (models.Messages, erro
 			messages = append(messages, message)
 	}
 	return messages, nil
+}
+
+func (chatsUC *ChatsUC) CheckChatByUserId(chatId int64, userId int64) error {
+	var chatExists models.ChatDB
+	if chatId == chatsUC.useCases.errorId {
+		return &models.BadRequestError{Message: "incorrect chat id", RequestId: chatId}
+	}
+	err := chatsUC.ChatsRepo.GetChatByIdAndMasterOrStudentId(&chatExists, chatId, userId)
+	if err != nil {
+		return fmt.Errorf(chatsUC.useCases.errorMessages.DbError)
+	}
+	if chatExists.Id == chatsUC.useCases.errorId {
+		absenceError := &models.BadRequestError{Message: "chat doesn't exist", RequestId: chatId}
+		logger.Errorf(absenceError.Error())
+		return absenceError
+	}
+	return nil
 }

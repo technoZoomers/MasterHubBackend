@@ -29,7 +29,6 @@ func main() {
 	//	fmt.Println(f.Name())
 	//}
 
-	fmt.Println("WHAT THE FUCK")
 
 	//database initialization
 
@@ -44,6 +43,8 @@ func main() {
 		User:     "alexis",
 		Password: "alexis",
 	})
+
+	fmt.Println("WHAT THE FUCK")
 
 	//config, err := pgx.ParseConnectionString(os.Getenv("DATABASE_URL"))
 	//if err != nil {
@@ -91,14 +92,12 @@ func main() {
 
 	// users
 	r.Handle("/users", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.UsersHandlers.CheckAuth, false)).Methods("GET")
-	//r.Handle("/users/login", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.UsersHandlers.Login, true)).Methods("POST")
-	//r.Handle("/users/{id}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.UsersHandlers.GetUserById, true)).Methods("GET")
-	//r.Handle("/users/{id}/chats", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.GetChatsByUserId, true)).Methods("GET")
-	r.HandleFunc("/users/login",mhHandlers.UsersHandlers.Login).Methods("POST")
-	r.HandleFunc("/users/{id}", mhHandlers.UsersHandlers.GetUserById).Methods("GET")
-	r.HandleFunc("/users/{id}/chats", mhHandlers.ChatsHandlers.GetChatsByUserId).Methods("GET")
+	r.Handle("/users/login", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.UsersHandlers.Login, true)).Methods("POST")
+	r.Handle("/users/logout", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.UsersHandlers.Logout, false)).Methods("DELETE")
+	r.Handle("/users/{id}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.UsersHandlers.GetUserById, false)).Methods("GET")
+	r.Handle("/users/{id}/chats", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.GetChatsByUserId, false)).Methods("GET")
 
-	r.HandleFunc("/users/{id}/interactions", mhHandlers.WSHandlers.UpgradeConnection)
+	r.Handle("/users/{id}/interactions",  mhMiddlewares.AuthMiddleware.Auth(mhHandlers.WSHandlers.UpgradeConnection, false))
 
 
 	//languages
@@ -113,34 +112,34 @@ func main() {
 	// students
 	r.HandleFunc("/students/create", mhHandlers.StudentsHandlers.Register).Methods("POST")
 	r.HandleFunc("/students/{id}", mhHandlers.StudentsHandlers.GetStudentById).Methods("GET")
-	r.HandleFunc("/students/{id}", mhHandlers.StudentsHandlers.ChangeStudentData).Methods("PUT")
-	r.HandleFunc("/students/{id}/chats", mhHandlers.ChatsHandlers.CreateChatRequest).Methods("POST")
+	r.Handle("/students/{id}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.StudentsHandlers.ChangeStudentData, false)).Methods("PUT")
+	r.Handle("/students/{id}/chats", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.CreateChatRequest, false)).Methods("POST")
 
 
 	//masters
 	r.HandleFunc("/masters", mhHandlers.MastersHandlers.Get).Methods("GET")
 	r.HandleFunc("/masters/create", mhHandlers.MastersHandlers.Register).Methods("POST")
 	r.HandleFunc("/masters/{id}", mhHandlers.MastersHandlers.GetMasterById).Methods("GET")
-	r.HandleFunc("/masters/{id}", mhHandlers.MastersHandlers.ChangeMasterData).Methods("PUT")
-	r.HandleFunc("/masters/{id}/videos/create", mhHandlers.VideosHandlers.Upload).Methods("POST")
+	r.Handle("/masters/{id}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.MastersHandlers.ChangeMasterData, false)).Methods("PUT")
+	r.Handle("/masters/{id}/videos/create", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.Upload, false)).Methods("POST")
 	r.HandleFunc("/masters/{id}/videos/{videoId}", mhHandlers.VideosHandlers.GetVideoById).Methods("GET")
-	r.HandleFunc("/masters/{id}/videos/{videoId}", mhHandlers.VideosHandlers.DeleteVideoById).Methods("DELETE")
+	r.Handle("/masters/{id}/videos/{videoId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.DeleteVideoById, false)).Methods("DELETE")
 	r.HandleFunc("/masters/{id}/videos/{videoId}/data", mhHandlers.VideosHandlers.GetVideoDataById).Methods("GET")
-	r.HandleFunc("/masters/{id}/videos/{videoId}/data", mhHandlers.VideosHandlers.ChangeVideoData).Methods("PUT")
+	r.Handle("/masters/{id}/videos/{videoId}/data", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.ChangeVideoData, false)).Methods("PUT")
 	r.HandleFunc("/masters/{id}/videos", mhHandlers.VideosHandlers.GetVideosByMasterId).Methods("GET")
-	r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.UploadIntro).Methods("POST")
-	r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.ChangeIntro).Methods("PUT")
-	r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.DeleteIntro).Methods("DELETE")
+	r.Handle("/masters/{id}/intro", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.UploadIntro, false)).Methods("POST")
+	r.Handle("/masters/{id}/intro", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.ChangeIntro, false)).Methods("PUT")
+	r.Handle("/masters/{id}/intro", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.DeleteIntro, false)).Methods("DELETE")
 	r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.GetIntro).Methods("GET")
-	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.ChangeIntroData).Methods("PUT")
+	r.Handle("/masters/{id}/intro/data", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.ChangeIntroData, false)).Methods("PUT")
 	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.GetIntroData).Methods("GET")
-	r.HandleFunc("/masters/{id}/chats/{chatId}", mhHandlers.ChatsHandlers.ChangeChatStatus).Methods("PUT")
+	r.Handle("/masters/{id}/chats/{chatId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.ChangeChatStatus, false)).Methods("PUT")
 
 	//videos
 	r.HandleFunc("/videos", mhHandlers.VideosHandlers.Get).Methods("GET")
 
 	//chats
-	r.HandleFunc("/chats/{id}/messages", mhHandlers.ChatsHandlers.GetMessagesByChatId).Methods("GET")
+	r.Handle("/chats/{id}/messages", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.GetMessagesByChatId, false)).Methods("GET")
 
 	cors := handlers.CORS(handlers.AllowCredentials(),handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}), handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS"}), handlers.AllowedOrigins([]string{"*"}))
 

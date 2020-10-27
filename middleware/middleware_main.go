@@ -9,6 +9,7 @@ type Middlewares struct {
 	cookieString string
 	contextUserKey string
 	contextCookieKey string
+	contextAuthorisedKey string
 }
 
 func (middlewares *Middlewares) Init(usersUC useCases.UsersUCInterface) error {
@@ -16,5 +17,6 @@ func (middlewares *Middlewares) Init(usersUC useCases.UsersUCInterface) error {
 	middlewares.cookieString = "user_session"
 	middlewares.contextCookieKey = "cookie_key"
 	middlewares.contextUserKey = "user_key"
+	middlewares.contextAuthorisedKey = "auth_key"
 	return nil
 }
