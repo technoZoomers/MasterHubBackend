@@ -85,7 +85,14 @@ func (uh *UsersHandlers) deleteCookie(cookie *http.Cookie) error {
 }
 
 func (uh *UsersHandlers) CheckAuth(writer http.ResponseWriter, req *http.Request) {
-	utils.CreateEmptyBodyAnswer(writer, http.StatusOK)
+	user, ok := req.Context().Value(uh.handlers.contextUserKey).(models.User)
+	if !ok {
+		internalError := fmt.Errorf("error getting value from context")
+		logger.Errorf(internalError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(internalError.Error()))
+		return
+	}
+	uh.answerUser(writer, user, nil)
 }
 
 func (uh *UsersHandlers) answerUser(writer http.ResponseWriter, user models.User, err error) {
