@@ -24,24 +24,6 @@ type ChatsQueryKeys struct {
 	Offset string
 }
 
-func (ch *ChatsHandlers) validateStudentId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
-	return ch.handlers.validateId(writer, req, "id", "student")
-}
-
-func (ch *ChatsHandlers) validateMasterId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
-	return ch.handlers.validateId(writer, req, "id", "master")
-}
-
-func (ch *ChatsHandlers) validateUserId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
-	return ch.handlers.validateId(writer, req, "id", "user")
-}
-
-func (ch *ChatsHandlers) validateChatId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
-	return ch.handlers.validateId(writer, req, "chatId", "chat")
-}
-func (ch *ChatsHandlers) validateChatIdSimple(writer http.ResponseWriter, req *http.Request) (bool, int64) {
-	return ch.handlers.validateId(writer, req, "id", "chat")
-}
 func (ch *ChatsHandlers) parseChatsQuery(query url.Values, chatsQuery *models.ChatsQueryValues) error {
 	offsetString := query.Get(ch.ChatsQueryKeys.Offset)
 	if offsetString != "" {
@@ -72,7 +54,7 @@ func (ch *ChatsHandlers) parseChatsQuery(query url.Values, chatsQuery *models.Ch
 
 func (ch *ChatsHandlers) GetChatsByUserId(writer http.ResponseWriter, req *http.Request) {
 	query := req.URL.Query()
-	sent, userId := ch.validateUserId(writer, req)
+	sent, userId := ch.handlers.validateUserId(writer, req)
 	if sent {
 		return
 	}
@@ -89,7 +71,7 @@ func (ch *ChatsHandlers) GetChatsByUserId(writer http.ResponseWriter, req *http.
 
 func (ch *ChatsHandlers) CreateChatRequest(writer http.ResponseWriter, req *http.Request) {
 	var err error
-	sent, studentId := ch.validateStudentId(writer, req)
+	sent, studentId := ch.handlers.validateStudentId(writer, req)
 	if sent {
 		return
 	}
@@ -107,11 +89,11 @@ func (ch *ChatsHandlers) CreateChatRequest(writer http.ResponseWriter, req *http
 
 func (ch *ChatsHandlers) ChangeChatStatus(writer http.ResponseWriter, req *http.Request) {
 	var err error
-	sent, masterId := ch.validateMasterId(writer, req)
+	sent, masterId := ch.handlers.validateMasterId(writer, req)
 	if sent {
 		return
 	}
-	sent, chatId := ch.validateChatId(writer, req)
+	sent, chatId := ch.handlers.validateChatId(writer, req)
 	if sent {
 		return
 	}
@@ -128,7 +110,7 @@ func (ch *ChatsHandlers) ChangeChatStatus(writer http.ResponseWriter, req *http.
 }
 
 func (ch *ChatsHandlers) GetMessagesByChatId(writer http.ResponseWriter, req *http.Request) {
-	sent, chatId := ch.validateChatIdSimple(writer, req)
+	sent, chatId := ch.handlers.validateChatIdSimple(writer, req)
 	if sent {
 		return
 	}

@@ -12,9 +12,6 @@ type ThemesHandlers struct {
 	ThemesUC useCases.ThemesUCInterface
 }
 
-func (th *ThemesHandlers) validateThemeId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
-	return th.handlers.validateId(writer, req, "id", "theme")
-}
 
 func (th *ThemesHandlers) Get(writer http.ResponseWriter, req *http.Request) {
 	themes, err := th.ThemesUC.Get()
@@ -22,7 +19,7 @@ func (th *ThemesHandlers) Get(writer http.ResponseWriter, req *http.Request) {
 }
 
 func (th *ThemesHandlers) GetThemeById(writer http.ResponseWriter, req *http.Request) {
-	sent, themeId := th.validateThemeId(writer, req)
+	sent, themeId := th.handlers.validateThemeId(writer, req)
 	if sent {
 		return
 	}

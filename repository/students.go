@@ -27,3 +27,71 @@ func (studentsRepo *StudentsRepo) GetStudentByUserId(student *models.StudentDB) 
 	}
 	return nil
 }
+
+func (studentsRepo *StudentsRepo) GetStudentIdByUsername(student *models.StudentDB) error {
+	var dbError error
+	transaction, err := studentsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	row := transaction.QueryRow("SELECT id FROM students WHERE username=$1", student.Username)
+	err = row.Scan(&student.Id)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve student id: %v", err.Error())
+		logger.Errorf(dbError.Error())
+	}
+	err = studentsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (studentsRepo *StudentsRepo) InsertStudent(student *models.StudentDB) error {
+	var dbError error
+	transaction, err := studentsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	row := transaction.QueryRow("INSERT INTO students (user_id, username, fullname) values ($1, $2, $3) returning id",
+		student.UserId, student.Username, student.Fullname)
+	err = row.Scan(&student.Id)
+	if err != nil {
+		dbError = fmt.Errorf("failed to insert student: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		errRollback := studentsRepo.repository.rollbackTransaction(transaction)
+		if errRollback != nil {
+			return errRollback
+		}
+		return dbError
+	}
+	err = studentsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (studentsRepo *StudentsRepo) UpdateStudent(student *models.StudentDB) error {
+	var dbError error
+	transaction, err := studentsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	_, err = transaction.Exec("UPDATE students SET (username, fullname) = ($1, $2) where id = $3",
+		student.Username, student.Fullname, student.Id)
+	if err != nil {
+		dbError = fmt.Errorf("failed to update student: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		errRollback := studentsRepo.repository.rollbackTransaction(transaction)
+		if errRollback != nil {
+			return errRollback
+		}
+		return dbError
+	}
+	err = studentsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}

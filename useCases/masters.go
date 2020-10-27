@@ -6,11 +6,14 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/technoZoomers/MasterHubBackend/models"
 	"github.com/technoZoomers/MasterHubBackend/repository"
+	"time"
 )
 
 type MastersUC struct {
 	useCases      *UseCases
 	MastersRepo   repository.MastersRepoI
+	StudentsRepo   repository.StudentsRepoI
+	UsersRepo repository.UsersRepoI
 	ThemesRepo    repository.ThemesRepoI
 	LanguagesRepo repository.LanguagesRepoI
 	mastersConfig MastersConfig
@@ -116,7 +119,7 @@ func (mastersUC *MastersUC) setQualification(master *models.Master, qualificatio
 
 func (mastersUC *MastersUC) setLanguages(master *models.Master, masterDB *models.MasterDB) error {
 	var langs []string
-	langsIds, err := mastersUC.MastersRepo.GetMasterLanguagesById(masterDB.Id)
+	langsIds, err := mastersUC.UsersRepo.GetUserLanguagesById(masterDB.UserId)
 	if err != nil {
 		master.Languages = langs
 		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
@@ -219,6 +222,18 @@ func (mastersUC *MastersUC) ChangeMasterData(master *models.Master) error {
 			absenceError := &models.ConflictError{Message: "can't update master, username is already taken", RequestId: master.UserId}
 			logger.Errorf(absenceError.Error())
 			return absenceError
+		}
+		studentDBUsernameExist := models.StudentDB{
+			Username: master.Username,
+		}
+		err = mastersUC.StudentsRepo.GetStudentIdByUsername(&studentDBUsernameExist)
+		if err != nil {
+			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+		}
+		if studentDBUsernameExist.Id != mastersUC.useCases.errorId  && studentDBUsernameExist.Id != masterDB.Id {
+			conflictError := &models.ConflictError{Message: "can't update master, username is already taken", RequestId: master.UserId}
+			logger.Errorf(conflictError.Error())
+			return conflictError
 		}
 		masterDB.Username = master.Username
 	} else {
@@ -343,19 +358,19 @@ func (mastersUC *MastersUC) changeMastersLanguages(master *models.Master, master
 		newLanguagesIds = append(newLanguagesIds, languageDB.Id)
 	}
 
-	oldLanguagesIds, err := mastersUC.MastersRepo.GetMasterLanguagesById(masterDB.Id)
+	oldLanguagesIds, err := mastersUC.UsersRepo.GetUserLanguagesById(masterDB.UserId)
 	if err != nil {
 		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 	}
 
-	err = mastersUC.MastersRepo.DeleteMasterLanguagesById(masterDB.Id)
+	err = mastersUC.UsersRepo.DeleteUserLanguagesById(masterDB.UserId)
 	if err != nil {
 		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 	}
 
-	err = mastersUC.MastersRepo.SetMasterLanguagesById(masterDB.Id, newLanguagesIds)
+	err = mastersUC.UsersRepo.SetUserLanguagesById(masterDB.UserId, newLanguagesIds)
 	if err != nil {
-		_ = mastersUC.MastersRepo.SetMasterLanguagesById(masterDB.Id, oldLanguagesIds)
+		_ = mastersUC.UsersRepo.SetUserLanguagesById(masterDB.UserId, oldLanguagesIds)
 		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 	}
 	return nil
@@ -405,6 +420,7 @@ func (mastersUC *MastersUC) changeMastersSubthemes(master *models.Master, master
 	return nil
 }
 
+
 func (mastersUC *MastersUC) changeMastersTheme(master *models.Master, masterDB *models.MasterDB) error {
 	var err error
 
@@ -429,7 +445,7 @@ func (mastersUC *MastersUC) changeMastersTheme(master *models.Master, masterDB *
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
 		if newThemeDB.Id == mastersUC.useCases.errorId {
-			fileError := &models.BadRequestError{Message: "cant't update master, theme doesn't exist", RequestId: master.UserId}
+			fileError := &models.BadRequestError{Message: "can't update master, theme doesn't exist", RequestId: master.UserId}
 			logger.Errorf(fileError.Error())
 			return fileError
 		}
@@ -594,4 +610,225 @@ func (mastersUC *MastersUC) Get(query models.MastersQueryValues) (models.Masters
 		masters = append(masters, master)
 	}
 	return masters, nil
+}
+
+func (mastersUC *MastersUC) insertMastersThemeDB(theme string,  masterDB *models.MasterDB) error {
+	var err error
+
+	if theme == "" {
+		masterDB.Theme = mastersUC.useCases.errorId
+		return nil
+	}
+	themeDB := models.ThemeDB{
+		Name: theme,
+	}
+	err = mastersUC.ThemesRepo.GetThemeByName(&themeDB)
+	if err != nil {
+		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+	}
+	if themeDB.Id == mastersUC.useCases.errorId {
+		badParamError := &models.BadRequestError{Message: "theme doesn't exist"}
+		logger.Errorf(badParamError.Error())
+		return badParamError
+	}
+	masterDB.Theme = themeDB.Id
+	return nil
+}
+
+func (mastersUC *MastersUC) insertMastersQualification(qualification string, masterDB *models.MasterDB) error {
+	if qualification != "" {
+		newQualification := mastersUC.mastersConfig.qualificationMapBackwards[qualification]
+		if newQualification != mastersUC.useCases.errorId {
+			if masterDB.Qualification != newQualification {
+				masterDB.Qualification = newQualification
+			}
+		} else {
+			notExistError := &models.BadRequestError{Message: "can't register master, qualification doesn't exist"}
+			logger.Errorf(notExistError.Error())
+			return notExistError
+		}
+	} else {
+		masterDB.Qualification = mastersUC.useCases.errorId
+	}
+	return nil
+}
+
+func (mastersUC *MastersUC) insertMastersEducationFormat(edFormat []string, masterDB *models.MasterDB) error {
+	lenEdFormat := len(edFormat)
+	switch lenEdFormat {
+	case 0:
+		masterDB.EducationFormat = mastersUC.useCases.errorId
+		return nil
+	case 1:
+		newEdFormat := mastersUC.mastersConfig.educationFormatMapBackwards[edFormat[0]]
+		if newEdFormat != mastersUC.useCases.errorId {
+			if masterDB.EducationFormat != newEdFormat {
+				masterDB.EducationFormat = newEdFormat
+			}
+			return nil
+		}
+	case 2:
+		newEdFormatFirst := mastersUC.mastersConfig.educationFormatMapBackwards[edFormat[0]]
+		if newEdFormatFirst == mastersUC.useCases.errorId {
+			break
+		}
+		newEdFormatSecond := mastersUC.mastersConfig.educationFormatMapBackwards[edFormat[1]]
+		if newEdFormatSecond == mastersUC.useCases.errorId {
+			break
+		}
+		masterDB.EducationFormat = newEdFormatFirst + newEdFormatSecond
+		return nil
+	default:
+		break
+	}
+	notExistError := &models.BadRequestError{Message: "cant't insert master, education format doesn't exist"}
+	logger.Errorf(notExistError.Error())
+	return notExistError
+}
+
+func (mastersUC *MastersUC) insertMastersLanguages(languages []string, masterDB *models.MasterDB) error {
+	var newLanguagesIds []int64
+	for _, language := range languages {
+		languageDB := models.LanguageDB{Name: language}
+		err := mastersUC.LanguagesRepo.GetLanguageByName(&languageDB)
+		if err != nil {
+			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+		}
+		if languageDB.Id == mastersUC.useCases.errorId {
+			fileError := &models.BadRequestError{Message: "can't register master, language doesn't exist"}
+			logger.Errorf(fileError.Error())
+			return fileError
+		}
+		newLanguagesIds = append(newLanguagesIds, languageDB.Id)
+	}
+	err := mastersUC.UsersRepo.SetUserLanguagesById(masterDB.UserId, newLanguagesIds)
+	if err != nil {
+		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+	}
+	return nil
+}
+
+func (mastersUC *MastersUC) insertMastersSubthemes(theme models.Theme, masterDB *models.MasterDB) error {
+	var err error
+
+	if theme.Theme == "" || len(theme.Subthemes) == 0 {
+		return nil
+	}
+
+	var newSubthemesIds []int64
+	for _, subtheme := range theme.Subthemes {
+		subthemeDB := models.SubthemeDB{Name: subtheme}
+		err := mastersUC.ThemesRepo.GetSubthemeByName(&subthemeDB)
+		if err != nil {
+			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+		}
+		if subthemeDB.Id == mastersUC.useCases.errorId {
+			fileError := &models.BadRequestError{Message: "can't register master, subtheme doesn't exist"}
+			logger.Errorf(fileError.Error())
+			return fileError
+		}
+		newSubthemesIds = append(newSubthemesIds, subthemeDB.Id)
+	}
+
+	err = mastersUC.MastersRepo.SetMasterSubthemesById(masterDB.Id, newSubthemesIds)
+	if err != nil {
+		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+	}
+	return nil
+}
+
+func (mastersUC *MastersUC) Register(masterFull *models.MasterFull) error {
+	var err error
+	var masterDB models.MasterDB
+	var userDB models.UserDB
+
+	if masterFull.Email == "" {
+		reqError := &models.BadRequestError{Message: "email can't be empty", RequestId: masterFull.UserId} // TODO: refactor id in error
+		logger.Errorf(reqError.Error())
+		return reqError
+	} else {
+		userDBEmailExists := models.UserDB{
+			Email: masterFull.Email,
+		}
+		err = mastersUC.UsersRepo.GetUserByEmail(&userDBEmailExists)
+		if err != nil {
+			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+		}
+		if userDBEmailExists.Id != mastersUC.useCases.errorId {
+			conflictError := &models.ConflictError{Message: "can't register master, email is already taken", RequestId: masterFull.UserId}
+			logger.Errorf(conflictError.Error())
+			return conflictError
+		}
+	}
+	userDB.Email = masterFull.Email
+	userDB.Password = masterFull.Password
+	userDB.Created = time.Now()
+	userDB.Type = 1
+	if masterFull.Username == "" {
+		reqError := &models.BadRequestError{Message: "username can't be empty", RequestId: masterFull.UserId} // TODO: refactor id in error
+		logger.Errorf(reqError.Error())
+		return reqError
+	} else {
+		masterDBUsernameExist := models.MasterDB{
+			Username: masterFull.Username,
+		}
+		err = mastersUC.MastersRepo.GetMasterIdByUsername(&masterDBUsernameExist)
+		if err != nil {
+			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+		}
+		if masterDBUsernameExist.Id != mastersUC.useCases.errorId {
+			conflictError := &models.ConflictError{Message: "can't register master, username is already taken", RequestId: masterFull.UserId}
+			logger.Errorf(conflictError.Error())
+			return conflictError
+		}
+		studentDBUsernameExist := models.StudentDB{
+			Username: masterFull.Username,
+		}
+		err = mastersUC.StudentsRepo.GetStudentIdByUsername(&studentDBUsernameExist)
+		if err != nil {
+			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+		}
+		if studentDBUsernameExist.Id != mastersUC.useCases.errorId {
+			conflictError := &models.ConflictError{Message: "can't register master, username is already taken", RequestId: masterFull.UserId}
+			logger.Errorf(conflictError.Error())
+			return conflictError
+		}
+	}
+	masterDB.Username = masterFull.Username
+	masterDB.Description = masterFull.Description
+	masterDB.AveragePrice = masterFull.AveragePrice.Value // TODO: REFACTOR!!!
+	masterDB.Fullname = masterFull.Fullname
+	err = mastersUC.insertMastersThemeDB(masterFull.Theme.Theme, &masterDB)
+	if err != nil {
+		return err
+	}
+	err = mastersUC.insertMastersEducationFormat(masterFull.EducationFormat, &masterDB)
+	if err != nil {
+		return err
+	}
+	err = mastersUC.insertMastersQualification(masterFull.Qualification, &masterDB)
+	if err != nil {
+		return err
+	}
+	err = mastersUC.UsersRepo.InsertUser(&userDB)
+	if err != nil {
+		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+	}
+	masterDB.UserId = userDB.Id
+	err = mastersUC.MastersRepo.InsertMaster(&masterDB)
+	if err != nil {
+		_ = mastersUC.UsersRepo.DeleteUserWithId(userDB.Id)
+		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
+	}
+	masterFull.Password = ""
+	masterFull.UserId = userDB.Id
+	err = mastersUC.insertMastersSubthemes(masterFull.Theme, &masterDB)
+	if err != nil {
+		return err
+	}
+	err = mastersUC.insertMastersLanguages(masterFull.Languages, &masterDB)
+	if err != nil {
+		return err
+	}
+	return nil
 }

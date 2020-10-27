@@ -150,3 +150,30 @@ func (handlers *Handlers) validateId(writer http.ResponseWriter, req *http.Reque
 	}
 	return false, id
 }
+
+func (handlers *Handlers) validateUserId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
+	return handlers.validateId(writer, req, "id", "user")
+}
+
+func (handlers *Handlers) validateStudentId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
+	return handlers.validateId(writer, req, "id", "student")
+}
+
+func (handlers *Handlers) validateMasterId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
+	return handlers.validateId(writer, req, "id", "master")
+}
+
+func (handlers *Handlers) validateChatId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
+	return handlers.validateId(writer, req, "chatId", "chat")
+}
+func (handlers *Handlers) validateChatIdSimple(writer http.ResponseWriter, req *http.Request) (bool, int64) {
+	return handlers.validateId(writer, req, "id", "chat")
+}
+
+func (handlers *Handlers) validateThemeId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
+	return handlers.validateId(writer, req, "id", "theme")
+}
+
+func (handlers *Handlers) validateVideoId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
+	return handlers.validateId(writer, req, "videoId", "video")
+}

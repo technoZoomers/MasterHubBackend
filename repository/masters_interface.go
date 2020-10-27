@@ -8,9 +8,7 @@ type MastersRepoI interface {
 	GetMasterSubthemesById(masterId int64) ([]int64, error)
 	DeleteMasterSubthemesById(masterId int64) error
 	SetMasterSubthemesById(masterId int64, subthemes []int64) error
-	GetMasterLanguagesById(masterId int64) ([]int64, error)
-	DeleteMasterLanguagesById(masterId int64) error
-	SetMasterLanguagesById(masterId int64, languages []int64) error
 	UpdateMaster(master *models.MasterDB) error
+	InsertMaster(master *models.MasterDB) error
 	GetMasters(query models.MastersQueryValuesDB) ([]models.MasterDB, error)
 }

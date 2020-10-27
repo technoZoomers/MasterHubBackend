@@ -13,6 +13,7 @@ type WebsocketsUC struct {
 	useCases     *UseCases
 	WebsocketsRepo   repository.WebsocketsRepo// TODO: INTERFACE
 	ChatsRepo   repository.ChatsRepoI
+	messagesTypesMap map[int64]bool
 }
 
 
@@ -36,10 +37,7 @@ func (wsUC *WebsocketsUC) Start() {
 		case conn := <-wsUC.WebsocketsRepo.DroppedClients:
 			wsUC.WebsocketsRepo.RemoveClient(conn)
 		case message := <-wsUC.WebsocketsRepo.Messages:
-			err := wsUC.processMessage(message)
-			if err != nil {
-				logger.Errorf(err.Error())
-			}
+			wsUC.processMessage(message)
 		}
 	}
 }
@@ -56,50 +54,60 @@ func (wsUC *WebsocketsUC) matchMessageToDB (messageDB *models.MessageDB, message
 	}
 }
 
-func (wsUC *WebsocketsUC) processMessage(message models.WebsocketMessage) error {
+func (wsUC *WebsocketsUC) processMessage(message models.WebsocketMessage) {
 	marshalledMessage, err := json.Marshal(message)
 	if err != nil {
 		jsonError := fmt.Errorf("error marshalling json: %v", err.Error())
-		logger.Error(jsonError)
-		return jsonError
+		logger.Errorf(jsonError.Error())
+		return
 	}
 
 	var chat models.ChatDB
 	err = wsUC.ChatsRepo.GetChatById(&chat, message.Message.ChatId)
 	if err != nil {
-		return fmt.Errorf(wsUC.useCases.errorMessages.DbError)
+		dbError := fmt.Errorf(wsUC.useCases.errorMessages.DbError)
+		logger.Errorf(dbError.Error())
+		return
 	}
 
-	if message.Type == 1 {
+	if message.Type == 1 {  // TODO: other message types 2-delete, 3-resend
 		var messageDB models.MessageDB
 		wsUC.matchMessageToDB(&messageDB, &message.Message)
 		err = wsUC.ChatsRepo.InsertMessage(&messageDB)
 		if err != nil {
-			return fmt.Errorf(wsUC.useCases.errorMessages.DbError)
+			dbError := fmt.Errorf(wsUC.useCases.errorMessages.DbError)
+			logger.Errorf(dbError.Error())
+			return
 		}
 	}
 
 	if chat.StudentId != 0 {
 		studentConnString := wsUC.WebsocketsRepo.GetConnectionString(chat.StudentId)
 		if studentConnString != "" {
-			client := wsUC.WebsocketsRepo.GetConnection(studentConnString)
-			err := client.Connection.WriteMessage(websocket.TextMessage, marshalledMessage)
-			if err != nil { // TODO: refactor!!!
-				fmt.Println("Error broadcasting message: ", err)
-				return err
+			err = wsUC.writeMessageToConnection(studentConnString, marshalledMessage)
+			if err != nil {
+				return
 			}
 		}
 	}
 	if chat.MasterId != 0 {
 		masterConnString := wsUC.WebsocketsRepo.GetConnectionString(chat.MasterId)
 		if masterConnString != "" {
-			client := wsUC.WebsocketsRepo.GetConnection(masterConnString)
-			err := client.Connection.WriteMessage(websocket.TextMessage, marshalledMessage)
-			if err != nil { // TODO: refactor!!!
-				fmt.Println("Error broadcasting message: ", err)
-				return err
+			err = wsUC.writeMessageToConnection(masterConnString, marshalledMessage)
+			if err != nil {
+				return
 			}
 		}
+	}
+}
+
+func (wsUC *WebsocketsUC) writeMessageToConnection(connectionString string,marshalledMessage []byte) error {
+	client := wsUC.WebsocketsRepo.GetConnection(connectionString)
+	err := client.Connection.WriteMessage(websocket.TextMessage, marshalledMessage)
+	if err != nil {
+		broadcastError := fmt.Errorf("error broadcasting message: %v", err.Error())
+		logger.Errorf(broadcastError.Error())
+		return broadcastError
 	}
 	return nil
 }

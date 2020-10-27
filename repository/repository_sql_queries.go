@@ -1,12 +1,13 @@
 package repository
 
 const TABLES_DROPPING = `
-DROP TABLE IF EXISTS messages;
+DROP TABLE IF EXISTS messages;  
 DROP TABLE IF EXISTS chats;
 DROP TABLE IF EXISTS videos_subthemes;
 DROP TABLE IF EXISTS videos;
 DROP TABLE IF EXISTS avatars;
 DROP TABLE IF EXISTS masters_languages;
+DROP TABLE IF EXISTS users_languages;
 DROP TABLE IF EXISTS masters_subthemes;
 DROP TABLE IF EXISTS masters;
 DROP TABLE IF EXISTS students;
@@ -66,8 +67,8 @@ CREATE TABLE masters_subthemes (
     subtheme_id int NOT NULL REFERENCES subthemes(id) ON DELETE CASCADE
 );
 
-CREATE TABLE masters_languages (
-	master_id int NOT NULL REFERENCES masters(id) ON DELETE CASCADE,
+CREATE TABLE users_languages (
+	user_id int NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     language_id int NOT NULL REFERENCES languages(id) ON DELETE CASCADE
 );
 
@@ -149,25 +150,24 @@ INSERT INTO masters (user_id, username, fullname, theme, description, qualificat
                                         (4, 'royanderson', 'Roy Anderson', 6, '', 2, 1, 0),
                                         (5, 'cookmaster', 'Jacob Terrier', 6, '', 2, 2, 0),
                                         (6, 'musefan', 'Ali Torcher', 2, 'I love Muse', 2, 1, 0);
-                                                                                                                         ;
-;
+
 INSERT INTO masters_subthemes (master_id, subtheme_id) values (1, 3);
-INSERT INTO masters_languages (master_id, language_id) values (1, 1), (1, 2);
+INSERT INTO users_languages (user_id, language_id) values (1, 1), (1, 2);
 
 INSERT INTO masters_subthemes (master_id, subtheme_id) values (2, 5), (2, 6);
-INSERT INTO masters_languages (master_id, language_id) values (2, 1), (2, 2);
+INSERT INTO users_languages (user_id, language_id) values (2, 1), (2, 2);
 
 INSERT INTO masters_subthemes (master_id, subtheme_id) values (3, 18), (3, 20);
-INSERT INTO masters_languages (master_id, language_id) values (3, 1), (3, 3);
+INSERT INTO users_languages (user_id, language_id) values (3, 1), (3, 3);
 
 INSERT INTO masters_subthemes (master_id, subtheme_id) values (4, 18), (4, 21);
-INSERT INTO masters_languages (master_id, language_id) values (4, 1), (4, 2);
+INSERT INTO users_languages (user_id, language_id) values (4, 1), (4, 2);
 
 INSERT INTO masters_subthemes (master_id, subtheme_id) values (5, 21), (5, 22);
-INSERT INTO masters_languages (master_id, language_id) values (5, 1), (5, 4);
+INSERT INTO users_languages (user_id, language_id) values (5, 1), (5, 4);
 
 INSERT INTO masters_subthemes (master_id, subtheme_id) values (6, 2), (6, 3);
-INSERT INTO masters_languages (master_id, language_id) values (6, 1), (6, 2);
+INSERT INTO users_languages (user_id, language_id) values (6, 1), (6, 2);
 
 INSERT INTO videos (master_id, filename, extension, intro, uploaded, rating, theme) VALUES (1, 'master_1_video_1', 'webm', false, '2020-10-10T12:30:00+00:00', 112, 1) ,
                                                                              (2, 'master_2_video_2', 'webm', false, '2020-10-10T12:31:00+00:00', 10, 1) ,

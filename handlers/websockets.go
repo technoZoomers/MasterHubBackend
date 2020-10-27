@@ -17,12 +17,8 @@ type WSHandlers struct {
 	WebsocketsUC useCases.WebsocketsUCInterface
 }
 
-func (wsHandlers *WSHandlers) validateUserId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
-	return wsHandlers.handlers.validateId(writer, req, "id", "user")
-}
-
 func (wsHandlers *WSHandlers) UpgradeConnection (writer http.ResponseWriter, req *http.Request) {
-	sent, userId := wsHandlers.validateUserId(writer, req)
+	sent, userId := wsHandlers.handlers.validateUserId(writer, req)
 	if sent {
 		return
 	}
@@ -45,16 +41,21 @@ func (wsHandlers *WSHandlers) listenClient(clientConn *models.WebsocketConnectio
 	for {
 		_, message, err := clientConn.Connection.ReadMessage()
 		if err != nil {
-			fmt.Println(err.Error())
+			readError := fmt.Errorf("error reading message from ws: %v", err.Error())
+			logger.Errorf(readError.Error())
 			wsHandlers.WebsocketsUC.RemoveClient(clientConn)
-			return
 		}
 		var wsMessage models.WebsocketMessage
 		err = wsMessage.UnmarshalJSON(message)
-		if err != nil { // TODO: refactor!!!
-			fmt.Println("Error parsing message: ", err)
+		if err != nil {
+			parseError := fmt.Errorf("error parsing message from ws: %v", err.Error())
+			logger.Errorf(parseError.Error())
 			wsHandlers.WebsocketsUC.RemoveClient(clientConn)
-			return
+		}
+		if clientConn.UserId != wsMessage.Message.AuthorId {
+			requestError := fmt.Errorf("request forgery from ws: %v", err.Error())
+			logger.Errorf(requestError.Error())
+			wsHandlers.WebsocketsUC.RemoveClient(clientConn)
 		}
 		wsHandlers.WebsocketsUC.SendMessage(wsMessage)
 	}

@@ -29,12 +29,8 @@ type MastersQueryKeys struct {
 	Offset          string
 }
 
-func (mh *MastersHandlers) validateMasterId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
-	return mh.handlers.validateId(writer, req, "id", "master")
-}
-
 func (mh *MastersHandlers) GetMasterById(writer http.ResponseWriter, req *http.Request) {
-	sent, masterId := mh.validateMasterId(writer, req)
+	sent, masterId := mh.handlers.validateMasterId(writer, req)
 	if sent {
 		return
 	}
@@ -45,7 +41,7 @@ func (mh *MastersHandlers) GetMasterById(writer http.ResponseWriter, req *http.R
 }
 
 func (mh *MastersHandlers) ChangeMasterData(writer http.ResponseWriter, req *http.Request) {
-	sent, masterId := mh.validateMasterId(writer, req)
+	sent, masterId := mh.handlers.validateMasterId(writer, req)
 	if sent {
 		return
 	}
@@ -106,10 +102,31 @@ func (mh *MastersHandlers) Get(writer http.ResponseWriter, req *http.Request) {
 	mh.answerMasters(writer, masters, err)
 }
 
+func (mh *MastersHandlers) Register(writer http.ResponseWriter, req *http.Request) {
+	var newMaster models.MasterFull
+	err := json.UnmarshalFromReader(req.Body, &newMaster)
+	if err != nil {
+		jsonError := fmt.Errorf("error unmarshaling json: %v", err.Error())
+		logger.Errorf(jsonError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(jsonError.Error()))
+		return
+	}
+	err = mh.MastersUC.Register(&newMaster)
+	mh.answerMasterFull(writer, newMaster, err)
+
+}
+
 func (mh *MastersHandlers) answerMaster(writer http.ResponseWriter, master models.Master, err error) {
 	sent := mh.handlers.handleErrorConflict(writer, err)
 	if !sent {
 		utils.CreateAnswerMasterJson(writer, http.StatusOK, master)
+	}
+}
+
+func (mh *MastersHandlers) answerMasterFull(writer http.ResponseWriter, masterFull models.MasterFull,  err error) {
+	sent := mh.handlers.handleErrorConflict(writer, err)
+	if !sent {
+		utils.CreateAnswerMasterFullJson(writer, http.StatusCreated, masterFull)
 	}
 }
 

@@ -24,6 +24,8 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 	useCases.MastersUC = &MastersUC{
 		useCases:useCases,
 		MastersRepo:mastersRepo,
+		UsersRepo: usersRepo,
+		StudentsRepo: studentsRepo,
 		ThemesRepo:themesRepo,
 		LanguagesRepo:languagesRepo,
 	mastersConfig:MastersConfig{
@@ -32,7 +34,7 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 			qualificationMapBackwards: map[string]int64{"self-educated":1, "professional" :2},
 			educationFormatMapBackwards: map[string]int64{"online":1, "live":2},
 	}}
-	useCases.StudentsUC = &StudentsUC{useCases, studentsRepo}
+	useCases.StudentsUC = &StudentsUC{useCases, usersRepo, mastersRepo, studentsRepo, languagesRepo}
 	useCases.ThemesUC = &ThemesUC{useCases, themesRepo}
 	useCases.LanguagesUC = &LanguagesUC{useCases, languagesRepo}
 	useCases.VideosUC = &VideosUC{
@@ -77,12 +79,24 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 				4: "deleted by master",
 				5: "deleted by student",
 			},
+			messagesTypesMap: map[int64]bool{
+				1:false,
+				2:true,
+			},
+			messagesTypesMapBackwards: map[bool]int64{
+				false:1,
+				true:2,
+			},
 	},
 	}
 	useCases.WebsocketsUC = &WebsocketsUC{
 		useCases: useCases,
 		WebsocketsRepo :wsRepo,
 		ChatsRepo : chatsRepo,
+		messagesTypesMap: map[int64]bool{
+			1:false,
+			2:true,
+		},
 	}
 	go useCases.WebsocketsUC.Start()
 	useCases.errorMessages = ErrorMessagesUC{

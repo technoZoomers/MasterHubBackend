@@ -79,8 +79,11 @@ func main() {
 	r := mux.NewRouter()
 
 	// users
+	r.HandleFunc("/users/login", mhHandlers.UsersHandlers.Login).Methods("POST")
+	r.HandleFunc("/users/{id}", mhHandlers.UsersHandlers.GetUserById).Methods("GET")
 	r.HandleFunc("/users/{id}/chats", mhHandlers.ChatsHandlers.GetChatsByUserId).Methods("GET")
 	r.HandleFunc("/users/{id}/interactions", mhHandlers.WSHandlers.UpgradeConnection)
+
 
 	//languages
 
@@ -92,11 +95,15 @@ func main() {
 	r.HandleFunc("/themes/{id}", mhHandlers.ThemesHandlers.GetThemeById).Methods("GET")
 
 	// students
+	r.HandleFunc("/students/create", mhHandlers.StudentsHandlers.Register).Methods("POST")
+	r.HandleFunc("/students/{id}", mhHandlers.StudentsHandlers.GetStudentById).Methods("GET")
+	r.HandleFunc("/students/{id}", mhHandlers.StudentsHandlers.ChangeStudentData).Methods("PUT")
 	r.HandleFunc("/students/{id}/chats", mhHandlers.ChatsHandlers.CreateChatRequest).Methods("POST")
 
 
 	//masters
 	r.HandleFunc("/masters", mhHandlers.MastersHandlers.Get).Methods("GET")
+	r.HandleFunc("/masters/create", mhHandlers.MastersHandlers.Register).Methods("POST")
 	r.HandleFunc("/masters/{id}", mhHandlers.MastersHandlers.GetMasterById).Methods("GET")
 	r.HandleFunc("/masters/{id}", mhHandlers.MastersHandlers.ChangeMasterData).Methods("PUT")
 	r.HandleFunc("/masters/{id}/videos/create", mhHandlers.VideosHandlers.Upload).Methods("POST")

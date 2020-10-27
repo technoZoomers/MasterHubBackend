@@ -1,8 +1,64 @@
 package useCases
 
-import "github.com/technoZoomers/MasterHubBackend/repository"
+import (
+	"fmt"
+	"github.com/google/logger"
+	"github.com/technoZoomers/MasterHubBackend/models"
+	"github.com/technoZoomers/MasterHubBackend/repository"
+)
 
 type UsersUC struct {
 	useCases  *UseCases
 	UsersRepo repository.UsersRepoI
+}
+
+func (usersUC *UsersUC) GetUserById(user *models.User) error {
+	var userDB models.UserDB
+	err := usersUC.validateUser(&userDB, user)
+	if err != nil {
+		return err
+	}
+	usersUC.matchUser(&userDB, user)
+	return nil
+}
+func (usersUC *UsersUC) matchUser(userDB *models.UserDB, user *models.User) {
+	user.Email = userDB.Email
+	user.Password = userDB.Password // TODO: HASH
+	user.Type = userDB.Type
+	user.Created = userDB.Created
+}
+func (usersUC *UsersUC) validateUser(userDB *models.UserDB, user *models.User) error {
+	if user.Id == usersUC.useCases.errorId {
+		return &models.BadRequestError{Message: "incorrect user id", RequestId: user.Id}
+	}
+	err := usersUC.UsersRepo.GetUserById(userDB, user.Id)
+	if err != nil {
+		return fmt.Errorf(usersUC.useCases.errorMessages.DbError)
+	}
+	if userDB.Id == usersUC.useCases.errorId {
+		absenceError := &models.BadRequestError{Message: "user doesn't exist", RequestId: user.Id}
+		logger.Errorf(absenceError.Error())
+		return absenceError
+	}
+	return nil
+}
+
+func (usersUC *UsersUC) Login(user *models.User) error {
+	userDB := models.UserDB {
+		Email: user.Email,
+		Password: user.Password,
+	}
+	err := usersUC.UsersRepo.GetUserByEmailAndPassword(&userDB)
+	if err != nil {
+		return fmt.Errorf(usersUC.useCases.errorMessages.DbError)
+	}
+	if userDB.Id == usersUC.useCases.errorId {
+		absenceError := &models.BadRequestError{Message: "wrong email or password"}
+		logger.Errorf(absenceError.Error())
+		return absenceError
+	}
+	user.Id = userDB.Id
+	user.Type = userDB.Type
+	user.Created = userDB.Created
+	return nil
 }

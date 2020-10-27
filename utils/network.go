@@ -84,6 +84,15 @@ func CreateAnswerMasterJson(writer http.ResponseWriter, statusCode int, master m
 	createAnswerJson(writer, statusCode, marshalledMaster)
 }
 
+func CreateAnswerMasterFullJson(writer http.ResponseWriter, statusCode int, master masterhub_models.MasterFull) {
+	marshalledMaster, err := json.Marshal(master)
+	if err != nil {
+		jsonError := fmt.Errorf("error marshalling json: %v", err.Error())
+		logger.Error(jsonError)
+	}
+	createAnswerJson(writer, statusCode, marshalledMaster)
+}
+
 func CreateAnswerMastersJson(writer http.ResponseWriter, statusCode int, masters masterhub_models.Masters) {
 	marshalledMasters, err := json.Marshal(masters)
 	if err != nil {
@@ -136,4 +145,31 @@ func CreateAnswerMessagesJson(writer http.ResponseWriter, statusCode int, messag
 		logger.Error(jsonError)
 	}
 	createAnswerJson(writer, statusCode, marshalledMessages)
+}
+
+func CreateAnswerUserJson(writer http.ResponseWriter, statusCode int, user masterhub_models.User) {
+	marshalledUser, err := json.Marshal(user)
+	if err != nil {
+		jsonError := fmt.Errorf("error marshalling json: %v", err.Error())
+		logger.Error(jsonError)
+	}
+	createAnswerJson(writer, statusCode, marshalledUser)
+}
+
+func CreateAnswerStudentJson(writer http.ResponseWriter, statusCode int, student masterhub_models.Student) {
+	marshalledStudent, err := json.Marshal(student)
+	if err != nil {
+		jsonError := fmt.Errorf("error marshalling json: %v", err.Error())
+		logger.Error(jsonError)
+	}
+	createAnswerJson(writer, statusCode, marshalledStudent)
+}
+
+func CreateAnswerStudentFullJson(writer http.ResponseWriter, statusCode int, student masterhub_models.StudentFull) {
+	marshalledStudent, err := json.Marshal(student)
+	if err != nil {
+		jsonError := fmt.Errorf("error marshalling json: %v", err.Error())
+		logger.Error(jsonError)
+	}
+	createAnswerJson(writer, statusCode, marshalledStudent)
 }

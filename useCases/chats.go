@@ -24,6 +24,10 @@ type ChatsConfig struct {
 
 	userMapBackwards map[int64]string
 	chatTypesBackwards  map[int64]string
+
+	messagesTypesMap map[int64]bool
+	messagesTypesMapBackwards map[bool]int64
+
 }
 
 func (chatsUC *ChatsUC) validateChat(chatExists *models.ChatDB, chatId int64) error {
@@ -88,11 +92,7 @@ func (chatsUC *ChatsUC) matchMessage (messageDB *models.MessageDB, message *mode
 	message.ChatId = messageDB.ChatId
 	message.Created = messageDB.Created
 	message.Text = messageDB.Text
-	if messageDB.Info {
-		message.Type = 2 //TODO: refactor types!!!
-	} else {
-		message.Type = 1
-	}
+	message.Type = chatsUC.chatsConfig.messagesTypesMapBackwards[messageDB.Info]
 	return nil
 }
 
@@ -214,7 +214,7 @@ func (chatsUC *ChatsUC) ChangeChatStatus(chat *models.Chat, masterId int64, chat
 	if chat.MasterId == chatsUC.useCases.errorId {
 		chat.MasterId = masterId
 	} else {
-		if chat.MasterId != masterId {
+		if chat.MasterId != masterId { // TODO: change error type
 			matchError := &models.BadRequestError{Message: "can't change other masters's chat status", RequestId: chat.Id}
 			logger.Errorf(matchError.Error())
 			return matchError

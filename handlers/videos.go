@@ -34,14 +34,6 @@ type VideoParseConfig struct {
 	VideoFormats map[string]bool
 }
 
-func (vh *VideosHandlers) validateMasterId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
-	return vh.handlers.validateId(writer, req, "id", "master")
-}
-
-func (vh *VideosHandlers) validateVideoId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
-	return vh.handlers.validateId(writer, req, "videoId", "video")
-}
-
 func (vh *VideosHandlers) Upload(writer http.ResponseWriter, req *http.Request) {
 	vh.uploadVideo(writer, req, false)
 }
@@ -70,7 +62,7 @@ func (vh *VideosHandlers) getFileFromFormData(writer http.ResponseWriter, req *h
 func (vh *VideosHandlers) uploadVideo(writer http.ResponseWriter, req *http.Request, intro bool) {
 	var err error
 	var videoData models.VideoData
-	sent, masterId := vh.validateMasterId(writer, req)
+	sent, masterId := vh.handlers.validateMasterId(writer, req)
 	if sent {
 		return
 	}
@@ -89,7 +81,7 @@ func (vh *VideosHandlers) uploadVideo(writer http.ResponseWriter, req *http.Requ
 
 func (vh *VideosHandlers) GetVideosByMasterId(writer http.ResponseWriter, req *http.Request) {
 	var err error
-	sent, masterId := vh.validateMasterId(writer, req)
+	sent, masterId := vh.handlers.validateMasterId(writer, req)
 	if sent {
 		return
 	}
@@ -99,7 +91,7 @@ func (vh *VideosHandlers) GetVideosByMasterId(writer http.ResponseWriter, req *h
 
 func (vh *VideosHandlers) getVideo(writer http.ResponseWriter, req *http.Request, intro bool) {
 	var err error
-	sent, masterId := vh.validateMasterId(writer, req)
+	sent, masterId := vh.handlers.validateMasterId(writer, req)
 	if sent {
 		return
 	}
@@ -108,7 +100,7 @@ func (vh *VideosHandlers) getVideo(writer http.ResponseWriter, req *http.Request
 		videoBytes, err = vh.VideosUC.GetMasterIntro(masterId)
 		vh.answerMultipartIntro(writer, videoBytes, http.StatusOK, err)
 	} else {
-		sent, videoId := vh.validateVideoId(writer, req)
+		sent, videoId := vh.handlers.validateVideoId(writer, req)
 		if sent {
 			return
 		}
@@ -128,7 +120,7 @@ func (vh *VideosHandlers) GetIntro(writer http.ResponseWriter, req *http.Request
 func (vh *VideosHandlers) ChangeIntro(writer http.ResponseWriter, req *http.Request) {
 	var err error
 	var videoData models.VideoData
-	sent, masterId := vh.validateMasterId(writer, req)
+	sent, masterId := vh.handlers.validateMasterId(writer, req)
 	if sent {
 		return
 	}
@@ -142,14 +134,14 @@ func (vh *VideosHandlers) ChangeIntro(writer http.ResponseWriter, req *http.Requ
 
 func (vh *VideosHandlers) deleteVideo(writer http.ResponseWriter, req *http.Request, intro bool) {
 	var err error
-	sent, masterId := vh.validateMasterId(writer, req)
+	sent, masterId := vh.handlers.validateMasterId(writer, req)
 	if sent {
 		return
 	}
 	if intro {
 		err = vh.VideosUC.DeleteMasterIntro(masterId)
 	} else {
-		sent, videoId := vh.validateVideoId(writer, req)
+		sent, videoId := vh.handlers.validateVideoId(writer, req)
 		if sent {
 			return
 		}
@@ -168,11 +160,11 @@ func (vh *VideosHandlers) DeleteIntro(writer http.ResponseWriter, req *http.Requ
 
 func (vh *VideosHandlers) GetVideoDataById(writer http.ResponseWriter, req *http.Request) {
 	var err error
-	sent, masterId := vh.validateMasterId(writer, req)
+	sent, masterId := vh.handlers.validateMasterId(writer, req)
 	if sent {
 		return
 	}
-	sent, videoId := vh.validateVideoId(writer, req)
+	sent, videoId := vh.handlers.validateVideoId(writer, req)
 	if sent {
 		return
 	}
@@ -185,7 +177,7 @@ func (vh *VideosHandlers) GetVideoDataById(writer http.ResponseWriter, req *http
 
 func (vh *VideosHandlers) GetIntroData(writer http.ResponseWriter, req *http.Request) {
 	var err error
-	sent, masterId := vh.validateMasterId(writer, req)
+	sent, masterId := vh.handlers.validateMasterId(writer, req)
 	if sent {
 		return
 	}
@@ -198,11 +190,11 @@ func (vh *VideosHandlers) GetIntroData(writer http.ResponseWriter, req *http.Req
 
 func (vh *VideosHandlers) ChangeVideoData(writer http.ResponseWriter, req *http.Request) {
 	var err error
-	sent, masterId := vh.validateMasterId(writer, req)
+	sent, masterId := vh.handlers.validateMasterId(writer, req)
 	if sent {
 		return
 	}
-	sent, videoId := vh.validateVideoId(writer, req)
+	sent, videoId := vh.handlers.validateVideoId(writer, req)
 	if sent {
 		return
 	}
@@ -220,7 +212,7 @@ func (vh *VideosHandlers) ChangeVideoData(writer http.ResponseWriter, req *http.
 
 func (vh *VideosHandlers) ChangeIntroData(writer http.ResponseWriter, req *http.Request) {
 	var err error
-	sent, masterId := vh.validateMasterId(writer, req)
+	sent, masterId := vh.handlers.validateMasterId(writer, req)
 	if sent {
 		return
 	}

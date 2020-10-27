@@ -8,4 +8,5 @@ type MastersUCInterface interface {
 	Get(query models.MastersQueryValues) (models.Masters, error)
 	GetMasterById(master *models.Master) error
 	ChangeMasterData(master *models.Master) error
+	Register(masterFull *models.MasterFull) error
 }
