@@ -38,8 +38,8 @@ func main() {
 
 	err := repo.Init(pgx.ConnConfig{
 		Database: utils.DBName,
-		//Host:     "213.219.214.220",
-		Host: "localhost",
+		Host:     "213.219.214.220",
+		//Host: "localhost",
 		User:     "alexis",
 		Password: "alexis",
 	})
