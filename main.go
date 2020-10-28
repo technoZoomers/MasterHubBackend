@@ -103,7 +103,10 @@ func main() {
 	//r.Handle("/users/{id}/interactions",  mhMiddlewares.AuthMiddleware.Auth(mhHandlers.WSHandlers.UpgradeConnection, false))
 
 	r.Handle("/users/{id}/chats", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.GetChatsByUserId, true)).Methods("GET")
-	r.Handle("/users/{id}/interactions",  mhMiddlewares.AuthMiddleware.Auth(mhHandlers.WSHandlers.UpgradeConnection, true))
+
+	// interactions
+
+	r.Handle("/interactions/users/{id}",  mhMiddlewares.AuthMiddleware.Auth(mhHandlers.WSHandlers.UpgradeConnection, true))
 
 	//languages
 
