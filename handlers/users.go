@@ -22,10 +22,10 @@ func (uh *UsersHandlers) GetUserById(writer http.ResponseWriter, req *http.Reque
 	if sent {
 		return
 	}
-	//sent = uh.handlers.checkUserAuth(writer, req, userId)
-	//if sent {
-	//	return
-	//}
+	sent = uh.handlers.checkUserAuth(writer, req, userId)
+	if sent {
+		return
+	}
 	var user models.User
 	user.Id = userId
 	err := uh.UsersUC.GetUserById(&user)

@@ -66,10 +66,10 @@ func (vh *VideosHandlers) uploadVideo(writer http.ResponseWriter, req *http.Requ
 	if sent {
 		return
 	}
-	//sent = vh.handlers.checkUserAuth(writer, req, masterId)
-	//if sent {
-	//	return
-	//}
+	sent = vh.handlers.checkUserAuth(writer, req, masterId)
+	if sent {
+		return
+	}
 	sent, file, err := vh.getFileFromFormData(writer, req)
 	if sent {
 		return
@@ -128,10 +128,10 @@ func (vh *VideosHandlers) ChangeIntro(writer http.ResponseWriter, req *http.Requ
 	if sent {
 		return
 	}
-	//sent = vh.handlers.checkUserAuth(writer, req, masterId)
-	//if sent {
-	//	return
-	//}
+	sent = vh.handlers.checkUserAuth(writer, req, masterId)
+	if sent {
+		return
+	}
 	sent, file, err := vh.getFileFromFormData(writer, req)
 	if sent {
 		return
@@ -146,10 +146,10 @@ func (vh *VideosHandlers) deleteVideo(writer http.ResponseWriter, req *http.Requ
 	if sent {
 		return
 	}
-	//sent = vh.handlers.checkUserAuth(writer, req, masterId)
-	//if sent {
-	//	return
-	//}
+	sent = vh.handlers.checkUserAuth(writer, req, masterId)
+	if sent {
+		return
+	}
 	if intro {
 		err = vh.VideosUC.DeleteMasterIntro(masterId)
 	} else {
@@ -206,10 +206,10 @@ func (vh *VideosHandlers) ChangeVideoData(writer http.ResponseWriter, req *http.
 	if sent {
 		return
 	}
-	//sent = vh.handlers.checkUserAuth(writer, req, masterId)
-	//if sent {
-	//	return
-	//}
+	sent = vh.handlers.checkUserAuth(writer, req, masterId)
+	if sent {
+		return
+	}
 	sent, videoId := vh.handlers.validateVideoId(writer, req)
 	if sent {
 		return
@@ -232,10 +232,10 @@ func (vh *VideosHandlers) ChangeIntroData(writer http.ResponseWriter, req *http.
 	if sent {
 		return
 	}
-	//sent = vh.handlers.checkUserAuth(writer, req, masterId)
-	//if sent {
-	//	return
-	//}
+	sent = vh.handlers.checkUserAuth(writer, req, masterId)
+	if sent {
+		return
+	}
 	var videoData models.VideoData
 	err = json.UnmarshalFromReader(req.Body, &videoData)
 	if err != nil {

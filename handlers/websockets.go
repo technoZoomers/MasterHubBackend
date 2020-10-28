@@ -22,10 +22,10 @@ func (wsHandlers *WSHandlers) UpgradeConnection (writer http.ResponseWriter, req
 	if sent {
 		return
 	}
-	//sent = wsHandlers.handlers.checkUserAuth(writer, req, userId)
-	//if sent {
-	//	return
-	//}
+	sent = wsHandlers.handlers.checkUserAuth(writer, req, userId)
+	if sent {
+		return
+	}
 	connection, err := wsHandlers.upgrader.Upgrade(writer, req, nil) // TODO: response header add
 	if err != nil {
 		upgradeError := fmt.Errorf("error upgrading connection: %v", err.Error())
