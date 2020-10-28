@@ -45,10 +45,10 @@ func (mh *MastersHandlers) ChangeMasterData(writer http.ResponseWriter, req *htt
 	if sent {
 		return
 	}
-	sent = mh.handlers.checkUserAuth(writer, req, masterId)
-	if sent {
-		return
-	}
+	//sent = mh.handlers.checkUserAuth(writer, req, masterId)
+	//if sent {
+	//	return
+	//}
 	var master models.Master
 	err := json.UnmarshalFromReader(req.Body, &master)
 	if err != nil {

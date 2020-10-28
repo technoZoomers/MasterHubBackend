@@ -44,10 +44,10 @@ func (sh *StudentsHandlers) ChangeStudentData(writer http.ResponseWriter, req *h
 	if sent {
 		return
 	}
-	sent = sh.handlers.checkUserAuth(writer, req, studentId)
-	if sent {
-		return
-	}
+	//sent = sh.handlers.checkUserAuth(writer, req, studentId)
+	//if sent {
+	//	return
+	//}
 	var student models.Student
 	err := json.UnmarshalFromReader(req.Body, &student)
 	if err != nil {

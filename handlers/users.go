@@ -22,10 +22,10 @@ func (uh *UsersHandlers) GetUserById(writer http.ResponseWriter, req *http.Reque
 	if sent {
 		return
 	}
-	sent = uh.handlers.checkUserAuth(writer, req, userId)
-	if sent {
-		return
-	}
+	//sent = uh.handlers.checkUserAuth(writer, req, userId)
+	//if sent {
+	//	return
+	//}
 	var user models.User
 	user.Id = userId
 	err := uh.UsersUC.GetUserById(&user)
@@ -75,7 +75,7 @@ func (uh *UsersHandlers) setCookie(user *models.User, cookie *http.Cookie) error
 	cookie.Value = token.String()
 	cookie.Expires = time.Now().Add(365 * 24 * time.Hour)
 	cookie.SameSite = http.SameSiteNoneMode
-	cookie.Secure = true
+	//cookie.Secure = true
 	cookie.HttpOnly = true
 	cookie.Path = "/"
 	return uh.UsersUC.InsertCookie(user.Id, cookie.Value)
