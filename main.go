@@ -142,7 +142,14 @@ func main() {
 	//chats
 	r.Handle("/chats/{id}/messages", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.GetMessagesByChatId, false)).Methods("GET")
 
-	cors := handlers.CORS(handlers.AllowCredentials(),handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}), handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS"}), handlers.AllowedOrigins([]string{"*"}))
+	cors := handlers.CORS(handlers.AllowCredentials(),
+		handlers.AllowedHeaders([]string{"X-Content-Type-Options", "Access-Control-Allow-Origin","X-Requested-With", "Content-Type", "Authorization"}),
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "DELETE"}),
+		handlers.AllowedOrigins([]string{"http://89.208.199.170:3000",
+			"http://213.219.214.220:8080",
+			"http://localhost:8080",
+			"http://127.0.0.1:8080",
+			"http://www.masterhub.site"}))
 
 	// server initialization
 

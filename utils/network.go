@@ -18,7 +18,6 @@ func writeData (w http.ResponseWriter, data []byte) {
 
 func setHeaders(w http.ResponseWriter, statusCode int, contentType string) {
 	w.WriteHeader(statusCode)
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	if contentType != "" {
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		w.Header().Set("content-type", contentType)
