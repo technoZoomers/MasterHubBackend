@@ -44,7 +44,7 @@ func (chatsRepo *ChatsRepo) GetChatsByUserId(query models.ChatsQueryValuesDB) ([
 	queryCount := 0
 	var selectQuery string
 	if query.Limit == 0 && query.Offset == 0 {
-		selectQuery = "SELECT chats.id, chats.user_id_master, user_id_student, chats.type, chats.created FROM chats INNER JOIN messages m on chats.id = m.chat_id WHERE"
+		selectQuery = "SELECT chats.id, chats.user_id_master, user_id_student, chats.type, chats.created FROM chats LEFT OUTER JOIN messages m on chats.id = m.chat_id WHERE"
 		selectQuery, queryCount, err = chatsRepo.addWhereParamsToQuery(query, selectQuery, &queryValues, queryCount)
 		if err != nil {
 			return chats, err
@@ -53,7 +53,7 @@ func (chatsRepo *ChatsRepo) GetChatsByUserId(query models.ChatsQueryValuesDB) ([
 	} else {
 		selectQuery = "SELECT id, user_id_master, user_id_student, type, created FROM (SELECT row_number() over (ORDER BY MAX(m.created) DESC) " +
 			"as select_id, chats.id, chats.user_id_master, user_id_student, chats.type, chats.created FROM chats " +
-			"INNER JOIN messages m on chats.id = m.chat_id WHERE"
+			"LEFT OUTER JOIN messages m on chats.id = m.chat_id WHERE"
 		selectQuery, queryCount, err = chatsRepo.addWhereParamsToQuery(query, selectQuery, &queryValues, queryCount)
 		selectQuery+= " GROUP BY chats.id"
 		if err != nil {
@@ -72,6 +72,7 @@ func (chatsRepo *ChatsRepo) GetChatsByUserId(query models.ChatsQueryValuesDB) ([
 			queryValues = append(queryValues, query.Offset+1, query.Offset+query.Limit)
 		}
 	}
+	fmt.Println(selectQuery, queryValues)
 	rows, err := transaction.Query(selectQuery, queryValues...)
 	if err != nil {
 		dbError = fmt.Errorf("failed to retrieve chats: %v", err.Error())
