@@ -88,7 +88,8 @@ func main() {
 
 	// router initialization
 
-	r := mux.NewRouter()
+	routerMain := mux.NewRouter()
+	r:= routerMain.PathPrefix(utils.Prefix).Subrouter()
 
 	// users
 	r.Handle("/users", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.UsersHandlers.CheckAuth, false)).Methods("GET")
