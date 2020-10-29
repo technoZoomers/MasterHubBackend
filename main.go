@@ -198,7 +198,6 @@ func main() {
 		ReadTimeout:  120 * time.Second,
 		WriteTimeout: 120 * time.Second,
 	}
-
 	err = server.ListenAndServe()
 
 	if err != nil {

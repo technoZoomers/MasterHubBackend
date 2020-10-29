@@ -29,10 +29,10 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 		ThemesRepo:themesRepo,
 		LanguagesRepo:languagesRepo,
 	mastersConfig:MastersConfig{
-			qualificationMap: map[int64]string{1: "self-educated", 2: "professional"},
-			educationFormatMap: map[int64]string{1: "online", 2: "live"},
-			qualificationMapBackwards: map[string]int64{"self-educated":1, "professional" :2},
-			educationFormatMapBackwards: map[string]int64{"online":1, "live":2},
+			qualificationMap: map[int64]string{1: "самоучка", 2: "профессионал"},
+			educationFormatMap: map[int64]string{1: "онлайн", 2: "вживую"},
+			qualificationMapBackwards: map[string]int64{"самоучка":1, "профессионал" :2},
+			educationFormatMapBackwards: map[string]int64{"онлайн":1, "вживую":2},
 	}}
 	useCases.StudentsUC = &StudentsUC{useCases, usersRepo, mastersRepo, studentsRepo, languagesRepo}
 	useCases.ThemesUC = &ThemesUC{useCases, themesRepo}

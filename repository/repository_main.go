@@ -136,7 +136,7 @@ func (repository *Repository) dropTables() error {
 }
 
 func (repository *Repository) fillTables() error {
-	_, err := repository.pool.Exec(TABLES_FILLING)
+	_, err := repository.pool.Exec(TABLES_FILLING_RU)
 	if err != nil {
 		return err
 	}
