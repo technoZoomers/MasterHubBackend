@@ -184,7 +184,10 @@ func main() {
 			"http://213.219.214.220:8080",
 			"http://192.168.1.102:8080",
 			"http://172.17.21.178:8080",
+			"http://192.168.1.4:8083",
 			"http://localhost:8080",
+			"http://localhost:8083",
+			"http://127.0.0.1:8083",
 			"http://127.0.0.1:8080",
 			"http://masterhub.site",
 			"http://www.masterhub.site"}))
