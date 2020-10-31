@@ -48,7 +48,7 @@ func (uh *UsersHandlers) Login(writer http.ResponseWriter, req *http.Request) {
 	err = uh.UsersUC.Login(&user)
 	var cookie http.Cookie
 	if err == nil {
-		err = uh.setCookie(&user, &cookie)
+		err = uh.setCookie(user.Id, &cookie)
 		if err != nil {
 			cookieError := fmt.Errorf("error setting cookie: %v", err.Error())
 			logger.Errorf(cookieError.Error())
@@ -69,7 +69,7 @@ func (uh *UsersHandlers) Logout(writer http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (uh *UsersHandlers) setCookie(user *models.User, cookie *http.Cookie) error {
+func (uh *UsersHandlers) setCookie(userId int64, cookie *http.Cookie) error {
 	token := uuid.New()
 	cookie.Name = uh.handlers.cookieString
 	cookie.Value = token.String()
@@ -78,7 +78,7 @@ func (uh *UsersHandlers) setCookie(user *models.User, cookie *http.Cookie) error
 	//cookie.Secure = true
 	cookie.HttpOnly = true
 	cookie.Path = "/"
-	return uh.UsersUC.InsertCookie(user.Id, cookie.Value)
+	return uh.UsersUC.InsertCookie(userId, cookie.Value)
 }
 
 

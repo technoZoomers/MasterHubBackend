@@ -25,7 +25,16 @@ func (sh *StudentsHandlers) Register(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 	err = sh.StudentsUC.Register(&newStudent)
-	sh.answerStudentFull(writer, newStudent, err)
+	var cookie http.Cookie
+	if err == nil {
+		err = sh.handlers.UsersHandlers.setCookie(newStudent.UserId, &cookie)
+		if err != nil {
+			cookieError := fmt.Errorf("error setting cookie: %v", err.Error())
+			logger.Errorf(cookieError.Error())
+			err = cookieError
+		}
+	}
+	sh.answerStudentFullLogin(writer, newStudent,  &cookie, err)
 
 }
 func (sh *StudentsHandlers) GetStudentById(writer http.ResponseWriter, req *http.Request) {
@@ -74,9 +83,25 @@ func (sh *StudentsHandlers) answerStudent(writer http.ResponseWriter, student mo
 	}
 }
 
+func (sh *StudentsHandlers) answerStudentLogin(writer http.ResponseWriter, student models.Student, cookie *http.Cookie,  err error) {
+	sent := sh.handlers.handleErrorConflict(writer, err)
+	if !sent {
+		http.SetCookie(writer, cookie)
+		utils.CreateAnswerStudentJson(writer, http.StatusOK, student)
+	}
+}
+
 func (sh *StudentsHandlers) answerStudentFull(writer http.ResponseWriter, studentFull models.StudentFull,  err error) {
 	sent := sh.handlers.handleErrorConflict(writer, err)
 	if !sent {
 		utils.CreateAnswerStudentFullJson(writer, http.StatusCreated, studentFull)
 	}
 }
+func (sh *StudentsHandlers) answerStudentFullLogin(writer http.ResponseWriter, studentFull models.StudentFull,  cookie *http.Cookie, err error) {
+	sent := sh.handlers.handleErrorConflict(writer, err)
+	if !sent {
+		http.SetCookie(writer, cookie)
+		utils.CreateAnswerStudentFullJson(writer, http.StatusCreated, studentFull)
+	}
+}
+

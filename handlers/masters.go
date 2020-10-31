@@ -116,8 +116,16 @@ func (mh *MastersHandlers) Register(writer http.ResponseWriter, req *http.Reques
 		return
 	}
 	err = mh.MastersUC.Register(&newMaster)
-	mh.answerMasterFull(writer, newMaster, err)
-
+	var cookie http.Cookie
+	if err == nil {
+		err = mh.handlers.UsersHandlers.setCookie(newMaster.UserId, &cookie)
+		if err != nil {
+			cookieError := fmt.Errorf("error setting cookie: %v", err.Error())
+			logger.Errorf(cookieError.Error())
+			err = cookieError
+		}
+	}
+	mh.answerMasterFullLogin(writer, newMaster, &cookie, err)
 }
 
 func (mh *MastersHandlers) answerMaster(writer http.ResponseWriter, master models.Master, err error) {
@@ -127,9 +135,25 @@ func (mh *MastersHandlers) answerMaster(writer http.ResponseWriter, master model
 	}
 }
 
+func (mh *MastersHandlers) answerMasterLogin(writer http.ResponseWriter, master models.Master, cookie *http.Cookie, err error) {
+	sent := mh.handlers.handleErrorConflict(writer, err)
+	if !sent {
+		http.SetCookie(writer, cookie)
+		utils.CreateAnswerMasterJson(writer, http.StatusOK, master)
+	}
+}
+
 func (mh *MastersHandlers) answerMasterFull(writer http.ResponseWriter, masterFull models.MasterFull,  err error) {
 	sent := mh.handlers.handleErrorConflict(writer, err)
 	if !sent {
+		utils.CreateAnswerMasterFullJson(writer, http.StatusCreated, masterFull)
+	}
+}
+
+func (mh *MastersHandlers) answerMasterFullLogin(writer http.ResponseWriter, masterFull models.MasterFull, cookie *http.Cookie,  err error) {
+	sent := mh.handlers.handleErrorConflict(writer, err)
+	if !sent {
+		http.SetCookie(writer, cookie)
 		utils.CreateAnswerMasterFullJson(writer, http.StatusCreated, masterFull)
 	}
 }
