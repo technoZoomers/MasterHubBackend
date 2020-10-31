@@ -148,10 +148,23 @@ func (videosUC *VideosUC) newVideo(videoData *models.VideoData, file multipart.F
 		return fileError
 	}
 
+	// ПЕРЕДЕЛАТЬ!!!!
+
+	var masterDB models.MasterDB // TODO: fix this
+	err = videosUC.MastersRepo.GetMasterByUserId(&masterDB)
+	if err != nil {
+		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+	}
+	if masterDB.Id == videosUC.useCases.errorId {
+		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: masterId}
+		logger.Errorf(absenceError.Error())
+		return absenceError
+	}
+
 	videoDB := models.VideoDB{
 		Filename:  filename,
 		Extension: fileExtension.Extension,
-		MasterId:  masterId,
+		MasterId:  masterDB.Id,
 		Name:      videosUC.videosConfig.videosDefaultName,
 		Intro:     intro,
 		Uploaded:  time.Now(),
