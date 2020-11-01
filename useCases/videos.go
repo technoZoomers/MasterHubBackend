@@ -151,11 +151,12 @@ func (videosUC *VideosUC) newVideo(videoData *models.VideoData, file multipart.F
 	// ПЕРЕДЕЛАТЬ!!!!
 
 	var masterDB models.MasterDB // TODO: fix this
+	masterDB.UserId = masterId
 	err = videosUC.MastersRepo.GetMasterByUserId(&masterDB)
 	if err != nil {
 		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
-	if masterDB.Id == videosUC.useCases.errorId {
+	if masterDB.UserId == videosUC.useCases.errorId {
 		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: masterId}
 		logger.Errorf(absenceError.Error())
 		return absenceError
