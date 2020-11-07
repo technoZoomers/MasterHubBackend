@@ -18,5 +18,7 @@ test.html
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+utils/delete.go
 sqlFiles
 master_videos
+users_avatars

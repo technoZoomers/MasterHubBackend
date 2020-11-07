@@ -27,7 +27,7 @@ func (cookiesRepo *CookiesRepo) DeleteCookie(cookie string) error {
 	return err
 }
 
-func (cookiesRepo *CookiesRepo) GetCookieByUser(userId string, cookieDB *models.CookieDB) error {
+func (cookiesRepo *CookiesRepo) GetCookieByUser(userId int64, cookieDB *models.CookieDB) error {
 	cookiesCollection := cookiesRepo.repository.mongoDB.Collection(cookiesRepo.collectionName)
 	filter := bson.D{{cookiesRepo.userKey, userId}}
 	err := cookiesCollection.FindOne(context.TODO(), filter).Decode(&cookieDB)

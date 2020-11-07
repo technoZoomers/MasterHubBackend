@@ -14,6 +14,7 @@ type UseCases struct {
 	WebsocketsUC  *WebsocketsUC
 	errorMessages ErrorMessagesUC
 	errorId       int64
+	filesDir      string
 }
 
 func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repository.MastersRepoI, studentsRepo repository.StudentsRepoI,
@@ -50,7 +51,15 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 			videoPrefixIntro:  "_intro",
 		},
 	}
-	useCases.AvatarsUC = &AvatarsUC{useCases, avatarsRepo}
+	useCases.AvatarsUC = &AvatarsUC{
+		useCases:    useCases,
+		AvatarsRepo: avatarsRepo,
+		avatarConfig: AvatarConfig{
+			avatarsDir:    "/users_avatars/",
+			avatarPrefix:  "user_",
+			avatarPostfix: "_avatar",
+		},
+	}
 	useCases.ChatsUC = &ChatsUC{
 		useCases:     useCases,
 		MastersRepo:  mastersRepo,
@@ -111,5 +120,6 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 		},
 	}
 	useCases.errorId = 0
+	useCases.filesDir = "masterhub_files"
 	return nil
 }

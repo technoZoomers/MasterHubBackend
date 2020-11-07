@@ -56,7 +56,19 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 	handlers.StudentsHandlers = &StudentsHandlers{handlers, studentsUC}
 	handlers.LanguagesHandlers = &LanguagesHandlers{handlers, languagesUC}
 	handlers.ThemesHandlers = &ThemesHandlers{handlers, themesUC}
-	handlers.AvatarsHandlers = &AvatarsHandlers{handlers, avatarsUC}
+	handlers.AvatarsHandlers = &AvatarsHandlers{
+		handlers:  handlers,
+		AvatarsUC: avatarsUC,
+		AvatarParseConfig: AvatarParseConfig{
+			FormDataKey: "avatar",
+			ImgFormats: map[string]bool{
+				"image/jpeg":    true,
+				"image/png":     true,
+				"image/gif":     true,
+				"image/svg+xml": true,
+			},
+		},
+	}
 	handlers.VideosHandlers = &VideosHandlers{
 		handlers: handlers,
 		VideosUC: videosUC,

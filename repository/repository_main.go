@@ -55,7 +55,6 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 	repository.LanguagesRepo = &LanguagesRepo{repository}
 	repository.ThemesRepo = &ThemesRepo{repository}
 	repository.VideosRepo = &VideosRepo{repository}
-	repository.AvatarsRepo = &AvatarsRepo{repository}
 	repository.ChatsRepo = &ChatsRepo{
 		repository: repository,
 		userMap: map[string]int64{
@@ -74,6 +73,13 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 		userKey:        "user",
 		cookieKey:      "cookie",
 		collectionName: "cookies",
+	}
+	repository.AvatarsRepo = &AvatarsRepo{
+		repository:     repository,
+		userKey:        "user",
+		avatarKey:      "filename",
+		collectionName: "avatars",
+		extKey:         "extension",
 	}
 	err = repository.InitMongoDB(config.Host)
 	if err != nil {
@@ -97,10 +103,10 @@ func (repository *Repository) InitMongoDB(host string) error {
 		return err
 	}
 	repository.mongoDB = client.Database(utils.DBName)
-	//err = repository.dropCollections()
-	//if err != nil {
-	//	return err
-	//}
+	err = repository.dropCollections()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -110,6 +116,12 @@ func (repository *Repository) dropCollections() error {
 	err := repository.mongoDB.Collection(repository.CookiesRepo.collectionName).Drop(context.TODO())
 	if err != nil {
 		dbError := fmt.Errorf("can't drop cookies collection: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return err
+	}
+	err = repository.mongoDB.Collection(repository.AvatarsRepo.collectionName).Drop(context.TODO())
+	if err != nil {
+		dbError := fmt.Errorf("can't drop avatars collection: %v", err.Error())
 		logger.Errorf(dbError.Error())
 		return err
 	}

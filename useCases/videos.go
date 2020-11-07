@@ -131,7 +131,7 @@ func (videosUC *VideosUC) newVideo(videoData *models.VideoData, file multipart.F
 	if err != nil {
 		return err
 	}
-	newPath := fmt.Sprintf("%s%s.%s", videosUC.videosConfig.videosDir, filename, fileExtension.Extension)
+	newPath := fmt.Sprintf("%s%s%s.%s", videosUC.useCases.filesDir, videosUC.videosConfig.videosDir, filename, fileExtension.Extension)
 	newFile, err := os.Create(newPath)
 	if err != nil {
 		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileCreateError, err.Error())
@@ -305,7 +305,7 @@ func (videosUC *VideosUC) deleteVideo(videoDB *models.VideoDB, masterId int64) e
 	if err != nil {
 		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
-	filename := fmt.Sprintf("%s%s.%s", videosUC.videosConfig.videosDir, videoDB.Filename, videoDB.Extension)
+	filename := fmt.Sprintf("%s%s%s.%s", videosUC.useCases.filesDir, videosUC.videosConfig.videosDir, videoDB.Filename, videoDB.Extension)
 	err = os.Remove(filename)
 	if err != nil {
 		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileRemoveError, err.Error())
@@ -345,7 +345,7 @@ func (videosUC *VideosUC) getVideo(videoDB *models.VideoDB, masterId int64) ([]b
 	if err != nil {
 		return videoBytes, err
 	}
-	filename := fmt.Sprintf("%s%s.%s", videosUC.videosConfig.videosDir, videoDB.Filename, videoDB.Extension)
+	filename := fmt.Sprintf("%s%s%s.%s", videosUC.useCases.filesDir, videosUC.videosConfig.videosDir, videoDB.Filename, videoDB.Extension)
 	videoFile, err := os.Open(filename)
 	if err != nil {
 		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileOpenError, err.Error())

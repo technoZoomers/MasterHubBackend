@@ -15,7 +15,7 @@ type UsersUC struct {
 
 func (usersUC *UsersUC) GetUserById(user *models.User) error {
 	var userDB models.UserDB
-	err := usersUC.validateUser(&userDB, user)
+	err := usersUC.validateUser(&userDB, user.Id)
 	if err != nil {
 		return err
 	}
@@ -29,20 +29,25 @@ func (usersUC *UsersUC) matchUser(userDB *models.UserDB, user *models.User) {
 	user.Type = userDB.Type
 	user.Created = userDB.Created
 }
-func (usersUC *UsersUC) validateUser(userDB *models.UserDB, user *models.User) error {
-	if user.Id == usersUC.useCases.errorId {
-		return &models.BadRequestError{Message: "incorrect user id", RequestId: user.Id}
+func (usersUC *UsersUC) validateUser(userDB *models.UserDB, userId int64) error {
+	if userId == usersUC.useCases.errorId {
+		return &models.BadRequestError{Message: "incorrect user id", RequestId: userId}
 	}
-	err := usersUC.UsersRepo.GetUserById(userDB, user.Id)
+	err := usersUC.UsersRepo.GetUserById(userDB, userId)
 	if err != nil {
 		return fmt.Errorf(usersUC.useCases.errorMessages.DbError)
 	}
 	if userDB.Id == usersUC.useCases.errorId {
-		absenceError := &models.BadRequestError{Message: "user doesn't exist", RequestId: user.Id}
+		absenceError := &models.BadRequestError{Message: "user doesn't exist", RequestId: userId}
 		logger.Errorf(absenceError.Error())
 		return absenceError
 	}
 	return nil
+}
+
+func (usersUC *UsersUC) validateUserId(userId int64) error {
+	var userDB models.UserDB
+	return usersUC.validateUser(&userDB, userId)
 }
 
 func (usersUC *UsersUC) Login(user *models.User) error {
