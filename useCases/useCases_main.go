@@ -120,6 +120,7 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 		},
 	}
 	useCases.errorId = 0
-	useCases.filesDir = "masterhub_files"
+	useCases.filesDir = "/masterhub_files"
+	//useCases.filesDir = ""
 	return nil
 }

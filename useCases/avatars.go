@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"os"
-	"strconv"
 )
 
 type AvatarsUC struct {
@@ -26,7 +25,12 @@ type AvatarConfig struct {
 }
 
 func (avatarsUC *AvatarsUC) createAvatarFilename(userId int64) (string, error) {
+	var avatarExists models.AvatarDB
 	var filename string
+	_ = avatarsUC.AvatarsRepo.GetAvatarByUser(userId, &avatarExists)
+	if avatarExists.User != avatarsUC.useCases.errorId {
+		return filename, &models.ConflictError{Message: "avatar already exists"}
+	}
 	filename = fmt.Sprintf("%s%d%s", avatarsUC.avatarConfig.avatarPrefix, userId, avatarsUC.avatarConfig.avatarPostfix)
 	return filename, nil
 }
@@ -128,7 +132,7 @@ func (avatarsUC *AvatarsUC) ChangeUserAvatar(file multipart.File, userId int64) 
 		return err
 	}
 	avatar.Extension = ext
-	err = avatarsUC.AvatarsRepo.UpdateAvatarByUserId(strconv.FormatInt(userId, 10), &avatar)
+	err = avatarsUC.AvatarsRepo.UpdateAvatarByUserId(userId, &avatar)
 	if err != nil {
 		return fmt.Errorf(avatarsUC.useCases.errorMessages.DbError)
 	}
@@ -148,7 +152,7 @@ func (avatarsUC *AvatarsUC) GetUserAvatar(userId int64) ([]byte, error) {
 		return videoBytes, fmt.Errorf(avatarsUC.useCases.errorMessages.DbError)
 	}
 	if avatar.User == avatarsUC.useCases.errorId {
-		filename = fmt.Sprintf("%s%s%s.%s", avatarsUC.useCases.filesDir, avatarsUC.avatarConfig.avatarsDir, "default", "jpg")
+		filename = fmt.Sprintf("%s%s%s.%s", avatarsUC.useCases.filesDir, avatarsUC.avatarConfig.avatarsDir, "default", "png")
 	} else {
 		filename = fmt.Sprintf("%s%s%s.%s", avatarsUC.useCases.filesDir, avatarsUC.avatarConfig.avatarsDir, avatar.Filename, avatar.Extension)
 	}

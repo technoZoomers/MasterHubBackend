@@ -27,7 +27,7 @@ func (avatarsRepo *AvatarsRepo) InsertAvatar(avatar *models.AvatarDB) error {
 	return nil
 }
 
-func (avatarsRepo *AvatarsRepo) UpdateAvatarByUserId(userId string, avatar *models.AvatarDB) error {
+func (avatarsRepo *AvatarsRepo) UpdateAvatarByUserId(userId int64, avatar *models.AvatarDB) error {
 	avatarCollection := avatarsRepo.repository.mongoDB.Collection(avatarsRepo.collectionName)
 	filter := bson.D{{avatarsRepo.userKey, userId}}
 	update := bson.M{
