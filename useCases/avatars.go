@@ -147,10 +147,7 @@ func (avatarsUC *AvatarsUC) GetUserAvatar(userId int64) ([]byte, error) {
 		return videoBytes, err
 	}
 	var avatar models.AvatarDB
-	err = avatarsUC.AvatarsRepo.GetAvatarByUser(userId, &avatar)
-	if err != nil {
-		return videoBytes, fmt.Errorf(avatarsUC.useCases.errorMessages.DbError)
-	}
+	_ = avatarsUC.AvatarsRepo.GetAvatarByUser(userId, &avatar)
 	if avatar.User == avatarsUC.useCases.errorId {
 		filename = fmt.Sprintf("%s%s%s.%s", avatarsUC.useCases.filesDir, avatarsUC.avatarConfig.avatarsDir, "default", "png")
 	} else {
