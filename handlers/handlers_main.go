@@ -27,7 +27,7 @@ type Handlers struct {
 	conflictError          *models.ConflictError
 	noContentError         *models.NoContentError
 	badQueryParameterError *models.BadQueryParameterError
-	forbiddenError *models.ForbiddenError
+	forbiddenError         *models.ForbiddenError
 	contextUserKey         string
 	contextCookieKey       string
 	cookieString           string

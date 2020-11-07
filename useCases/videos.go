@@ -71,7 +71,7 @@ func (videosUC *VideosUC) validateMaster(masterId int64) (int64, error) {
 		logger.Errorf(absenceError.Error())
 		return videosUC.useCases.errorId, absenceError
 	}
-	return videosUC.useCases.errorId, nil
+	return masterDB.Id, nil
 }
 
 func (videosUC *VideosUC) validateVideo(videoDB *models.VideoDB) error {
@@ -181,7 +181,7 @@ func (videosUC *VideosUC) NewMasterIntro(videoData *models.VideoData, file multi
 
 func (videosUC *VideosUC) ChangeMasterIntro(videoData *models.VideoData, file multipart.File, masterId int64) error {
 	videoDB := models.VideoDB{
-		Intro:    true,
+		Intro: true,
 	}
 	err := videosUC.deleteVideo(&videoDB, masterId)
 	if err != nil {
@@ -317,15 +317,15 @@ func (videosUC *VideosUC) deleteVideo(videoDB *models.VideoDB, masterId int64) e
 
 func (videosUC *VideosUC) DeleteMasterVideo(masterId int64, videoId int64) error {
 	videoDB := models.VideoDB{
-		Id:       videoId,
-		Intro:    false,
+		Id:    videoId,
+		Intro: false,
 	}
 	return videosUC.deleteVideo(&videoDB, masterId)
 }
 
 func (videosUC *VideosUC) DeleteMasterIntro(masterId int64) error {
 	videoDB := models.VideoDB{
-		Intro:    true,
+		Intro: true,
 	}
 	return videosUC.deleteVideo(&videoDB, masterId)
 }
@@ -375,15 +375,15 @@ func (videosUC *VideosUC) getVideo(videoDB *models.VideoDB, masterId int64) ([]b
 
 func (videosUC *VideosUC) GetMasterVideo(masterId int64, videoId int64) ([]byte, error) {
 	videoDB := models.VideoDB{
-		Id:       videoId,
-		Intro:    false,
+		Id:    videoId,
+		Intro: false,
 	}
 	return videosUC.getVideo(&videoDB, masterId)
 
 }
 func (videosUC *VideosUC) GetMasterIntro(masterId int64) ([]byte, error) {
 	videoDB := models.VideoDB{
-		Intro:    true,
+		Intro: true,
 	}
 	return videosUC.getVideo(&videoDB, masterId)
 }
@@ -411,15 +411,15 @@ func (videosUC *VideosUC) getVideoData(videoDB *models.VideoDB, masterId int64, 
 
 func (videosUC *VideosUC) GetVideoDataById(videoData *models.VideoData, masterId int64) error {
 	videoDB := models.VideoDB{
-		Id:       videoData.Id,
-		Intro:    false,
+		Id:    videoData.Id,
+		Intro: false,
 	}
 	return videosUC.getVideoData(&videoDB, masterId, videoData)
 }
 
 func (videosUC *VideosUC) GetIntroData(videoData *models.VideoData, masterId int64) error {
 	videoDB := models.VideoDB{
-		Intro:    true,
+		Intro: true,
 	}
 	return videosUC.getVideoData(&videoDB, masterId, videoData)
 }
@@ -490,7 +490,7 @@ func (videosUC *VideosUC) changeVideoData(videoDB *models.VideoDB, masterId int6
 
 func (videosUC *VideosUC) ChangeIntroData(videoData *models.VideoData, masterId int64) error {
 	videoDB := models.VideoDB{
-		Intro:    true,
+		Intro: true,
 	}
 	return videosUC.changeVideoData(&videoDB, masterId, videoData)
 }
@@ -506,8 +506,8 @@ func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId 
 		}
 	}
 	videoDB := models.VideoDB{
-		Id:       videoData.Id,
-		Intro:    false,
+		Id:    videoData.Id,
+		Intro: false,
 	}
 	return videosUC.changeVideoData(&videoDB, masterId, videoData)
 }

@@ -20,7 +20,7 @@ func (brError *BadQueryParameterError) Error() string {
 }
 
 type ConflictError struct {
-	Message   string
+	Message         string
 	ExistingContent string
 }
 
@@ -38,7 +38,7 @@ func (noContentError *NoContentError) Error() string {
 }
 
 type ForbiddenError struct {
-	Reason   string
+	Reason string
 }
 
 func (forbiddenError *ForbiddenError) Error() string {
