@@ -27,11 +27,11 @@ type Handlers struct {
 	conflictError          *models.ConflictError
 	noContentError         *models.NoContentError
 	badQueryParameterError *models.BadQueryParameterError
-	contextUserKey string
-	contextCookieKey string
-	cookieString string
-	contextAuthorisedKey string
-
+	forbiddenError *models.ForbiddenError
+	contextUserKey         string
+	contextCookieKey       string
+	cookieString           string
+	contextAuthorisedKey   string
 }
 
 func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useCases.MastersUCInterface, studentsUC useCases.StudentsUCInterface,
@@ -90,7 +90,7 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 	}
 	handlers.WSHandlers = &WSHandlers{
 		handlers: handlers,
-		ChatsUC: chatsUC,
+		ChatsUC:  chatsUC,
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
@@ -129,6 +129,15 @@ func (handlers *Handlers) handleErrorNoContent(writer http.ResponseWriter, err e
 	if errors.As(err, &handlers.noContentError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusNoContent, models.CreateMessage(err.Error()))
+		return true
+	}
+	return handlers.handleError(writer, err)
+}
+
+func (handlers *Handlers) handleForbiddenError(writer http.ResponseWriter, err error) bool {
+	if errors.As(err, &handlers.forbiddenError) {
+		logger.Error(err)
+		utils.CreateErrorAnswerJson(writer, http.StatusForbidden, models.CreateMessage(err.Error()))
 		return true
 	}
 	return handlers.handleError(writer, err)

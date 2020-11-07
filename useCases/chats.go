@@ -10,24 +10,23 @@ import (
 )
 
 type ChatsUC struct {
-	useCases     *UseCases
-	ChatsRepo   repository.ChatsRepoI
-	MastersRepo repository.MastersRepoI
-	StudentsRepo repository.StudentsRepoI
+	useCases        *UseCases
+	ChatsRepo       repository.ChatsRepoI
+	MastersRepo     repository.MastersRepoI
+	StudentsRepo    repository.StudentsRepoI
 	badRequestError *models.BadRequestError
-	chatsConfig ChatsConfig
+	chatsConfig     ChatsConfig
 }
 
 type ChatsConfig struct {
-	userMap map[string]int64
+	userMap   map[string]int64
 	chatTypes map[string]int64
 
-	userMapBackwards map[int64]string
-	chatTypesBackwards  map[int64]string
+	userMapBackwards   map[int64]string
+	chatTypesBackwards map[int64]string
 
-	messagesTypesMap map[int64]bool
+	messagesTypesMap          map[int64]bool
 	messagesTypesMapBackwards map[bool]int64
-
 }
 
 func (chatsUC *ChatsUC) validateChat(chatExists *models.ChatDB, chatId int64) error {
@@ -84,7 +83,7 @@ func (chatsUC *ChatsUC) validateStudent(studentId int64) error {
 	return nil
 }
 
-func (chatsUC *ChatsUC) matchMessage (messageDB *models.MessageDB, message *models.Message) error {
+func (chatsUC *ChatsUC) matchMessage(messageDB *models.MessageDB, message *models.Message) error {
 	message.Id = messageDB.Id
 	if messageDB.UserId != chatsUC.useCases.errorId {
 		message.AuthorId = messageDB.UserId
@@ -96,7 +95,7 @@ func (chatsUC *ChatsUC) matchMessage (messageDB *models.MessageDB, message *mode
 	return nil
 }
 
-func (chatsUC *ChatsUC) matchChat (chatDB *models.ChatDB, chat *models.Chat) error {
+func (chatsUC *ChatsUC) matchChat(chatDB *models.ChatDB, chat *models.Chat) error {
 	chat.Id = chatDB.Id
 	chat.Type = chatDB.Type
 	chat.Created = chatDB.Created
@@ -117,10 +116,10 @@ func (chatsUC *ChatsUC) checkDeleted(userType int64, chatType int64) bool {
 	if (chatsUC.chatsConfig.userMap["student"] == userType &&
 		chatsUC.chatsConfig.chatTypes["deleted by student"] == chatType) ||
 		(chatsUC.chatsConfig.userMap["master"] == userType &&
-			chatsUC.chatsConfig.chatTypes["deleted by master"] == chatType){
+			chatsUC.chatsConfig.chatTypes["deleted by master"] == chatType) {
 		return true
 	} else {
-		return  false
+		return false
 	}
 }
 
@@ -171,15 +170,15 @@ func (chatsUC *ChatsUC) CreateChatRequest(chatRequest *models.Chat, studentId in
 		return err
 	}
 	if chatRequest.StudentId != studentId {
-		accessError := &models.BadRequestError{Message: "can't create other student's chat", RequestId: studentId}
+		accessError := &models.ForbiddenError{Reason: "can't create other student's chat"}
 		logger.Errorf(accessError.Error())
 		return accessError
 	}
 	chatDB := models.ChatDB{
-		Type:  1,
+		Type:      1,
 		StudentId: chatRequest.StudentId,
 		MasterId:  chatRequest.MasterId,
-		Created:  time.Now(),
+		Created:   time.Now(),
 	}
 	err = chatsUC.ChatsRepo.GetChatByStudentIdAndMasterId(&chatDB)
 	if err != nil {
@@ -198,7 +197,7 @@ func (chatsUC *ChatsUC) CreateChatRequest(chatRequest *models.Chat, studentId in
 	if err != nil {
 		return err
 	}
-	return  nil
+	return nil
 }
 
 func (chatsUC *ChatsUC) ChangeChatStatus(chat *models.Chat, masterId int64, chatId int64) error {
@@ -214,8 +213,8 @@ func (chatsUC *ChatsUC) ChangeChatStatus(chat *models.Chat, masterId int64, chat
 	if chat.MasterId == chatsUC.useCases.errorId {
 		chat.MasterId = masterId
 	} else {
-		if chat.MasterId != masterId { // TODO: change error type
-			matchError := &models.BadRequestError{Message: "can't change other masters's chat status", RequestId: chat.Id}
+		if chat.MasterId != masterId {
+			matchError := &models.ForbiddenError{Reason: "can't change other masters's chat status"}
 			logger.Errorf(matchError.Error())
 			return matchError
 		}
@@ -283,12 +282,12 @@ func (chatsUC *ChatsUC) GetMessagesByChatId(chatId int64) (models.Messages, erro
 		return messages, fmt.Errorf(chatsUC.useCases.errorMessages.DbError)
 	}
 	for _, messageDB := range messagesDB {
-			var message models.Message
-			err = chatsUC.matchMessage(&messageDB, &message)
-			if err != nil {
-				return messages, err
-			}
-			messages = append(messages, message)
+		var message models.Message
+		err = chatsUC.matchMessage(&messageDB, &message)
+		if err != nil {
+			return messages, err
+		}
+		messages = append(messages, message)
 	}
 	return messages, nil
 }

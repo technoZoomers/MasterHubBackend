@@ -9,10 +9,10 @@ import (
 )
 
 type StudentsUC struct {
-	useCases     *UseCases
-	UsersRepo repository.UsersRepoI
-	MastersRepo repository.MastersRepoI
-	StudentsRepo repository.StudentsRepoI
+	useCases      *UseCases
+	UsersRepo     repository.UsersRepoI
+	MastersRepo   repository.MastersRepoI
+	StudentsRepo  repository.StudentsRepoI
 	LanguagesRepo repository.LanguagesRepoI
 }
 
@@ -44,7 +44,7 @@ func (studentsUC *StudentsUC) Register(studentFull *models.StudentFull) error {
 	var userDB models.UserDB
 
 	if studentFull.Email == "" {
-		reqError := &models.BadRequestError{Message: "email can't be empty"} // TODO: refactor id in error
+		reqError := &models.BadRequestError{Message: "email can't be empty"}
 		logger.Errorf(reqError.Error())
 		return reqError
 	} else {
@@ -56,7 +56,7 @@ func (studentsUC *StudentsUC) Register(studentFull *models.StudentFull) error {
 			return fmt.Errorf(studentsUC.useCases.errorMessages.DbError)
 		}
 		if userDBEmailExists.Id != studentsUC.useCases.errorId {
-			conflictError := &models.ConflictError{Message: "can't register student, email is already taken", RequestId: studentFull.UserId}
+			conflictError := &models.ConflictError{Message: "can't register student, email is already taken", ExistingContent: studentFull.Email}
 			logger.Errorf(conflictError.Error())
 			return conflictError
 		}
@@ -66,7 +66,7 @@ func (studentsUC *StudentsUC) Register(studentFull *models.StudentFull) error {
 	userDB.Created = time.Now()
 	userDB.Type = 2
 	if studentFull.Username == "" {
-		reqError := &models.BadRequestError{Message: "username can't be empty", RequestId: studentFull.UserId} // TODO: refactor id in error
+		reqError := &models.BadRequestError{Message: "username can't be empty", RequestId: studentFull.UserId}
 		logger.Errorf(reqError.Error())
 		return reqError
 	} else {
@@ -78,7 +78,7 @@ func (studentsUC *StudentsUC) Register(studentFull *models.StudentFull) error {
 			return fmt.Errorf(studentsUC.useCases.errorMessages.DbError)
 		}
 		if masterDBUsernameExist.Id != studentsUC.useCases.errorId {
-			conflictError := &models.ConflictError{Message: "can't register student, username is already taken", RequestId: studentFull.UserId}
+			conflictError := &models.ConflictError{Message: "can't register student, username is already taken", ExistingContent: studentFull.Username}
 			logger.Errorf(conflictError.Error())
 			return conflictError
 		}
@@ -90,7 +90,7 @@ func (studentsUC *StudentsUC) Register(studentFull *models.StudentFull) error {
 			return fmt.Errorf(studentsUC.useCases.errorMessages.DbError)
 		}
 		if studentDBUsernameExist.Id != studentsUC.useCases.errorId {
-			conflictError := &models.ConflictError{Message: "can't register student, username is already taken", RequestId: studentFull.UserId}
+			conflictError := &models.ConflictError{Message: "can't register student, username is already taken", ExistingContent: studentFull.Username}
 			logger.Errorf(conflictError.Error())
 			return conflictError
 		}
@@ -205,7 +205,7 @@ func (studentsUC *StudentsUC) ChangeStudentData(student *models.Student) error {
 			return fmt.Errorf(studentsUC.useCases.errorMessages.DbError)
 		}
 		if masterDBUsernameExist.Id != studentsUC.useCases.errorId && masterDBUsernameExist.Id != studentDB.Id {
-			absenceError := &models.ConflictError{Message: "can't update student, username is already taken", RequestId: student.UserId}
+			absenceError := &models.ConflictError{Message: "can't update student, username is already taken", ExistingContent: student.Username}
 			logger.Errorf(absenceError.Error())
 			return absenceError
 		}
@@ -217,7 +217,7 @@ func (studentsUC *StudentsUC) ChangeStudentData(student *models.Student) error {
 			return fmt.Errorf(studentsUC.useCases.errorMessages.DbError)
 		}
 		if studentDBUsernameExist.Id != studentsUC.useCases.errorId && studentDBUsernameExist.Id != studentDB.Id {
-			conflictError := &models.ConflictError{Message: "can't update student, username is already taken", RequestId: student.UserId}
+			conflictError := &models.ConflictError{Message: "can't update student, username is already taken", ExistingContent: student.Username}
 			logger.Errorf(conflictError.Error())
 			return conflictError
 		}
@@ -228,7 +228,6 @@ func (studentsUC *StudentsUC) ChangeStudentData(student *models.Student) error {
 
 	studentDB.Fullname = student.Fullname
 
-
 	err = studentsUC.StudentsRepo.UpdateStudent(&studentDB)
 	if err != nil {
 		return fmt.Errorf(studentsUC.useCases.errorMessages.DbError)
@@ -236,7 +235,7 @@ func (studentsUC *StudentsUC) ChangeStudentData(student *models.Student) error {
 
 	err = studentsUC.changeStudentsLanguages(student, &studentDB)
 	if err != nil {
-		return  err
+		return err
 	}
 
 	return nil

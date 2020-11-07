@@ -118,7 +118,7 @@ func (ch *ChatsHandlers) ChangeChatStatus(writer http.ResponseWriter, req *http.
 		return
 	}
 	err = ch.ChatsUC.ChangeChatStatus(&chatRequest, masterId, chatId)
-	ch.answerChat(writer, chatRequest, http.StatusCreated, err)
+	ch.answerChat(writer, chatRequest, http.StatusOK, err)
 }
 
 func (ch *ChatsHandlers) GetMessagesByChatId(writer http.ResponseWriter, req *http.Request) {
@@ -148,7 +148,7 @@ func (ch *ChatsHandlers) answerMessages(writer http.ResponseWriter, messages []m
 	}
 }
 func (ch *ChatsHandlers) answerChat(writer http.ResponseWriter, chat models.Chat, statusCode int, err error) {
-	sent := ch.handlers.handleError(writer, err)
+	sent := ch.handlers.handleForbiddenError(writer, err)
 	if !sent {
 		utils.CreateAnswerChatJson(writer, statusCode, chat)
 	}

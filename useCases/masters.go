@@ -12,19 +12,19 @@ import (
 type MastersUC struct {
 	useCases      *UseCases
 	MastersRepo   repository.MastersRepoI
-	StudentsRepo   repository.StudentsRepoI
-	UsersRepo repository.UsersRepoI
+	StudentsRepo  repository.StudentsRepoI
+	UsersRepo     repository.UsersRepoI
 	ThemesRepo    repository.ThemesRepoI
 	LanguagesRepo repository.LanguagesRepoI
 	mastersConfig MastersConfig
 }
 
 type MastersConfig struct {
-	qualificationMap        map[int64]string
-	educationFormatMap   map[int64]string
+	qualificationMap   map[int64]string
+	educationFormatMap map[int64]string
 
-	qualificationMapBackwards        map[string]int64
-	educationFormatMapBackwards  map[string]int64
+	qualificationMapBackwards   map[string]int64
+	educationFormatMapBackwards map[string]int64
 }
 
 func (mastersUC *MastersUC) matchMaster(masterDB *models.MasterDB, master *models.Master) error {
@@ -219,7 +219,7 @@ func (mastersUC *MastersUC) ChangeMasterData(master *models.Master) error {
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
 		if masterDBUsernameExist.Id != mastersUC.useCases.errorId && masterDBUsernameExist.Id != masterDB.Id {
-			absenceError := &models.ConflictError{Message: "can't update master, username is already taken", RequestId: master.UserId}
+			absenceError := &models.ConflictError{Message: "can't update master, username is already taken", ExistingContent: master.Username}
 			logger.Errorf(absenceError.Error())
 			return absenceError
 		}
@@ -230,8 +230,8 @@ func (mastersUC *MastersUC) ChangeMasterData(master *models.Master) error {
 		if err != nil {
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
-		if studentDBUsernameExist.Id != mastersUC.useCases.errorId  && studentDBUsernameExist.Id != masterDB.Id {
-			conflictError := &models.ConflictError{Message: "can't update master, username is already taken", RequestId: master.UserId}
+		if studentDBUsernameExist.Id != mastersUC.useCases.errorId && studentDBUsernameExist.Id != masterDB.Id {
+			conflictError := &models.ConflictError{Message: "can't update master, username is already taken", ExistingContent: master.Username}
 			logger.Errorf(conflictError.Error())
 			return conflictError
 		}
@@ -251,17 +251,17 @@ func (mastersUC *MastersUC) ChangeMasterData(master *models.Master) error {
 
 	err = mastersUC.changeMastersTheme(master, &masterDB)
 	if err != nil {
-		return  err
+		return err
 	}
 
 	err = mastersUC.changeMastersQualification(master, &masterDB)
 	if err != nil {
-		return  err
+		return err
 	}
 
 	err = mastersUC.changeMastersEducationFormat(master, &masterDB)
 	if err != nil {
-		return  err
+		return err
 	}
 
 	err = mastersUC.MastersRepo.UpdateMaster(&masterDB)
@@ -271,12 +271,12 @@ func (mastersUC *MastersUC) ChangeMasterData(master *models.Master) error {
 
 	err = mastersUC.changeMastersLanguages(master, &masterDB)
 	if err != nil {
-		return  err
+		return err
 	}
 
 	err = mastersUC.changeMastersSubthemes(master, &masterDB)
 	if err != nil {
-		return  err
+		return err
 	}
 
 	return nil
@@ -318,7 +318,6 @@ func (mastersUC *MastersUC) changeMastersEducationFormat(master *models.Master, 
 	logger.Errorf(notExistError.Error())
 	return notExistError
 }
-
 
 func (mastersUC *MastersUC) changeMastersQualification(master *models.Master, masterDB *models.MasterDB) error {
 	var err error
@@ -420,7 +419,6 @@ func (mastersUC *MastersUC) changeMastersSubthemes(master *models.Master, master
 	return nil
 }
 
-
 func (mastersUC *MastersUC) changeMastersTheme(master *models.Master, masterDB *models.MasterDB) error {
 	var err error
 
@@ -461,7 +459,7 @@ func (mastersUC *MastersUC) matchEducationFormat(educationFormat string) (int64,
 		if edFormatInt != mastersUC.useCases.errorId {
 			return edFormatInt, nil
 		}
-		badParamError := &models.BadQueryParameterError{Parameter:"educationFormat"}
+		badParamError := &models.BadQueryParameterError{Parameter: "educationFormat"}
 		logger.Errorf(badParamError.Error())
 		return edFormatInt, badParamError
 	}
@@ -612,7 +610,7 @@ func (mastersUC *MastersUC) Get(query models.MastersQueryValues) (models.Masters
 	return masters, nil
 }
 
-func (mastersUC *MastersUC) insertMastersThemeDB(theme string,  masterDB *models.MasterDB) error {
+func (mastersUC *MastersUC) insertMastersThemeDB(theme string, masterDB *models.MasterDB) error {
 	var err error
 
 	if theme == "" {
@@ -743,7 +741,7 @@ func (mastersUC *MastersUC) Register(masterFull *models.MasterFull) error {
 	var userDB models.UserDB
 
 	if masterFull.Email == "" {
-		reqError := &models.BadRequestError{Message: "email can't be empty", RequestId: masterFull.UserId} // TODO: refactor id in error
+		reqError := &models.BadRequestError{Message: "email can't be empty"}
 		logger.Errorf(reqError.Error())
 		return reqError
 	} else {
@@ -755,7 +753,7 @@ func (mastersUC *MastersUC) Register(masterFull *models.MasterFull) error {
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
 		if userDBEmailExists.Id != mastersUC.useCases.errorId {
-			conflictError := &models.ConflictError{Message: "can't register master, email is already taken", RequestId: masterFull.UserId}
+			conflictError := &models.ConflictError{Message: "can't register master, email is already taken", ExistingContent: masterFull.Email}
 			logger.Errorf(conflictError.Error())
 			return conflictError
 		}
@@ -765,7 +763,7 @@ func (mastersUC *MastersUC) Register(masterFull *models.MasterFull) error {
 	userDB.Created = time.Now()
 	userDB.Type = 1
 	if masterFull.Username == "" {
-		reqError := &models.BadRequestError{Message: "username can't be empty", RequestId: masterFull.UserId} // TODO: refactor id in error
+		reqError := &models.BadRequestError{Message: "username can't be empty"}
 		logger.Errorf(reqError.Error())
 		return reqError
 	} else {
@@ -777,7 +775,7 @@ func (mastersUC *MastersUC) Register(masterFull *models.MasterFull) error {
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
 		if masterDBUsernameExist.Id != mastersUC.useCases.errorId {
-			conflictError := &models.ConflictError{Message: "can't register master, username is already taken", RequestId: masterFull.UserId}
+			conflictError := &models.ConflictError{Message: "can't register master, username is already taken", ExistingContent: masterFull.Username}
 			logger.Errorf(conflictError.Error())
 			return conflictError
 		}
@@ -789,7 +787,7 @@ func (mastersUC *MastersUC) Register(masterFull *models.MasterFull) error {
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
 		if studentDBUsernameExist.Id != mastersUC.useCases.errorId {
-			conflictError := &models.ConflictError{Message: "can't register master, username is already taken", RequestId: masterFull.UserId}
+			conflictError := &models.ConflictError{Message: "can't register master, username is already taken", ExistingContent: masterFull.Username}
 			logger.Errorf(conflictError.Error())
 			return conflictError
 		}

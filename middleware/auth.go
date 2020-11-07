@@ -11,15 +11,14 @@ import (
 )
 
 type AuthMidleware struct {
-	 middlewares *Middlewares
-	 UserUC         useCases.UsersUCInterface
+	middlewares *Middlewares
+	UserUC      useCases.UsersUCInterface
 }
 
 func (authMiddleware *AuthMidleware) Auth(httpHandler http.HandlerFunc, passNext bool) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 		cookie, err := req.Cookie(authMiddleware.middlewares.cookieString)
-		fmt.Println(cookie)
 		if err != nil {
 			ctx = context.WithValue(ctx, authMiddleware.middlewares.contextAuthorisedKey, false)
 			authMiddleware.passNext(passNext, httpHandler, writer, req, ctx)

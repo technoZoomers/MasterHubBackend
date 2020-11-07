@@ -82,7 +82,6 @@ func (mastersRepo *MastersRepo) GetMasterSubthemesById(masterId int64) ([]int64,
 	return subthemesIds, nil
 }
 
-
 func (mastersRepo *MastersRepo) DeleteMasterSubthemesById(masterId int64) error {
 	var dbError error
 	transaction, err := mastersRepo.repository.startTransaction()
@@ -189,7 +188,6 @@ func (mastersRepo *MastersRepo) InsertMaster(master *models.MasterDB) error {
 	return nil
 }
 
-
 func (mastersRepo *MastersRepo) GetMasters(query models.MastersQueryValuesDB) ([]models.MasterDB, error) {
 	var dbError error
 	masters := make([]models.MasterDB, 0)
@@ -249,7 +247,7 @@ func (mastersRepo *MastersRepo) GetMasters(query models.MastersQueryValuesDB) ([
 	}
 
 	if query.EducationFormat != 0 {
-		if len(query.Theme) > 0 || query.Qualification != 0{
+		if len(query.Theme) > 0 || query.Qualification != 0 {
 			selectQuery += " AND "
 		} else {
 			selectQuery += " WHERE "

@@ -5,12 +5,12 @@ import (
 )
 
 type WebsocketsRepo struct {
-	repository *Repository
-	userConnMap map[int64]string
-	clientsMap          map[string]*models.WebsocketConnection
-	NewClients    chan *models.WebsocketConnection
+	repository     *Repository
+	userConnMap    map[int64]string
+	clientsMap     map[string]*models.WebsocketConnection
+	NewClients     chan *models.WebsocketConnection
 	DroppedClients chan *models.WebsocketConnection
-	Messages    chan models.WebsocketMessage
+	Messages       chan models.WebsocketMessage
 }
 
 func (wsRepo *WebsocketsRepo) AddNewCLient(clientConnection *models.WebsocketConnection) {
@@ -23,10 +23,10 @@ func (wsRepo *WebsocketsRepo) RemoveClient(clientConnection *models.WebsocketCon
 	delete(wsRepo.clientsMap, clientConnection.Connection.RemoteAddr().String())
 }
 
-func (wsRepo *WebsocketsRepo)  GetConnection(connString string) *models.WebsocketConnection {
+func (wsRepo *WebsocketsRepo) GetConnection(connString string) *models.WebsocketConnection {
 	return wsRepo.clientsMap[connString]
 }
 
-func (wsRepo *WebsocketsRepo)  GetConnectionString(userId int64) string {
+func (wsRepo *WebsocketsRepo) GetConnectionString(userId int64) string {
 	return wsRepo.userConnMap[userId]
 }

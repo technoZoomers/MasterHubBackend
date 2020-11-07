@@ -41,7 +41,7 @@ func (videosRepo *VideosRepo) CountVideos() (int64, error) {
 	var dbError error
 	transaction, err := videosRepo.repository.startTransaction()
 	if err != nil {
-		return countVideo,err
+		return countVideo, err
 	}
 	row := transaction.QueryRow("SELECT COUNT(*) FROM videos")
 	err = row.Scan(&countVideo)
@@ -62,7 +62,7 @@ func (videosRepo *VideosRepo) GetVideosByMasterId(masterId int64) ([]models.Vide
 	videos := make([]models.VideoDB, 0)
 	transaction, err := videosRepo.repository.startTransaction()
 	if err != nil {
-		return videos,err
+		return videos, err
 	}
 	rows, err := transaction.Query(`SELECT * FROM videos WHERE master_id=$1`, masterId)
 	if err != nil {
@@ -74,7 +74,7 @@ func (videosRepo *VideosRepo) GetVideosByMasterId(masterId int64) ([]models.Vide
 		var videoDB models.VideoDB
 		var theme sql.NullInt64
 		err = rows.Scan(&videoDB.Id, &videoDB.MasterId, &videoDB.Filename, &videoDB.Extension, &videoDB.Name, &videoDB.Description,
-			&videoDB.Intro, &videoDB.Rating,  &theme, &videoDB.Uploaded)
+			&videoDB.Intro, &videoDB.Rating, &theme, &videoDB.Uploaded)
 		if err != nil {
 			dbError = fmt.Errorf("failed to retrieve video data: %v", err)
 			logger.Errorf(dbError.Error())
@@ -334,7 +334,7 @@ func (videosRepo *VideosRepo) GetVideos(query models.VideosQueryValuesDB) ([]mod
 			queryCount++
 			selectQuery += fmt.Sprintf(" WHERE i.select_id > $%d", queryCount)
 			queryValues = append(queryValues, query.Offset)
-		}else {
+		} else {
 			queryCount++
 			selectQuery += fmt.Sprintf(" WHERE i.select_id BETWEEN $%d", queryCount)
 			queryCount++
@@ -352,7 +352,7 @@ func (videosRepo *VideosRepo) GetVideos(query models.VideosQueryValuesDB) ([]mod
 		var theme sql.NullInt64
 		var videoFound models.VideoDB
 		err = rows.Scan(&videoFound.Id, &videoFound.MasterId, &videoFound.Filename, &videoFound.Extension, &videoFound.Name, &videoFound.Description,
-			&videoFound.Intro, &videoFound.Rating,  &theme, &videoFound.Uploaded)
+			&videoFound.Intro, &videoFound.Rating, &theme, &videoFound.Uploaded)
 		if err != nil {
 			dbError = fmt.Errorf("failed to retrieve video: %v", err)
 			logger.Errorf(dbError.Error())

@@ -9,6 +9,7 @@ import (
 type StudentsRepo struct {
 	repository *Repository
 }
+
 func (studentsRepo *StudentsRepo) GetStudentByUserId(student *models.StudentDB) error {
 	var dbError error
 	transaction, err := studentsRepo.repository.startTransaction()

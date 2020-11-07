@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func writeData (w http.ResponseWriter, data []byte) {
+func writeData(w http.ResponseWriter, data []byte) {
 	_, err := w.Write(data)
 	if err != nil {
 		writeBytesError := fmt.Errorf("error writing video bytes to response: %v", err.Error())

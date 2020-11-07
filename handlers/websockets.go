@@ -3,21 +3,22 @@ package handlers
 import (
 	"fmt"
 	"github.com/google/logger"
+	"github.com/gorilla/websocket"
+	json "github.com/mailru/easyjson"
 	"github.com/technoZoomers/MasterHubBackend/models"
 	"github.com/technoZoomers/MasterHubBackend/useCases"
-	"github.com/gorilla/websocket"
 	"github.com/technoZoomers/MasterHubBackend/utils"
 	"net/http"
 )
 
 type WSHandlers struct {
-	handlers *Handlers
-	ChatsUC  useCases.ChatsUCInterface
-	upgrader websocket.Upgrader
+	handlers     *Handlers
+	ChatsUC      useCases.ChatsUCInterface
+	upgrader     websocket.Upgrader
 	WebsocketsUC useCases.WebsocketsUCInterface
 }
 
-func (wsHandlers *WSHandlers) UpgradeConnection (writer http.ResponseWriter, req *http.Request) {
+func (wsHandlers *WSHandlers) UpgradeConnection(writer http.ResponseWriter, req *http.Request) {
 	sent, userId := wsHandlers.handlers.validateUserId(writer, req)
 	if sent {
 		return
@@ -34,7 +35,7 @@ func (wsHandlers *WSHandlers) UpgradeConnection (writer http.ResponseWriter, req
 		return
 	}
 	websocketConnection := &models.WebsocketConnection{
-		UserId:userId,
+		UserId:     userId,
 		Connection: connection,
 	}
 	wsHandlers.listenClient(websocketConnection)
@@ -48,11 +49,15 @@ func (wsHandlers *WSHandlers) listenClient(clientConn *models.WebsocketConnectio
 			readError := fmt.Errorf("error reading message from ws: %v", err.Error())
 			logger.Errorf(readError.Error())
 			wsHandlers.WebsocketsUC.RemoveClient(clientConn)
+			return
 		}
 		var wsMessage models.WebsocketMessage
-		err = wsMessage.UnmarshalJSON(message)
+		err = json.Unmarshal(message, &wsMessage)
 		if err != nil {
+			jsonError := fmt.Errorf("error unmarshaling json: %v", err.Error())
+			logger.Errorf(jsonError.Error())
 			wsHandlers.WebsocketsUC.RemoveClient(clientConn)
+			return
 		}
 		if clientConn.UserId == wsMessage.Message.AuthorId {
 			wsHandlers.WebsocketsUC.SendMessage(wsMessage)

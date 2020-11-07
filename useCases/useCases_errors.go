@@ -1,9 +1,9 @@
 package useCases
 
 type ErrorMessagesUC struct {
-	DbError    string
+	DbError             string
 	InternalServerError string
-	FileErrors FileErrors
+	FileErrors          FileErrors
 }
 
 type FileErrors struct {
@@ -11,5 +11,5 @@ type FileErrors struct {
 	FileReadError          string
 	FileReadExtensionError string
 	FileCreateError        string
-	FileRemoveError string
+	FileRemoveError        string
 }

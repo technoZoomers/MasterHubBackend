@@ -81,7 +81,6 @@ func (uh *UsersHandlers) setCookie(userId int64, cookie *http.Cookie) error {
 	return uh.UsersUC.InsertCookie(userId, cookie.Value)
 }
 
-
 func (uh *UsersHandlers) deleteCookie(cookie *http.Cookie) error {
 	cookie.Expires = time.Now().AddDate(0, 0, -1)
 	return uh.UsersUC.DeleteCookie(cookie.Value)

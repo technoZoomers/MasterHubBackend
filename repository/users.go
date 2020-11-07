@@ -115,7 +115,6 @@ func (usersRepo *UsersRepo) GetUserByEmailAndPassword(user *models.UserDB) error
 	return nil
 }
 
-
 func (usersRepo *UsersRepo) GetUserLanguagesById(userId int64) ([]int64, error) {
 	languagesIds := make([]int64, 0)
 	var dbError error

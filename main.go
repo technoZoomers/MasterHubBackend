@@ -54,8 +54,6 @@ func main() {
 		logger.Fatalf("Couldn't initialize database: %v", err)
 	}
 
-
-
 	//usecases initialization
 
 	mhuseCases := useCases.UseCases{}
@@ -88,7 +86,7 @@ func main() {
 	// router initialization
 
 	routerMain := mux.NewRouter()
-	r:= routerMain.PathPrefix(utils.Prefix).Subrouter()
+	r := routerMain.PathPrefix(utils.Prefix).Subrouter()
 
 	// users
 	r.Handle("/users", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.UsersHandlers.CheckAuth, false)).Methods("GET")
@@ -105,7 +103,7 @@ func main() {
 
 	// interactions
 
-	r.Handle("/interactions/users/{id}",  mhMiddlewares.AuthMiddleware.Auth(mhHandlers.WSHandlers.UpgradeConnection, false))
+	r.Handle("/interactions/users/{id}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.WSHandlers.UpgradeConnection, false))
 
 	//languages
 
@@ -124,7 +122,6 @@ func main() {
 	r.Handle("/students/{id}/chats", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.CreateChatRequest, false)).Methods("POST")
 	//r.Handle("/students/{id}/chats", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.CreateChatRequest, true)).Methods("POST")
 
-
 	//masters
 	r.HandleFunc("/masters", mhHandlers.MastersHandlers.Get).Methods("GET")
 	r.HandleFunc("/masters/create", mhHandlers.MastersHandlers.Register).Methods("POST")
@@ -140,7 +137,6 @@ func main() {
 
 	r.Handle("/masters/{id}/videos/{videoId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.DeleteVideoById, false)).Methods("DELETE")
 	//r.Handle("/masters/{id}/videos/{videoId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.DeleteVideoById, true)).Methods("DELETE")
-
 
 	r.HandleFunc("/masters/{id}/videos/{videoId}/data", mhHandlers.VideosHandlers.GetVideoDataById).Methods("GET")
 
@@ -161,12 +157,10 @@ func main() {
 	r.Handle("/masters/{id}/intro/data", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.ChangeIntroData, false)).Methods("PUT")
 	//r.Handle("/masters/{id}/intro/data", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.ChangeIntroData, true)).Methods("PUT")
 
-
 	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.GetIntroData).Methods("GET")
 
 	r.Handle("/masters/{id}/chats/{chatId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.ChangeChatStatus, false)).Methods("PUT")
 	//r.Handle("/masters/{id}/chats/{chatId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.ChangeChatStatus, true)).Methods("PUT")
-
 
 	//videos
 	r.HandleFunc("/videos", mhHandlers.VideosHandlers.Get).Methods("GET")
@@ -175,9 +169,8 @@ func main() {
 	r.Handle("/chats/{id}/messages", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.GetMessagesByChatId, false)).Methods("GET")
 	//r.Handle("/chats/{id}/messages", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.GetMessagesByChatId, true)).Methods("GET")
 
-
 	cors := handlers.CORS(handlers.AllowCredentials(),
-		handlers.AllowedHeaders([]string{"X-Content-Type-Options", "Access-Control-Allow-Origin","X-Requested-With", "Content-Type", "Authorization"}),
+		handlers.AllowedHeaders([]string{"X-Content-Type-Options", "Access-Control-Allow-Origin", "X-Requested-With", "Content-Type", "Authorization"}),
 		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "DELETE"}),
 		handlers.AllowedOrigins([]string{
 			"http://213.219.214.220:8080",

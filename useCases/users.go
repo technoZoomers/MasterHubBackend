@@ -8,8 +8,8 @@ import (
 )
 
 type UsersUC struct {
-	useCases  *UseCases
-	UsersRepo repository.UsersRepoI
+	useCases    *UseCases
+	UsersRepo   repository.UsersRepoI
 	CookiesRepo repository.CookiesRepoI
 }
 
@@ -46,8 +46,8 @@ func (usersUC *UsersUC) validateUser(userDB *models.UserDB, user *models.User) e
 }
 
 func (usersUC *UsersUC) Login(user *models.User) error {
-	userDB := models.UserDB {
-		Email: user.Email,
+	userDB := models.UserDB{
+		Email:    user.Email,
 		Password: user.Password,
 	}
 	err := usersUC.UsersRepo.GetUserByEmailAndPassword(&userDB)

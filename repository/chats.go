@@ -9,10 +9,10 @@ import (
 
 type ChatsRepo struct {
 	repository *Repository
-	userMap map[string]int64
+	userMap    map[string]int64
 }
 
-func (chatsRepo *ChatsRepo) addWhereParamsToQuery (query models.ChatsQueryValuesDB, selectQuery string,
+func (chatsRepo *ChatsRepo) addWhereParamsToQuery(query models.ChatsQueryValuesDB, selectQuery string,
 	queryValues *[]interface{}, queryCount int) (string, int, error) {
 	queryCount++
 	if query.User == chatsRepo.userMap["master"] {
@@ -55,7 +55,7 @@ func (chatsRepo *ChatsRepo) GetChatsByUserId(query models.ChatsQueryValuesDB) ([
 			"as select_id, chats.id, chats.user_id_master, user_id_student, chats.type, chats.created FROM chats " +
 			"LEFT OUTER JOIN messages m on chats.id = m.chat_id WHERE"
 		selectQuery, queryCount, err = chatsRepo.addWhereParamsToQuery(query, selectQuery, &queryValues, queryCount)
-		selectQuery+= " GROUP BY chats.id"
+		selectQuery += " GROUP BY chats.id"
 		if err != nil {
 			return chats, err
 		}
@@ -64,7 +64,7 @@ func (chatsRepo *ChatsRepo) GetChatsByUserId(query models.ChatsQueryValuesDB) ([
 			queryCount++
 			selectQuery += fmt.Sprintf(" WHERE i.select_id > $%d", queryCount)
 			queryValues = append(queryValues, query.Offset)
-		}else {
+		} else {
 			queryCount++
 			selectQuery += fmt.Sprintf(" WHERE i.select_id BETWEEN $%d", queryCount)
 			queryCount++
@@ -96,7 +96,7 @@ func (chatsRepo *ChatsRepo) GetChatsByUserId(query models.ChatsQueryValuesDB) ([
 	return chats, nil
 }
 
-func  (chatsRepo *ChatsRepo) InsertChatRequest(chat *models.ChatDB) error {
+func (chatsRepo *ChatsRepo) InsertChatRequest(chat *models.ChatDB) error {
 	var dbError error
 	transaction, err := chatsRepo.repository.startTransaction()
 	if err != nil {
@@ -140,13 +140,19 @@ func (chatsRepo *ChatsRepo) GetChatByStudentIdAndMasterId(chat *models.ChatDB) e
 	return nil
 }
 
-func (chatsRepo *ChatsRepo) GetChatById(chat *models.ChatDB, chatId int64) error { //TODO: refactor!!!
+func (chatsRepo *ChatsRepo) getChat(chat *models.ChatDB, simple bool, args ...interface{}) error {
 	var dbError error
 	transaction, err := chatsRepo.repository.startTransaction()
 	if err != nil {
 		return err
 	}
-	row := transaction.QueryRow("SELECT * FROM chats WHERE id=$1", chatId)
+	var queryString string
+	if simple {
+		queryString = "SELECT * FROM chats WHERE id=$1"
+	} else {
+		queryString = "SELECT * FROM chats WHERE id = $1 AND (user_id_master=$2 OR user_id_student = $2)"
+	}
+	row := transaction.QueryRow(queryString, args...)
 	err = row.Scan(&chat.Id, &chat.MasterId, &chat.StudentId, &chat.Type, &chat.Created)
 	if err != nil {
 		dbError = fmt.Errorf("failed to retrieve chat: %v", err.Error())
@@ -159,26 +165,13 @@ func (chatsRepo *ChatsRepo) GetChatById(chat *models.ChatDB, chatId int64) error
 	return nil
 }
 
-func (chatsRepo *ChatsRepo) GetChatByIdAndMasterOrStudentId(chat *models.ChatDB, chatId int64, userId int64) error { //TODO: refactor!!!
-	var dbError error
-	transaction, err := chatsRepo.repository.startTransaction()
-	if err != nil {
-		return err
-	}
-	row := transaction.QueryRow("SELECT * FROM chats WHERE id = $1 AND (user_id_master=$2 OR user_id_student = $2)", chatId, userId)
-	err = row.Scan(&chat.Id, &chat.MasterId, &chat.StudentId, &chat.Type, &chat.Created)
-	if err != nil {
-		dbError = fmt.Errorf("failed to retrieve chat: %v", err.Error())
-		logger.Errorf(dbError.Error())
-	}
-	err = chatsRepo.repository.commitTransaction(transaction)
-	if err != nil {
-		return err
-	}
-	return nil
+func (chatsRepo *ChatsRepo) GetChatById(chat *models.ChatDB, chatId int64) error {
+	return chatsRepo.getChat(chat, true, chatId)
 }
 
-
+func (chatsRepo *ChatsRepo) GetChatByIdAndMasterOrStudentId(chat *models.ChatDB, chatId int64, userId int64) error {
+	return chatsRepo.getChat(chat, false, chatId, userId)
+}
 
 func (chatsRepo *ChatsRepo) ChangeChatType(chat *models.ChatDB) error {
 	var dbError error
@@ -202,7 +195,7 @@ func (chatsRepo *ChatsRepo) ChangeChatType(chat *models.ChatDB) error {
 	}
 	return nil
 }
-func(chatsRepo *ChatsRepo) GetMessagesByChatId(chatId int64) ([]models.MessageDB, error) {
+func (chatsRepo *ChatsRepo) GetMessagesByChatId(chatId int64) ([]models.MessageDB, error) {
 	var dbError error
 	messages := make([]models.MessageDB, 0)
 	transaction, err := chatsRepo.repository.startTransaction()

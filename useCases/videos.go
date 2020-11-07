@@ -22,16 +22,16 @@ type VideosUC struct {
 }
 
 type VideoConfig struct {
-	videosDir           string
-	videosDefaultName   string
+	videosDir         string
+	videosDefaultName string
 	videoPrefixMaster string
-	videoPrefixVideo string
-	videoPrefixIntro string
+	videoPrefixVideo  string
+	videoPrefixIntro  string
 }
 
 func (videosUC *VideosUC) createFilenameIntro(masterId int64) (string, error) {
-	introExists := models.VideoDB {
-		MasterId:masterId,
+	introExists := models.VideoDB{
+		MasterId: masterId,
 	}
 	var filename string
 	err := videosUC.VideosRepo.GetIntroByMasterId(&introExists)
@@ -39,7 +39,7 @@ func (videosUC *VideosUC) createFilenameIntro(masterId int64) (string, error) {
 		return filename, fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
 	if introExists.Id != videosUC.useCases.errorId {
-		return filename, &models.ConflictError{Message:"intro already exists", RequestId:masterId}
+		return filename, &models.ConflictError{Message: "intro already exists"}
 	}
 	filename = fmt.Sprintf("%s%d%s", videosUC.videosConfig.videoPrefixMaster, masterId, videosUC.videosConfig.videoPrefixIntro)
 	return filename, nil
@@ -55,23 +55,23 @@ func (videosUC *VideosUC) createFilenameVideo(masterId int64) (string, error) {
 	return filename, nil
 }
 
-func (videosUC *VideosUC) validateMaster(masterId int64) error {
+func (videosUC *VideosUC) validateMaster(masterId int64) (int64, error) {
 	if masterId == videosUC.useCases.errorId {
-		return &models.BadRequestError{Message: "incorrect master id", RequestId: masterId}
+		return videosUC.useCases.errorId, &models.BadRequestError{Message: "incorrect master id", RequestId: masterId}
 	}
 	masterDB := models.MasterDB{
 		UserId: masterId,
 	}
 	err := videosUC.MastersRepo.GetMasterByUserId(&masterDB)
 	if err != nil {
-		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+		return videosUC.useCases.errorId, fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
 	if masterDB.Id == videosUC.useCases.errorId {
 		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: masterId}
 		logger.Errorf(absenceError.Error())
-		return absenceError
+		return videosUC.useCases.errorId, absenceError
 	}
-	return nil
+	return videosUC.useCases.errorId, nil
 }
 
 func (videosUC *VideosUC) validateVideo(videoDB *models.VideoDB) error {
@@ -104,7 +104,7 @@ func (videosUC *VideosUC) validateIntro(intro *models.VideoDB) error {
 }
 
 func (videosUC *VideosUC) newVideo(videoData *models.VideoData, file multipart.File, masterId int64, intro bool) error {
-	err := videosUC.validateMaster(masterId)
+	masterDBId, err := videosUC.validateMaster(masterId)
 	if err != nil {
 		return err
 	}
@@ -148,24 +148,10 @@ func (videosUC *VideosUC) newVideo(videoData *models.VideoData, file multipart.F
 		return fileError
 	}
 
-	// ПЕРЕДЕЛАТЬ!!!!
-
-	var masterDB models.MasterDB // TODO: fix this
-	masterDB.UserId = masterId
-	err = videosUC.MastersRepo.GetMasterByUserId(&masterDB)
-	if err != nil {
-		return fmt.Errorf(videosUC.useCases.errorMessages.DbError)
-	}
-	if masterDB.UserId == videosUC.useCases.errorId {
-		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: masterId}
-		logger.Errorf(absenceError.Error())
-		return absenceError
-	}
-
 	videoDB := models.VideoDB{
 		Filename:  filename,
 		Extension: fileExtension.Extension,
-		MasterId:  masterDB.Id,
+		MasterId:  masterDBId,
 		Name:      videosUC.videosConfig.videosDefaultName,
 		Intro:     intro,
 		Uploaded:  time.Now(),
@@ -195,21 +181,20 @@ func (videosUC *VideosUC) NewMasterIntro(videoData *models.VideoData, file multi
 
 func (videosUC *VideosUC) ChangeMasterIntro(videoData *models.VideoData, file multipart.File, masterId int64) error {
 	videoDB := models.VideoDB{
-		MasterId: masterId,
-		Intro: true,
+		Intro:    true,
 	}
-	err := videosUC.deleteVideo(&videoDB)
+	err := videosUC.deleteVideo(&videoDB, masterId)
 	if err != nil {
-		return  err
+		return err
 	}
 	err = videosUC.newVideo(videoData, file, masterId, true)
 	if err != nil {
-		return  err
+		return err
 	}
 	return nil
 }
 
-func (videosUC *VideosUC) matchVideo (videoDB *models.VideoDB, video *models.VideoData) error {
+func (videosUC *VideosUC) matchVideo(videoDB *models.VideoDB, video *models.VideoData) error {
 	video.Id = videoDB.Id
 	video.MasterId = videoDB.MasterId
 	video.Name = videoDB.Name
@@ -234,11 +219,11 @@ func (videosUC *VideosUC) matchVideo (videoDB *models.VideoDB, video *models.Vid
 func (videosUC *VideosUC) GetVideosByMasterId(masterId int64) ([]models.VideoData, error) {
 	var videos []models.VideoData
 	var videosDB []models.VideoDB
-	err := videosUC.validateMaster(masterId)
+	masterDBId, err := videosUC.validateMaster(masterId)
 	if err != nil {
 		return videos, err
 	}
-	videosDB, err = videosUC.VideosRepo.GetVideosByMasterId(masterId)
+	videosDB, err = videosUC.VideosRepo.GetVideosByMasterId(masterDBId)
 	if err != nil {
 		return videos, fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}
@@ -302,11 +287,12 @@ func (videosUC *VideosUC) setSubThemes(video *models.VideoData, videoDB *models.
 	return nil
 }
 
-func (videosUC *VideosUC) deleteVideo(videoDB *models.VideoDB) error {
-	err := videosUC.validateMaster(videoDB.MasterId)
+func (videosUC *VideosUC) deleteVideo(videoDB *models.VideoDB, masterId int64) error {
+	masterDBId, err := videosUC.validateMaster(masterId)
 	if err != nil {
 		return err
 	}
+	videoDB.MasterId = masterDBId
 	if videoDB.Intro {
 		err = videosUC.validateIntro(videoDB)
 	} else {
@@ -332,26 +318,25 @@ func (videosUC *VideosUC) deleteVideo(videoDB *models.VideoDB) error {
 func (videosUC *VideosUC) DeleteMasterVideo(masterId int64, videoId int64) error {
 	videoDB := models.VideoDB{
 		Id:       videoId,
-		MasterId: masterId,
-		Intro: false,
+		Intro:    false,
 	}
-	return videosUC.deleteVideo(&videoDB)
+	return videosUC.deleteVideo(&videoDB, masterId)
 }
 
 func (videosUC *VideosUC) DeleteMasterIntro(masterId int64) error {
 	videoDB := models.VideoDB{
-		MasterId: masterId,
-		Intro: true,
+		Intro:    true,
 	}
-	return videosUC.deleteVideo(&videoDB)
+	return videosUC.deleteVideo(&videoDB, masterId)
 }
 
-func (videosUC *VideosUC) getVideo (videoDB *models.VideoDB) ([]byte, error) {
+func (videosUC *VideosUC) getVideo(videoDB *models.VideoDB, masterId int64) ([]byte, error) {
 	var videoBytes []byte
-	err := videosUC.validateMaster(videoDB.MasterId)
+	masterDBId, err := videosUC.validateMaster(masterId)
 	if err != nil {
 		return videoBytes, err
 	}
+	videoDB.MasterId = masterDBId
 	if videoDB.Intro {
 		err = videosUC.validateIntro(videoDB)
 	} else {
@@ -391,25 +376,24 @@ func (videosUC *VideosUC) getVideo (videoDB *models.VideoDB) ([]byte, error) {
 func (videosUC *VideosUC) GetMasterVideo(masterId int64, videoId int64) ([]byte, error) {
 	videoDB := models.VideoDB{
 		Id:       videoId,
-		MasterId: masterId,
-		Intro: false,
+		Intro:    false,
 	}
-	return videosUC.getVideo(&videoDB)
+	return videosUC.getVideo(&videoDB, masterId)
 
 }
 func (videosUC *VideosUC) GetMasterIntro(masterId int64) ([]byte, error) {
 	videoDB := models.VideoDB{
-		MasterId: masterId,
-		Intro: true,
+		Intro:    true,
 	}
-	return videosUC.getVideo(&videoDB)
+	return videosUC.getVideo(&videoDB, masterId)
 }
 
-func (videosUC *VideosUC) getVideoData(videoDB *models.VideoDB, videoData *models.VideoData) error {
-	err := videosUC.validateMaster(videoDB.MasterId)
+func (videosUC *VideosUC) getVideoData(videoDB *models.VideoDB, masterId int64, videoData *models.VideoData) error {
+	masterDBId, err := videosUC.validateMaster(masterId)
 	if err != nil {
 		return err
 	}
+	videoDB.MasterId = masterDBId
 	if videoDB.Intro {
 		err = videosUC.validateIntro(videoDB)
 	} else {
@@ -428,25 +412,24 @@ func (videosUC *VideosUC) getVideoData(videoDB *models.VideoDB, videoData *model
 func (videosUC *VideosUC) GetVideoDataById(videoData *models.VideoData, masterId int64) error {
 	videoDB := models.VideoDB{
 		Id:       videoData.Id,
-		MasterId: masterId,
-		Intro: false,
+		Intro:    false,
 	}
-	return videosUC.getVideoData(&videoDB, videoData)
+	return videosUC.getVideoData(&videoDB, masterId, videoData)
 }
 
 func (videosUC *VideosUC) GetIntroData(videoData *models.VideoData, masterId int64) error {
 	videoDB := models.VideoDB{
-		MasterId: masterId,
-		Intro: true,
+		Intro:    true,
 	}
-	return videosUC.getVideoData(&videoDB, videoData)
+	return videosUC.getVideoData(&videoDB, masterId, videoData)
 }
 
-func (videosUC *VideosUC) changeVideoData(videoDB *models.VideoDB, videoData *models.VideoData) error {
-	err := videosUC.validateMaster(videoDB.MasterId)
+func (videosUC *VideosUC) changeVideoData(videoDB *models.VideoDB, masterId int64, videoData *models.VideoData) error {
+	masterDBId, err := videosUC.validateMaster(masterId)
 	if err != nil {
 		return err
 	}
+	videoDB.MasterId = masterDBId
 	if videoDB.Intro {
 		err = videosUC.validateIntro(videoDB)
 	} else {
@@ -455,7 +438,7 @@ func (videosUC *VideosUC) changeVideoData(videoDB *models.VideoDB, videoData *mo
 	if err != nil {
 		return err
 	}
-	if videoData.Rating != videosUC.useCases.errorId  {
+	if videoData.Rating != videosUC.useCases.errorId {
 		if videoData.Rating != videoDB.Rating {
 			requestError := fmt.Errorf("video rating can't be changed") //TODO: refactor error type
 			logger.Errorf(requestError.Error())
@@ -507,10 +490,9 @@ func (videosUC *VideosUC) changeVideoData(videoDB *models.VideoDB, videoData *mo
 
 func (videosUC *VideosUC) ChangeIntroData(videoData *models.VideoData, masterId int64) error {
 	videoDB := models.VideoDB{
-		MasterId: masterId,
-		Intro: true,
+		Intro:    true,
 	}
-	return videosUC.changeVideoData(&videoDB, videoData)
+	return videosUC.changeVideoData(&videoDB, masterId, videoData)
 }
 
 func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId int64, videoId int64) error {
@@ -524,11 +506,10 @@ func (videosUC *VideosUC) ChangeVideoData(videoData *models.VideoData, masterId 
 		}
 	}
 	videoDB := models.VideoDB{
-		Id: videoData.Id,
-		MasterId: masterId,
-		Intro: false,
+		Id:       videoData.Id,
+		Intro:    false,
 	}
-	return videosUC.changeVideoData(&videoDB, videoData)
+	return videosUC.changeVideoData(&videoDB, masterId, videoData)
 }
 
 func (videosUC *VideosUC) changeVideoSubthemes(videoData *models.VideoData, videoDB *models.VideoDB) error {
@@ -573,7 +554,6 @@ func (videosUC *VideosUC) changeVideoSubthemes(videoData *models.VideoData, vide
 	}
 	return nil
 }
-
 
 func (videosUC *VideosUC) changeVideoTheme(videoData *models.VideoData, videoDB *models.VideoDB) error {
 

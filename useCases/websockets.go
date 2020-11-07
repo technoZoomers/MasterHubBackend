@@ -10,23 +10,22 @@ import (
 )
 
 type WebsocketsUC struct {
-	useCases     *UseCases
-	WebsocketsRepo   repository.WebsocketsRepo// TODO: INTERFACE
-	ChatsRepo   repository.ChatsRepoI
+	useCases         *UseCases
+	WebsocketsRepo   repository.WebsocketsRepo // TODO: INTERFACE
+	ChatsRepo        repository.ChatsRepoI
 	messagesTypesMap map[int64]bool
 }
 
-
 func (wsUC *WebsocketsUC) AddClient(clientConnection *models.WebsocketConnection) {
-	wsUC.WebsocketsRepo.NewClients <-clientConnection
+	wsUC.WebsocketsRepo.NewClients <- clientConnection
 }
 
 func (wsUC *WebsocketsUC) RemoveClient(clientConnection *models.WebsocketConnection) {
-	wsUC.WebsocketsRepo.DroppedClients <-clientConnection
+	wsUC.WebsocketsRepo.DroppedClients <- clientConnection
 }
 
 func (wsUC *WebsocketsUC) SendMessage(message models.WebsocketMessage) {
-	wsUC.WebsocketsRepo.Messages <-message
+	wsUC.WebsocketsRepo.Messages <- message
 }
 
 func (wsUC *WebsocketsUC) Start() {
@@ -42,16 +41,12 @@ func (wsUC *WebsocketsUC) Start() {
 	}
 }
 
-func (wsUC *WebsocketsUC) matchMessageToDB (messageDB *models.MessageDB, message *models.Message) {
+func (wsUC *WebsocketsUC) matchMessageToDB(messageDB *models.MessageDB, message *models.Message) {
 	messageDB.UserId = message.AuthorId
 	messageDB.ChatId = message.ChatId
 	messageDB.Created = message.Created
 	messageDB.Text = message.Text
-	if message.Type == 1 { //TODO: refactor types!!!
-		messageDB.Info = false
-	} else {
-		messageDB.Info = true
-	}
+	messageDB.Info = wsUC.messagesTypesMap[message.Type]
 }
 
 func (wsUC *WebsocketsUC) processMessage(message models.WebsocketMessage) {
@@ -70,7 +65,7 @@ func (wsUC *WebsocketsUC) processMessage(message models.WebsocketMessage) {
 		return
 	}
 
-	if message.Type == 1 {  // TODO: other message types 2-delete, 3-resend
+	if message.Type == 1 { // TODO: other message types 2-delete, 3-resend
 		var messageDB models.MessageDB
 		wsUC.matchMessageToDB(&messageDB, &message.Message)
 		err = wsUC.ChatsRepo.InsertMessage(&messageDB)
@@ -101,7 +96,7 @@ func (wsUC *WebsocketsUC) processMessage(message models.WebsocketMessage) {
 	}
 }
 
-func (wsUC *WebsocketsUC) writeMessageToConnection(connectionString string,marshalledMessage []byte) error {
+func (wsUC *WebsocketsUC) writeMessageToConnection(connectionString string, marshalledMessage []byte) error {
 	client := wsUC.WebsocketsRepo.GetConnection(connectionString)
 	err := client.Connection.WriteMessage(websocket.TextMessage, marshalledMessage)
 	if err != nil {

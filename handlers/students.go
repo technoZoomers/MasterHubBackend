@@ -34,7 +34,7 @@ func (sh *StudentsHandlers) Register(writer http.ResponseWriter, req *http.Reque
 			err = cookieError
 		}
 	}
-	sh.answerStudentFullLogin(writer, newStudent,  &cookie, err)
+	sh.answerStudentFullLogin(writer, newStudent, &cookie, err)
 
 }
 func (sh *StudentsHandlers) GetStudentById(writer http.ResponseWriter, req *http.Request) {
@@ -75,15 +75,14 @@ func (sh *StudentsHandlers) ChangeStudentData(writer http.ResponseWriter, req *h
 	sh.answerStudent(writer, student, err)
 }
 
-
-func (sh *StudentsHandlers) answerStudent(writer http.ResponseWriter, student models.Student,  err error) {
+func (sh *StudentsHandlers) answerStudent(writer http.ResponseWriter, student models.Student, err error) {
 	sent := sh.handlers.handleErrorConflict(writer, err)
 	if !sent {
 		utils.CreateAnswerStudentJson(writer, http.StatusOK, student)
 	}
 }
 
-func (sh *StudentsHandlers) answerStudentLogin(writer http.ResponseWriter, student models.Student, cookie *http.Cookie,  err error) {
+func (sh *StudentsHandlers) answerStudentLogin(writer http.ResponseWriter, student models.Student, cookie *http.Cookie, err error) {
 	sent := sh.handlers.handleErrorConflict(writer, err)
 	if !sent {
 		http.SetCookie(writer, cookie)
@@ -91,17 +90,16 @@ func (sh *StudentsHandlers) answerStudentLogin(writer http.ResponseWriter, stude
 	}
 }
 
-func (sh *StudentsHandlers) answerStudentFull(writer http.ResponseWriter, studentFull models.StudentFull,  err error) {
+func (sh *StudentsHandlers) answerStudentFull(writer http.ResponseWriter, studentFull models.StudentFull, err error) {
 	sent := sh.handlers.handleErrorConflict(writer, err)
 	if !sent {
 		utils.CreateAnswerStudentFullJson(writer, http.StatusCreated, studentFull)
 	}
 }
-func (sh *StudentsHandlers) answerStudentFullLogin(writer http.ResponseWriter, studentFull models.StudentFull,  cookie *http.Cookie, err error) {
+func (sh *StudentsHandlers) answerStudentFullLogin(writer http.ResponseWriter, studentFull models.StudentFull, cookie *http.Cookie, err error) {
 	sent := sh.handlers.handleErrorConflict(writer, err)
 	if !sent {
 		http.SetCookie(writer, cookie)
 		utils.CreateAnswerStudentFullJson(writer, http.StatusCreated, studentFull)
 	}
 }
-

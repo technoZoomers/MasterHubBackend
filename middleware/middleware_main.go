@@ -5,10 +5,10 @@ import (
 )
 
 type Middlewares struct {
-	AuthMiddleware *AuthMidleware
-	cookieString string
-	contextUserKey string
-	contextCookieKey string
+	AuthMiddleware       *AuthMidleware
+	cookieString         string
+	contextUserKey       string
+	contextCookieKey     string
 	contextAuthorisedKey string
 }
 

@@ -10,23 +10,22 @@ import (
 	"github.com/technoZoomers/MasterHubBackend/utils"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
 )
 
 type Repository struct {
-	DbConnections int
-	mongoDB *mongo.Database
-	pool          *pgx.ConnPool
-	UsersRepo     *UsersRepo
-	StudentsRepo  *StudentsRepo
-	MastersRepo   *MastersRepo
-	ThemesRepo    *ThemesRepo
-	LanguagesRepo *LanguagesRepo
-	VideosRepo    *VideosRepo
-	AvatarsRepo   *AvatarsRepo
-	ChatsRepo *ChatsRepo
+	DbConnections  int
+	mongoDB        *mongo.Database
+	pool           *pgx.ConnPool
+	UsersRepo      *UsersRepo
+	StudentsRepo   *StudentsRepo
+	MastersRepo    *MastersRepo
+	ThemesRepo     *ThemesRepo
+	LanguagesRepo  *LanguagesRepo
+	VideosRepo     *VideosRepo
+	AvatarsRepo    *AvatarsRepo
+	ChatsRepo      *ChatsRepo
 	WebsocketsRepo *WebsocketsRepo
-	CookiesRepo *CookiesRepo
+	CookiesRepo    *CookiesRepo
 }
 
 func (repository *Repository) Init(config pgx.ConnConfig) error {
@@ -60,20 +59,20 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 	repository.ChatsRepo = &ChatsRepo{
 		repository: repository,
 		userMap: map[string]int64{
-			"master" : 1,
-			"student" : 2,
+			"master":  1,
+			"student": 2,
 		}}
 	repository.WebsocketsRepo = &WebsocketsRepo{
-		repository: repository,
-		userConnMap: make(map[int64]string),
-		clientsMap:          make(map[string]*models.WebsocketConnection),
-		NewClients:    make(chan *models.WebsocketConnection),
+		repository:     repository,
+		userConnMap:    make(map[int64]string),
+		clientsMap:     make(map[string]*models.WebsocketConnection),
+		NewClients:     make(chan *models.WebsocketConnection),
 		DroppedClients: make(chan *models.WebsocketConnection),
-		Messages:    make(chan models.WebsocketMessage)}
+		Messages:       make(chan models.WebsocketMessage)}
 	repository.CookiesRepo = &CookiesRepo{
-		repository: repository,
-		userKey: "user",
-		cookieKey: "cookie",
+		repository:     repository,
+		userKey:        "user",
+		cookieKey:      "cookie",
 		collectionName: "cookies",
 	}
 	err = repository.InitMongoDB(config.Host)
@@ -83,7 +82,7 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 	return nil
 }
 
-func (repository *Repository) InitMongoDB (host string) error {
+func (repository *Repository) InitMongoDB(host string) error {
 	clientOptions := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:27017", host))
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
@@ -185,7 +184,6 @@ func checkNullValueInt64(value sql.NullInt64) int64 {
 		return 0
 	}
 }
-
 
 func checkNullValueString(value sql.NullString) string {
 	if value.Valid {

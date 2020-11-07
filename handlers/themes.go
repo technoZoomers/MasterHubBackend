@@ -12,7 +12,6 @@ type ThemesHandlers struct {
 	ThemesUC useCases.ThemesUCInterface
 }
 
-
 func (th *ThemesHandlers) Get(writer http.ResponseWriter, req *http.Request) {
 	themes, err := th.ThemesUC.Get()
 	th.answerThemes(writer, themes, err)

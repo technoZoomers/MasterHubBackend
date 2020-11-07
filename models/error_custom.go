@@ -8,7 +8,7 @@ type BadRequestError struct {
 }
 
 func (brError *BadRequestError) Error() string {
-	return fmt.Sprintf("%s with id: %d", brError.Message, brError.RequestId)
+	return fmt.Sprintf("%s with request id: %d", brError.Message, brError.RequestId)
 }
 
 type BadQueryParameterError struct {
@@ -21,11 +21,11 @@ func (brError *BadQueryParameterError) Error() string {
 
 type ConflictError struct {
 	Message   string
-	RequestId int64
+	ExistingContent string
 }
 
 func (conflictError *ConflictError) Error() string {
-	return fmt.Sprintf("%s with id: %d", conflictError.Message, conflictError.RequestId)
+	return fmt.Sprintf("%s with conflict content: %s", conflictError.Message, conflictError.ExistingContent)
 }
 
 type NoContentError struct {
@@ -34,5 +34,13 @@ type NoContentError struct {
 }
 
 func (noContentError *NoContentError) Error() string {
-	return fmt.Sprintf("%s with id: %d", noContentError.Message, noContentError.RequestId)
+	return fmt.Sprintf("%s with request id: %d", noContentError.Message, noContentError.RequestId)
+}
+
+type ForbiddenError struct {
+	Reason   string
+}
+
+func (forbiddenError *ForbiddenError) Error() string {
+	return fmt.Sprintf("forbidden resource, reason: %s ", forbiddenError.Reason)
 }
