@@ -25,7 +25,7 @@ func (studentsUC *StudentsUC) insertStudentsLanguages(languages []string, studen
 			return fmt.Errorf(studentsUC.useCases.errorMessages.DbError)
 		}
 		if languageDB.Id == studentsUC.useCases.errorId {
-			fileError := &models.BadRequestError{Message: "can't register student, language doesn't exist"}
+			fileError := &models.BadRequestError{Message: "такой язык не существует"}
 			logger.Errorf(fileError.Error())
 			return fileError
 		}
@@ -44,7 +44,7 @@ func (studentsUC *StudentsUC) Register(studentFull *models.StudentFull) error {
 	var userDB models.UserDB
 
 	if studentFull.Email == "" {
-		reqError := &models.BadRequestError{Message: "email can't be empty"}
+		reqError := &models.BadRequestError{Message: "email не может быть пустым"}
 		logger.Errorf(reqError.Error())
 		return reqError
 	} else {
@@ -56,7 +56,7 @@ func (studentsUC *StudentsUC) Register(studentFull *models.StudentFull) error {
 			return fmt.Errorf(studentsUC.useCases.errorMessages.DbError)
 		}
 		if userDBEmailExists.Id != studentsUC.useCases.errorId {
-			conflictError := &models.ConflictError{Message: "can't register student, email is already taken", ExistingContent: studentFull.Email}
+			conflictError := &models.ConflictError{Message: "юзер с таким email уже зарегистрирован", ExistingContent: studentFull.Email}
 			logger.Errorf(conflictError.Error())
 			return conflictError
 		}
@@ -66,7 +66,7 @@ func (studentsUC *StudentsUC) Register(studentFull *models.StudentFull) error {
 	userDB.Created = time.Now()
 	userDB.Type = 2
 	if studentFull.Username == "" {
-		reqError := &models.BadRequestError{Message: "username can't be empty", RequestId: studentFull.UserId}
+		reqError := &models.BadRequestError{Message: "username не может быть пустым", RequestId: studentFull.UserId}
 		logger.Errorf(reqError.Error())
 		return reqError
 	} else {
@@ -78,7 +78,7 @@ func (studentsUC *StudentsUC) Register(studentFull *models.StudentFull) error {
 			return fmt.Errorf(studentsUC.useCases.errorMessages.DbError)
 		}
 		if masterDBUsernameExist.Id != studentsUC.useCases.errorId {
-			conflictError := &models.ConflictError{Message: "can't register student, username is already taken", ExistingContent: studentFull.Username}
+			conflictError := &models.ConflictError{Message: "мастер с таким username уже зарегистрирован", ExistingContent: studentFull.Username}
 			logger.Errorf(conflictError.Error())
 			return conflictError
 		}
@@ -90,7 +90,7 @@ func (studentsUC *StudentsUC) Register(studentFull *models.StudentFull) error {
 			return fmt.Errorf(studentsUC.useCases.errorMessages.DbError)
 		}
 		if studentDBUsernameExist.Id != studentsUC.useCases.errorId {
-			conflictError := &models.ConflictError{Message: "can't register student, username is already taken", ExistingContent: studentFull.Username}
+			conflictError := &models.ConflictError{Message: "студент с таким username уже зарегистрирован", ExistingContent: studentFull.Username}
 			logger.Errorf(conflictError.Error())
 			return conflictError
 		}
@@ -205,7 +205,7 @@ func (studentsUC *StudentsUC) ChangeStudentData(student *models.Student) error {
 			return fmt.Errorf(studentsUC.useCases.errorMessages.DbError)
 		}
 		if masterDBUsernameExist.Id != studentsUC.useCases.errorId && masterDBUsernameExist.Id != studentDB.Id {
-			absenceError := &models.ConflictError{Message: "can't update student, username is already taken", ExistingContent: student.Username}
+			absenceError := &models.ConflictError{Message: "такой username уже зарегистрирован", ExistingContent: student.Username}
 			logger.Errorf(absenceError.Error())
 			return absenceError
 		}
@@ -217,7 +217,7 @@ func (studentsUC *StudentsUC) ChangeStudentData(student *models.Student) error {
 			return fmt.Errorf(studentsUC.useCases.errorMessages.DbError)
 		}
 		if studentDBUsernameExist.Id != studentsUC.useCases.errorId && studentDBUsernameExist.Id != studentDB.Id {
-			conflictError := &models.ConflictError{Message: "can't update student, username is already taken", ExistingContent: student.Username}
+			conflictError := &models.ConflictError{Message: "такой username уже зарегистрирован", ExistingContent: student.Username}
 			logger.Errorf(conflictError.Error())
 			return conflictError
 		}
@@ -250,7 +250,7 @@ func (studentsUC *StudentsUC) changeStudentsLanguages(student *models.Student, s
 			return fmt.Errorf(studentsUC.useCases.errorMessages.DbError)
 		}
 		if languageDB.Id == studentsUC.useCases.errorId {
-			fileError := &models.BadRequestError{Message: "cant't update student, language doesn't exist", RequestId: student.UserId}
+			fileError := &models.BadRequestError{Message: "такой язык не существует", RequestId: student.UserId}
 			logger.Errorf(fileError.Error())
 			return fileError
 		}

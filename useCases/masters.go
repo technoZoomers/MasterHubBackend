@@ -219,7 +219,7 @@ func (mastersUC *MastersUC) ChangeMasterData(master *models.Master) error {
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
 		if masterDBUsernameExist.Id != mastersUC.useCases.errorId && masterDBUsernameExist.Id != masterDB.Id {
-			absenceError := &models.ConflictError{Message: "can't update master, username is already taken", ExistingContent: master.Username}
+			absenceError := &models.ConflictError{Message: "такой username уже зарегистрирован", ExistingContent: master.Username}
 			logger.Errorf(absenceError.Error())
 			return absenceError
 		}
@@ -231,7 +231,7 @@ func (mastersUC *MastersUC) ChangeMasterData(master *models.Master) error {
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
 		if studentDBUsernameExist.Id != mastersUC.useCases.errorId && studentDBUsernameExist.Id != masterDB.Id {
-			conflictError := &models.ConflictError{Message: "can't update master, username is already taken", ExistingContent: master.Username}
+			conflictError := &models.ConflictError{Message: "такой username уже зарегистрирован", ExistingContent: master.Username}
 			logger.Errorf(conflictError.Error())
 			return conflictError
 		}
@@ -314,7 +314,7 @@ func (mastersUC *MastersUC) changeMastersEducationFormat(master *models.Master, 
 	default:
 		break
 	}
-	notExistError := &models.BadRequestError{Message: "cant't update master, education format doesn't exist", RequestId: master.UserId}
+	notExistError := &models.BadRequestError{Message: "такой формат обучения не существует", RequestId: master.UserId}
 	logger.Errorf(notExistError.Error())
 	return notExistError
 }
@@ -328,7 +328,7 @@ func (mastersUC *MastersUC) changeMastersQualification(master *models.Master, ma
 				masterDB.Qualification = newQualification
 			}
 		} else {
-			notExistError := &models.BadRequestError{Message: "cant't update master, qualification doesn't exist", RequestId: master.UserId}
+			notExistError := &models.BadRequestError{Message: "такая квалификация не существует", RequestId: master.UserId}
 			logger.Errorf(notExistError.Error())
 			return notExistError
 		}
@@ -350,7 +350,7 @@ func (mastersUC *MastersUC) changeMastersLanguages(master *models.Master, master
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
 		if languageDB.Id == mastersUC.useCases.errorId {
-			fileError := &models.BadRequestError{Message: "cant't update video, language doesn't exist", RequestId: master.UserId}
+			fileError := &models.BadRequestError{Message: "такой язык не существует", RequestId: master.UserId}
 			logger.Errorf(fileError.Error())
 			return fileError
 		}
@@ -394,7 +394,7 @@ func (mastersUC *MastersUC) changeMastersSubthemes(master *models.Master, master
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
 		if subthemeDB.Id == mastersUC.useCases.errorId {
-			fileError := &models.BadRequestError{Message: "cant't update video, subtheme doesn't exist", RequestId: master.UserId}
+			fileError := &models.BadRequestError{Message: "такая подтема не существует", RequestId: master.UserId}
 			logger.Errorf(fileError.Error())
 			return fileError
 		}
@@ -443,7 +443,7 @@ func (mastersUC *MastersUC) changeMastersTheme(master *models.Master, masterDB *
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
 		if newThemeDB.Id == mastersUC.useCases.errorId {
-			fileError := &models.BadRequestError{Message: "can't update master, theme doesn't exist", RequestId: master.UserId}
+			fileError := &models.BadRequestError{Message: "такая тема не существует", RequestId: master.UserId}
 			logger.Errorf(fileError.Error())
 			return fileError
 		}
@@ -625,7 +625,7 @@ func (mastersUC *MastersUC) insertMastersThemeDB(theme string, masterDB *models.
 		return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 	}
 	if themeDB.Id == mastersUC.useCases.errorId {
-		badParamError := &models.BadRequestError{Message: "theme doesn't exist"}
+		badParamError := &models.BadRequestError{Message: "такая тема не существует"}
 		logger.Errorf(badParamError.Error())
 		return badParamError
 	}
@@ -641,7 +641,7 @@ func (mastersUC *MastersUC) insertMastersQualification(qualification string, mas
 				masterDB.Qualification = newQualification
 			}
 		} else {
-			notExistError := &models.BadRequestError{Message: "can't register master, qualification doesn't exist"}
+			notExistError := &models.BadRequestError{Message: "такая квалификация не существует"}
 			logger.Errorf(notExistError.Error())
 			return notExistError
 		}
@@ -679,7 +679,7 @@ func (mastersUC *MastersUC) insertMastersEducationFormat(edFormat []string, mast
 	default:
 		break
 	}
-	notExistError := &models.BadRequestError{Message: "cant't insert master, education format doesn't exist"}
+	notExistError := &models.BadRequestError{Message: "такой формат обучения не существует"}
 	logger.Errorf(notExistError.Error())
 	return notExistError
 }
@@ -693,7 +693,7 @@ func (mastersUC *MastersUC) insertMastersLanguages(languages []string, masterDB 
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
 		if languageDB.Id == mastersUC.useCases.errorId {
-			fileError := &models.BadRequestError{Message: "can't register master, language doesn't exist"}
+			fileError := &models.BadRequestError{Message: "такой язык не существует"}
 			logger.Errorf(fileError.Error())
 			return fileError
 		}
@@ -721,7 +721,7 @@ func (mastersUC *MastersUC) insertMastersSubthemes(theme models.Theme, masterDB 
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
 		if subthemeDB.Id == mastersUC.useCases.errorId {
-			fileError := &models.BadRequestError{Message: "can't register master, subtheme doesn't exist"}
+			fileError := &models.BadRequestError{Message: "такая подтема не существует"}
 			logger.Errorf(fileError.Error())
 			return fileError
 		}
@@ -741,7 +741,7 @@ func (mastersUC *MastersUC) Register(masterFull *models.MasterFull) error {
 	var userDB models.UserDB
 
 	if masterFull.Email == "" {
-		reqError := &models.BadRequestError{Message: "email can't be empty"}
+		reqError := &models.BadRequestError{Message: "email не может быть пустым"}
 		logger.Errorf(reqError.Error())
 		return reqError
 	} else {
@@ -753,7 +753,7 @@ func (mastersUC *MastersUC) Register(masterFull *models.MasterFull) error {
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
 		if userDBEmailExists.Id != mastersUC.useCases.errorId {
-			conflictError := &models.ConflictError{Message: "can't register master, email is already taken", ExistingContent: masterFull.Email}
+			conflictError := &models.ConflictError{Message: "юзер с таким email уже зарегистрирован", ExistingContent: masterFull.Email}
 			logger.Errorf(conflictError.Error())
 			return conflictError
 		}
@@ -763,7 +763,7 @@ func (mastersUC *MastersUC) Register(masterFull *models.MasterFull) error {
 	userDB.Created = time.Now()
 	userDB.Type = 1
 	if masterFull.Username == "" {
-		reqError := &models.BadRequestError{Message: "username can't be empty"}
+		reqError := &models.BadRequestError{Message: "username не может быть пустым"}
 		logger.Errorf(reqError.Error())
 		return reqError
 	} else {
@@ -775,7 +775,7 @@ func (mastersUC *MastersUC) Register(masterFull *models.MasterFull) error {
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
 		if masterDBUsernameExist.Id != mastersUC.useCases.errorId {
-			conflictError := &models.ConflictError{Message: "can't register master, username is already taken", ExistingContent: masterFull.Username}
+			conflictError := &models.ConflictError{Message: "мастер с таким username уже зарегистрирован", ExistingContent: masterFull.Username}
 			logger.Errorf(conflictError.Error())
 			return conflictError
 		}
@@ -787,7 +787,7 @@ func (mastersUC *MastersUC) Register(masterFull *models.MasterFull) error {
 			return fmt.Errorf(mastersUC.useCases.errorMessages.DbError)
 		}
 		if studentDBUsernameExist.Id != mastersUC.useCases.errorId {
-			conflictError := &models.ConflictError{Message: "can't register master, username is already taken", ExistingContent: masterFull.Username}
+			conflictError := &models.ConflictError{Message: "студент с таким username уже зарегистрирован", ExistingContent: masterFull.Username}
 			logger.Errorf(conflictError.Error())
 			return conflictError
 		}

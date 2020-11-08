@@ -60,7 +60,7 @@ func (usersUC *UsersUC) Login(user *models.User) error {
 		return fmt.Errorf(usersUC.useCases.errorMessages.DbError)
 	}
 	if userDB.Id == usersUC.useCases.errorId {
-		absenceError := &models.BadRequestError{Message: "wrong email or password"}
+		absenceError := &models.BadRequestError{Message: "введен неправильный email или пароль"}
 		logger.Errorf(absenceError.Error())
 		return absenceError
 	}

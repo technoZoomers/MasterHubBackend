@@ -103,23 +103,23 @@ func (repository *Repository) InitMongoDB(host string) error {
 		return err
 	}
 	repository.mongoDB = client.Database(utils.DBName)
-	err = repository.dropCollections()
-	if err != nil {
-		return err
-	}
+	//err = repository.dropCollections()
+	//if err != nil {
+	//	return err
+	//}
 	return nil
 }
 
 // mongo collection drop
 
 func (repository *Repository) dropCollections() error {
-	//err := repository.mongoDB.Collection(repository.CookiesRepo.collectionName).Drop(context.TODO())
-	//if err != nil {
-	//	dbError := fmt.Errorf("can't drop cookies collection: %v", err.Error())
-	//	logger.Errorf(dbError.Error())
-	//	return err
-	//}
-	err := repository.mongoDB.Collection(repository.AvatarsRepo.collectionName).Drop(context.TODO())
+	err := repository.mongoDB.Collection(repository.CookiesRepo.collectionName).Drop(context.TODO())
+	if err != nil {
+		dbError := fmt.Errorf("can't drop cookies collection: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return err
+	}
+	err = repository.mongoDB.Collection(repository.AvatarsRepo.collectionName).Drop(context.TODO())
 	if err != nil {
 		dbError := fmt.Errorf("can't drop avatars collection: %v", err.Error())
 		logger.Errorf(dbError.Error())
