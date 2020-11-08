@@ -98,11 +98,13 @@ func (wsUC *WebsocketsUC) processMessage(message models.WebsocketMessage) {
 
 func (wsUC *WebsocketsUC) writeMessageToConnection(connectionString string, marshalledMessage []byte) error {
 	client := wsUC.WebsocketsRepo.GetConnection(connectionString)
-	err := client.Connection.WriteMessage(websocket.TextMessage, marshalledMessage)
-	if err != nil {
-		broadcastError := fmt.Errorf("error broadcasting message: %v", err.Error())
-		logger.Errorf(broadcastError.Error())
-		return broadcastError
+	if client != nil {
+		err := client.Connection.WriteMessage(websocket.TextMessage, marshalledMessage)
+		if err != nil {
+			broadcastError := fmt.Errorf("error broadcasting message: %v", err.Error())
+			logger.Errorf(broadcastError.Error())
+			return broadcastError
+		}
 	}
 	return nil
 }
