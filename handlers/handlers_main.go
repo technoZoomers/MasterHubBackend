@@ -134,7 +134,7 @@ func (handlers *Handlers) handleErrorConflict(writer http.ResponseWriter, err er
 		utils.CreateErrorAnswerJson(writer, http.StatusConflict, models.CreateMessage(err.Error()))
 		return true
 	}
-	return handlers.handleError(writer, err)
+	return handlers.handleForbiddenError(writer, err)
 }
 
 func (handlers *Handlers) handleErrorNoContent(writer http.ResponseWriter, err error) bool {

@@ -148,7 +148,7 @@ func (ch *ChatsHandlers) answerMessages(writer http.ResponseWriter, messages []m
 	}
 }
 func (ch *ChatsHandlers) answerChat(writer http.ResponseWriter, chat models.Chat, statusCode int, err error) {
-	sent := ch.handlers.handleForbiddenError(writer, err)
+	sent := ch.handlers.handleErrorConflict(writer, err)
 	if !sent {
 		utils.CreateAnswerChatJson(writer, statusCode, chat)
 	}
