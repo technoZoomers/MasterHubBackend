@@ -6,6 +6,7 @@ import (
 	"github.com/google/logger"
 	"github.com/technoZoomers/MasterHubBackend/models"
 	"github.com/technoZoomers/MasterHubBackend/repository"
+	"strconv"
 	"time"
 )
 
@@ -185,7 +186,7 @@ func (chatsUC *ChatsUC) CreateChatRequest(chatRequest *models.Chat, studentId in
 		return fmt.Errorf(chatsUC.useCases.errorMessages.DbError)
 	}
 	if chatDB.Id != chatsUC.useCases.errorId {
-		existsError := &models.BadRequestError{Message: "chat already exists", RequestId: chatDB.Id}
+		existsError := &models.ConflictError{Message: "chat already exists", ExistingContent: strconv.FormatInt(chatRequest.MasterId, 10)}
 		logger.Errorf(existsError.Error())
 		return existsError
 	}
