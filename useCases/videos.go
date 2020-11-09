@@ -47,7 +47,7 @@ func (videosUC *VideosUC) createFilenameIntro(masterId int64) (string, error) {
 
 func (videosUC *VideosUC) createFilenameVideo(masterId int64) (string, error) {
 	var filename string
-	countVideo, err := videosUC.VideosRepo.CountVideos()
+	countVideo, err := videosUC.VideosRepo.GetLastVideoId()
 	if err != nil {
 		return filename, fmt.Errorf(videosUC.useCases.errorMessages.DbError)
 	}

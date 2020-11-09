@@ -57,6 +57,27 @@ func (videosRepo *VideosRepo) CountVideos() (int64, error) {
 	return countVideo, nil
 }
 
+func (videosRepo *VideosRepo) GetLastVideoId() (int64, error) {
+	var lastVideoId int64 = 0
+	var dbError error
+	transaction, err := videosRepo.repository.startTransaction()
+	if err != nil {
+		return lastVideoId, err
+	}
+	row := transaction.QueryRow("SELECT currval(pg_get_serial_sequence('videos','id'))")
+	err = row.Scan(&lastVideoId)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve last video id: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return lastVideoId, dbError
+	}
+	err = videosRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return lastVideoId, err
+	}
+	return lastVideoId, nil
+}
+
 func (videosRepo *VideosRepo) GetVideosByMasterId(masterId int64) ([]models.VideoDB, error) {
 	var dbError error
 	videos := make([]models.VideoDB, 0)
