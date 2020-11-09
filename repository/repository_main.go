@@ -10,6 +10,7 @@ import (
 	"github.com/technoZoomers/MasterHubBackend/utils"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"sync"
 )
 
 type Repository struct {
@@ -54,7 +55,11 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 	repository.UsersRepo = &UsersRepo{repository}
 	repository.LanguagesRepo = &LanguagesRepo{repository}
 	repository.ThemesRepo = &ThemesRepo{repository}
-	repository.VideosRepo = &VideosRepo{repository}
+	repository.VideosRepo = &VideosRepo{
+		repository:  repository,
+		mutex:       sync.Mutex{},
+		videosCount: 9, //TODO: HARDCODED VIDEOS
+	}
 	repository.ChatsRepo = &ChatsRepo{
 		repository: repository,
 		userMap: map[string]int64{

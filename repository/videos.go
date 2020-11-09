@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/technoZoomers/MasterHubBackend/models"
+	"sync"
 )
 
 type VideosRepo struct {
-	repository *Repository
+	repository  *Repository
+	mutex       sync.Mutex
+	videosCount int64
 }
 
 func (videosRepo *VideosRepo) InsertVideoData(video *models.VideoDB) error {
@@ -33,6 +36,9 @@ func (videosRepo *VideosRepo) InsertVideoData(video *models.VideoDB) error {
 	if err != nil {
 		return err
 	}
+	videosRepo.mutex.Lock()
+	videosRepo.videosCount = video.Id
+	videosRepo.mutex.Unlock()
 	return nil
 }
 
@@ -57,25 +63,8 @@ func (videosRepo *VideosRepo) CountVideos() (int64, error) {
 	return countVideo, nil
 }
 
-func (videosRepo *VideosRepo) GetLastVideoId() (int64, error) {
-	var lastVideoId int64 = 0
-	var dbError error
-	transaction, err := videosRepo.repository.startTransaction()
-	if err != nil {
-		return lastVideoId, err
-	}
-	row := transaction.QueryRow("SELECT currval(pg_get_serial_sequence('videos','id'))")
-	err = row.Scan(&lastVideoId)
-	if err != nil {
-		dbError = fmt.Errorf("failed to retrieve last video id: %v", err.Error())
-		logger.Errorf(dbError.Error())
-		return lastVideoId, dbError
-	}
-	err = videosRepo.repository.commitTransaction(transaction)
-	if err != nil {
-		return lastVideoId, err
-	}
-	return lastVideoId, nil
+func (videosRepo *VideosRepo) GetLastVideoId() int64 {
+	return videosRepo.videosCount
 }
 
 func (videosRepo *VideosRepo) GetVideosByMasterId(masterId int64) ([]models.VideoDB, error) {
