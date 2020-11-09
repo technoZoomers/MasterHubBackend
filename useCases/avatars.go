@@ -72,12 +72,7 @@ func (avatarsUC *AvatarsUC) createAvatarFile(file multipart.File, filename strin
 	return newPath, ext, nil
 }
 
-func (avatarsUC *AvatarsUC) NewUserAvatar(file multipart.File, userId int64) error {
-	err := avatarsUC.useCases.UsersUC.validateUserId(userId)
-	if err != nil {
-		return err
-	}
-
+func (avatarsUC *AvatarsUC) newUserAvatar(file multipart.File, userId int64) error {
 	filename, err := avatarsUC.createAvatarFilename(userId)
 	if err != nil {
 		return err
@@ -97,6 +92,14 @@ func (avatarsUC *AvatarsUC) NewUserAvatar(file multipart.File, userId int64) err
 	return nil
 }
 
+func (avatarsUC *AvatarsUC) NewUserAvatar(file multipart.File, userId int64) error {
+	err := avatarsUC.useCases.UsersUC.validateUserId(userId)
+	if err != nil {
+		return err
+	}
+	return avatarsUC.newUserAvatar(file, userId)
+}
+
 func (avatarsUC *AvatarsUC) deleteAvatarFile(filename string, ext string) error {
 	oldPath := fmt.Sprintf("%s%s%s.%s", avatarsUC.useCases.filesDir, avatarsUC.avatarConfig.avatarsDir, filename, ext)
 	err := os.Remove(oldPath)
@@ -114,14 +117,9 @@ func (avatarsUC *AvatarsUC) ChangeUserAvatar(file multipart.File, userId int64) 
 		return err
 	}
 	var avatar models.AvatarDB
-	err = avatarsUC.AvatarsRepo.GetAvatarByUser(userId, &avatar)
-	if err != nil {
-		return fmt.Errorf(avatarsUC.useCases.errorMessages.DbError)
-	}
+	_ = avatarsUC.AvatarsRepo.GetAvatarByUser(userId, &avatar)
 	if avatar.User == avatarsUC.useCases.errorId {
-		absenceError := &models.NoContentError{Message: "avatar doesn't exist", RequestId: userId}
-		logger.Errorf(absenceError.Error())
-		return absenceError
+		return avatarsUC.newUserAvatar(file, userId)
 	}
 	err = avatarsUC.deleteAvatarFile(avatar.Filename, avatar.Extension)
 	if err != nil {
