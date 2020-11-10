@@ -63,8 +63,36 @@ func (videosRepo *VideosRepo) CountVideos() (int64, error) {
 	return countVideo, nil
 }
 
-func (videosRepo *VideosRepo) GetLastVideoId() int64 {
-	return videosRepo.videosCount
+func (videosRepo *VideosRepo) getLastVideoId() (int64, error) {
+	var lastVideoId int64 = 0
+	var dbError error
+	transaction, err := videosRepo.repository.startTransaction()
+	if err != nil {
+		return lastVideoId, err
+	}
+	row := transaction.QueryRow("SELECT last_value FROM videos_id_seq")
+	err = row.Scan(&lastVideoId)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve last video id: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return lastVideoId, dbError
+	}
+	err = videosRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return lastVideoId, err
+	}
+	return lastVideoId, nil
+}
+
+func (videosRepo *VideosRepo) GetLastVideoId() (int64, error) {
+	if videosRepo.videosCount == 0 {
+		videosCount, err := videosRepo.getLastVideoId()
+		if err != nil {
+			return videosCount, err
+		}
+		videosRepo.videosCount = videosCount
+	}
+	return videosRepo.videosCount, nil
 }
 
 func (videosRepo *VideosRepo) GetVideosByMasterId(masterId int64) ([]models.VideoDB, error) {

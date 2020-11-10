@@ -5,7 +5,7 @@ import "github.com/technoZoomers/MasterHubBackend/models"
 type VideosRepoI interface {
 	InsertVideoData(video *models.VideoDB) error
 	CountVideos() (int64, error)
-	GetLastVideoId() int64
+	GetLastVideoId() (int64, error)
 	GetVideosByMasterId(masterId int64) ([]models.VideoDB, error)
 	GetVideoDataByIdAndMasterId(video *models.VideoDB) error
 	GetVideoSubthemesById(videoId int64) ([]int64, error)

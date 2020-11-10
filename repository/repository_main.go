@@ -38,27 +38,15 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 	if err != nil {
 		return err
 	}
-	err = repository.dropTables()
-	if err != nil {
-		return err
-	}
-	err = repository.createTables()
-	if err != nil {
-		return err
-	}
-	err = repository.fillTables()
-	if err != nil {
-		return err
-	}
+
 	repository.StudentsRepo = &StudentsRepo{repository}
 	repository.MastersRepo = &MastersRepo{repository}
 	repository.UsersRepo = &UsersRepo{repository}
 	repository.LanguagesRepo = &LanguagesRepo{repository}
 	repository.ThemesRepo = &ThemesRepo{repository}
 	repository.VideosRepo = &VideosRepo{
-		repository:  repository,
-		mutex:       sync.Mutex{},
-		videosCount: 9, //TODO: HARDCODED VIDEOS
+		repository: repository,
+		mutex:      sync.Mutex{},
 	}
 	repository.ChatsRepo = &ChatsRepo{
 		repository: repository,
@@ -86,6 +74,19 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 		collectionName: "avatars",
 		extKey:         "extension",
 	}
+
+	//err = repository.dropTables()
+	//if err != nil {
+	//	return err
+	//}
+	//err = repository.createTables()
+	//if err != nil {
+	//	return err
+	//}
+	//err = repository.fillTables()
+	//if err != nil {
+	//	return err
+	//}
 	err = repository.InitMongoDB(config.Host)
 	if err != nil {
 		return err
@@ -108,10 +109,10 @@ func (repository *Repository) InitMongoDB(host string) error {
 		return err
 	}
 	repository.mongoDB = client.Database(utils.DBName)
-	err = repository.dropCollections()
-	if err != nil {
-		return err
-	}
+	//err = repository.dropCollections()
+	//if err != nil {
+	//	return err
+	//}
 	return nil
 }
 
@@ -156,6 +157,7 @@ func (repository *Repository) fillTables() error {
 	if err != nil {
 		return err
 	}
+	//repository.VideosRepo.videosCount = 9 //TODO: HARDCODED VIDEOS
 	return nil
 }
 
