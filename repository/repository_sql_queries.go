@@ -1,6 +1,8 @@
 package repository
 
 const TABLES_DROPPING = `
+DROP TABLE IF EXISTS lessons_students;
+DROP TABLE IF EXISTS lessons;
 DROP TABLE IF EXISTS messages;  
 DROP TABLE IF EXISTS chats;
 DROP TABLE IF EXISTS videos_subthemes;
@@ -112,6 +114,24 @@ CREATE TABLE messages (
     text text NOT NULL,
     created TIMESTAMPTZ NOT NULL
 );
+
+CREATE TABLE lessons (
+    id SERIAL NOT NULL PRIMARY KEY,
+    master_id int REFERENCES masters(id) ON DELETE CASCADE,
+    time_start timetz NOT NULL,
+    time_end timetz NOT NULL,
+    date date NOT NULL,
+    price numeric(20, 2) CONSTRAINT non_negative_price CHECK (price >= 0),
+    education_format int NOT NULL CHECK (education_format >=1 AND education_format <= 2),
+    status int NOT NULL CHECK (status >=1 AND status <= 3)
+);
+
+CREATE TABLE lessons_students (
+    lesson_id int REFERENCES lessons(id) ON DELETE CASCADE,
+    student_id int REFERENCES students(id) ON DELETE CASCADE,
+    status int NOT NULL CHECK (status >=0 AND status <= 2) DEFAULT 0
+);
+
 `
 
 const TABLES_FILLING = `
@@ -333,4 +353,7 @@ INSERT INTO videos (master_id, filename, extension, name, intro, uploaded, ratin
                                                                              (3, 'master_3_video_7', 'webm', 'Как заговорить на английском', false, '2020-10-10T12:36:00+00:00', 143, 3) ,
                                                                              (1, 'master_1_intro', 'webm', 'Архитектура', true, '2020-10-10T12:37:00+00:00', 10, 3) ,
                                                                              (2, 'master_2_intro', 'webm', 'Гитара',  true, '2020-10-10T12:38:00+00:00', 1, 6);
+
+INSERT INTO lessons (master_id, time_start, time_end, date, price, education_format, status) VALUES (1,'12:00:00', '13:10:00', '2020-11-20', 1000, 1, 1);
+
 `

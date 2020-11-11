@@ -37,8 +37,8 @@ func main() {
 
 	err := repo.Init(pgx.ConnConfig{
 		Database: utils.DBName,
-		Host:     "213.219.214.220",
-		//Host:     "localhost",
+		//Host:     "213.219.214.220",
+		Host:     "localhost",
 		User:     "alexis",
 		Password: "alexis",
 	})
@@ -60,7 +60,7 @@ func main() {
 	mhuseCases := useCases.UseCases{}
 
 	err = mhuseCases.Init(repo.UsersRepo, repo.MastersRepo, repo.StudentsRepo, repo.ThemesRepo, repo.LanguagesRepo,
-		repo.VideosRepo, repo.AvatarsRepo, repo.ChatsRepo, *repo.WebsocketsRepo, repo.CookiesRepo)
+		repo.VideosRepo, repo.AvatarsRepo, repo.ChatsRepo, *repo.WebsocketsRepo, repo.CookiesRepo, repo.LessonsRepo)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize useCases: %v", err)
 	}
@@ -70,7 +70,7 @@ func main() {
 	mhHandlers := masterHub_handlers.Handlers{}
 
 	err = mhHandlers.Init(mhuseCases.UsersUC, mhuseCases.MastersUC, mhuseCases.StudentsUC, mhuseCases.ThemesUC, mhuseCases.LanguagesUC,
-		mhuseCases.VideosUC, mhuseCases.AvatarsUC, mhuseCases.ChatsUC, mhuseCases.WebsocketsUC)
+		mhuseCases.VideosUC, mhuseCases.AvatarsUC, mhuseCases.ChatsUC, mhuseCases.WebsocketsUC, mhuseCases.LessonsUC)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize handlers: %v", err)
 	}
@@ -136,6 +136,7 @@ func main() {
 	r.Handle("/masters/{id}/intro/data", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.ChangeIntroData, false)).Methods("PUT")
 	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.GetIntroData).Methods("GET")
 	r.Handle("/masters/{id}/chats/{chatId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.ChangeChatStatus, false)).Methods("PUT")
+	r.Handle("/masters/{id}/lessons", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.CreateLesson, false)).Methods("POST")
 
 	//videos
 	r.HandleFunc("/videos", mhHandlers.VideosHandlers.Get).Methods("GET")

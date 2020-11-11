@@ -12,6 +12,7 @@ type UseCases struct {
 	AvatarsUC     *AvatarsUC
 	ChatsUC       *ChatsUC
 	WebsocketsUC  *WebsocketsUC
+	LessonsUC     *LessonsUC
 	errorMessages ErrorMessagesUC
 	errorId       int64
 	filesDir      string
@@ -20,7 +21,7 @@ type UseCases struct {
 func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repository.MastersRepoI, studentsRepo repository.StudentsRepoI,
 	themesRepo repository.ThemesRepoI, languagesRepo repository.LanguagesRepoI,
 	videosRepo repository.VideosRepoI, avatarsRepo repository.AvatarsRepoI, chatsRepo repository.ChatsRepoI,
-	wsRepo repository.WebsocketsRepo, cookiesRepo repository.CookiesRepoI) error {
+	wsRepo repository.WebsocketsRepo, cookiesRepo repository.CookiesRepoI, lessonsRepo repository.LessonsRepoI) error {
 	useCases.UsersUC = &UsersUC{useCases, usersRepo, cookiesRepo}
 	useCases.MastersUC = &MastersUC{
 		useCases:      useCases,
@@ -105,6 +106,17 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 		messagesTypesMap: map[int64]bool{
 			1: false,
 			2: true,
+		},
+	}
+	useCases.LessonsUC = &LessonsUC{
+		useCases:    useCases,
+		LessonsRepo: lessonsRepo,
+		MastersRepo: mastersRepo,
+		lessonsConfig: LessonsConfig{
+			educationFormatMap:          map[int64]string{1: "онлайн", 2: "вживую"},
+			educationFormatMapBackwards: map[string]int64{"онлайн": 1, "вживую": 2},
+			layoutISODate:               "2006-01-02",
+			layoutISOTime:               "12:00:01",
 		},
 	}
 	go useCases.WebsocketsUC.Start()

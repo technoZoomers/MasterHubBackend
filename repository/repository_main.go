@@ -27,6 +27,7 @@ type Repository struct {
 	ChatsRepo      *ChatsRepo
 	WebsocketsRepo *WebsocketsRepo
 	CookiesRepo    *CookiesRepo
+	LessonsRepo    *LessonsRepo
 }
 
 func (repository *Repository) Init(config pgx.ConnConfig) error {
@@ -74,7 +75,7 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 		collectionName: "avatars",
 		extKey:         "extension",
 	}
-
+	repository.LessonsRepo = &LessonsRepo{repository}
 	//err = repository.dropTables()
 	//if err != nil {
 	//	return err

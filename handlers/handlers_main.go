@@ -23,11 +23,13 @@ type Handlers struct {
 	AvatarsHandlers        *AvatarsHandlers
 	ChatsHandlers          *ChatsHandlers
 	WSHandlers             *WSHandlers
+	LessonsHandlers        *LessonsHandlers
 	badRequestError        *models.BadRequestError
 	conflictError          *models.ConflictError
 	noContentError         *models.NoContentError
 	badQueryParameterError *models.BadQueryParameterError
 	forbiddenError         *models.ForbiddenError
+	notAcceptableError     *models.NotAcceptableError
 	contextUserKey         string
 	contextCookieKey       string
 	cookieString           string
@@ -37,7 +39,7 @@ type Handlers struct {
 func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useCases.MastersUCInterface, studentsUC useCases.StudentsUCInterface,
 	themesUC useCases.ThemesUCInterface, languagesUC useCases.LanguagesUCInterface,
 	videosUC useCases.VideosUCInterface, avatarsUC useCases.AvatarsUCInterface,
-	chatsUC useCases.ChatsUCInterface, wsUC useCases.WebsocketsUCInterface) error {
+	chatsUC useCases.ChatsUCInterface, wsUC useCases.WebsocketsUCInterface, lessonsUC useCases.LessonsUCInterface) error {
 	handlers.UsersHandlers = &UsersHandlers{handlers, usersUC}
 	handlers.MastersHandlers = &MastersHandlers{
 		handlers:  handlers,
@@ -112,6 +114,10 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 		},
 		WebsocketsUC: wsUC,
 	}
+	handlers.LessonsHandlers = &LessonsHandlers{
+		handlers:  handlers,
+		LessonsUC: lessonsUC,
+	}
 	handlers.cookieString = "user_session"
 	handlers.contextCookieKey = "cookie_key"
 	handlers.contextUserKey = "user_key"
@@ -150,6 +156,15 @@ func (handlers *Handlers) handleForbiddenError(writer http.ResponseWriter, err e
 	if errors.As(err, &handlers.forbiddenError) {
 		logger.Error(err)
 		utils.CreateErrorAnswerJson(writer, http.StatusForbidden, models.CreateMessage(err.Error()))
+		return true
+	}
+	return handlers.handleError(writer, err)
+}
+
+func (handlers *Handlers) handleNotAcceptableError(writer http.ResponseWriter, err error) bool {
+	if errors.As(err, &handlers.notAcceptableError) {
+		logger.Error(err)
+		utils.CreateErrorAnswerJson(writer, http.StatusNotAcceptable, models.CreateMessage(err.Error()))
 		return true
 	}
 	return handlers.handleError(writer, err)

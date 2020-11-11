@@ -44,3 +44,11 @@ type ForbiddenError struct {
 func (forbiddenError *ForbiddenError) Error() string {
 	return fmt.Sprintf("forbidden resource, reason: %s ", forbiddenError.Reason)
 }
+
+type NotAcceptableError struct {
+	Message string
+}
+
+func (notAcceptableError *NotAcceptableError) Error() string {
+	return fmt.Sprintf("not acceptable data: %s", notAcceptableError.Message)
+}
