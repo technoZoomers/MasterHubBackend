@@ -167,7 +167,7 @@ func (handlers *Handlers) handleNotAcceptableError(writer http.ResponseWriter, e
 		utils.CreateErrorAnswerJson(writer, http.StatusNotAcceptable, models.CreateMessage(err.Error()))
 		return true
 	}
-	return handlers.handleForbiddenError(writer, err)
+	return handlers.handleErrorConflict(writer, err)
 }
 
 func (handlers *Handlers) handleError(writer http.ResponseWriter, err error) bool {
@@ -213,6 +213,10 @@ func (handlers *Handlers) validateChatId(writer http.ResponseWriter, req *http.R
 }
 func (handlers *Handlers) validateChatIdSimple(writer http.ResponseWriter, req *http.Request) (bool, int64) {
 	return handlers.validateId(writer, req, "id", "chat")
+}
+
+func (handlers *Handlers) validateLessonId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
+	return handlers.validateId(writer, req, "lessonId", "lesson")
 }
 
 func (handlers *Handlers) validateThemeId(writer http.ResponseWriter, req *http.Request) (bool, int64) {

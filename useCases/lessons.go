@@ -6,6 +6,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/technoZoomers/MasterHubBackend/models"
 	"github.com/technoZoomers/MasterHubBackend/repository"
+	"strconv"
 	"time"
 )
 
@@ -42,6 +43,22 @@ func (lessonsUC *LessonsUC) validateMaster(masterId int64) (int64, error) { // T
 		return lessonsUC.useCases.errorId, absenceError
 	}
 	return masterDB.Id, nil
+}
+
+func (lessonsUC *LessonsUC) validateLesson(lessonId int64, masterId int64, lessonDB *models.LessonDB) error {
+	if lessonId == lessonsUC.useCases.errorId {
+		return &models.BadRequestError{Message: "incorrect lesson id", RequestId: lessonId}
+	}
+	err := lessonsUC.LessonsRepo.GetLessonByIdAndMasterId(lessonDB, lessonId, masterId)
+	if err != nil {
+		return fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
+	}
+	if lessonDB.Id == lessonsUC.useCases.errorId {
+		absenceError := &models.BadRequestError{Message: "lesson doesn't exist", RequestId: masterId}
+		logger.Errorf(absenceError.Error())
+		return absenceError
+	}
+	return nil
 }
 
 func (lessonsUC *LessonsUC) matchEducationFormatToDB(format string) (int64, error) {
@@ -194,8 +211,64 @@ func (lessonsUC *LessonsUC) matchLessonToDB(lesson *models.Lesson, lessonDB *mod
 	return nil
 }
 
-func (lessonsUC *LessonsUC) GetMastersLessons() (models.Lessons, error) {
-	panic("implement me")
+func (lessonsUC *LessonsUC) matchLessonToDBUpdate(lesson *models.Lesson, lessonDB *models.LessonDB) error {
+	if lesson.Date != "" {
+		dateParsed, err := time.Parse(lessonsUC.lessonsConfig.layoutISODate, lesson.Date)
+		if err != nil {
+			parseError := fmt.Errorf("couldnt parse date: %s", err.Error())
+			logger.Errorf(parseError.Error())
+			return parseError
+		}
+		lessonDB.Date = dateParsed
+	} else {
+		lesson.Date = lessonDB.Date.Format(lessonsUC.lessonsConfig.layoutISODate)
+	}
+	if lesson.TimeEnd == "" {
+		lesson.TimeEnd = lessonDB.TimeEnd
+	}
+	if lesson.TimeStart == "" {
+		lesson.TimeStart = lessonDB.TimeStart
+	}
+	duration, durationAsDuration, err := lessonsUC.calculateDuration(lesson.TimeStart, lesson.TimeEnd)
+	if err != nil {
+		return err
+	}
+	lessonDB.TimeStart = lesson.TimeStart
+	lessonDB.TimeEnd = lesson.TimeEnd
+	lesson.Duration = duration
+
+	if durationAsDuration <= 0 {
+		formatError := &models.NotAcceptableError{Message: "lesson duration must be positive"}
+		logger.Errorf(formatError.Error())
+		return formatError
+	}
+	if lesson.EducationFormat == "" {
+		lesson.EducationFormat, _ = lessonsUC.matchEducationFormat(lessonDB.EducationFormat)
+	}
+	edFormat, err := lessonsUC.matchEducationFormatToDB(lesson.EducationFormat)
+	if err != nil {
+		return err
+	}
+	lessonDB.EducationFormat = edFormat
+	if lesson.Price.Currency == "" {
+		_ = lessonsUC.matchPrice(lesson, lessonDB.Price)
+	}
+	if lesson.Price.Value.IsNegative() {
+		formatError := &models.NotAcceptableError{Message: "lesson price must not be negative"}
+		logger.Errorf(formatError.Error())
+		return formatError
+	}
+	lessonDB.Price = lesson.Price.Value
+	if lesson.Status == lessonsUC.useCases.errorId {
+		lesson.Status = lessonDB.Status
+	} else {
+		err = lessonsUC.checkLessonStatus(lesson.Status)
+		if err != nil {
+			return err
+		}
+		lessonDB.Status = lesson.Status
+	}
+	return nil
 }
 
 func (lessonsUC *LessonsUC) CreateLesson(lesson *models.Lesson, masterId int64) error {
@@ -219,6 +292,15 @@ func (lessonsUC *LessonsUC) CreateLesson(lesson *models.Lesson, masterId int64) 
 	if err != nil {
 		return err
 	}
+	lessonsIds, err := lessonsUC.LessonsRepo.CheckLessonTimeRange(lessonDB)
+	if err != nil {
+		return fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
+	}
+	if len(lessonsIds) != 0 {
+		formatError := &models.ConflictError{Message: "this lesson time is already taken", ExistingContent: strconv.FormatInt(lessonsIds[0], 10)}
+		logger.Errorf(formatError.Error())
+		return formatError
+	}
 	err = lessonsUC.LessonsRepo.InsertLesson(lessonDB)
 	if err != nil {
 		return fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
@@ -227,8 +309,44 @@ func (lessonsUC *LessonsUC) CreateLesson(lesson *models.Lesson, masterId int64) 
 	return nil
 }
 
-func (lessonsUC *LessonsUC) ChangeLessonInfo(lesson *models.Lesson) error {
-	panic("implement me")
+func (lessonsUC *LessonsUC) ChangeLessonInfo(lesson *models.Lesson, masterId int64, lessonId int64) error {
+	if lesson.MasterId == lessonsUC.useCases.errorId {
+		lesson.MasterId = masterId
+	} else if masterId != lesson.MasterId {
+		return &models.ForbiddenError{Reason: "master ids doesnt match"}
+	}
+	masterDBId, err := lessonsUC.validateMaster(lesson.MasterId)
+	if err != nil {
+		return err
+	}
+	if lesson.Id == lessonsUC.useCases.errorId {
+		lesson.Id = lessonId
+	} else if lessonId != lesson.Id {
+		return &models.ForbiddenError{Reason: "lesson ids doesnt match"}
+	}
+	var lessonDB models.LessonDB
+	err = lessonsUC.validateLesson(lesson.Id, masterDBId, &lessonDB)
+	if err != nil {
+		return err
+	}
+	err = lessonsUC.matchLessonToDBUpdate(lesson, &lessonDB)
+	if err != nil {
+		return err
+	}
+	lessonsIds, err := lessonsUC.LessonsRepo.CheckLessonTimeRange(&lessonDB)
+	if err != nil {
+		return fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
+	}
+	if !(len(lessonsIds) == 1 && lessonsIds[0] == lesson.Id) && len(lessonsIds) != 0 {
+		formatError := &models.ConflictError{Message: "this lesson time is already taken", ExistingContent: strconv.FormatInt(lessonsIds[0], 10)}
+		logger.Errorf(formatError.Error())
+		return formatError
+	}
+	err = lessonsUC.LessonsRepo.UpdateLessonByIdAndMasterId(&lessonDB)
+	if err != nil {
+		return fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
+	}
+	return nil
 }
 
 func (lessonsUC *LessonsUC) GetMastersLessonsRequests() (models.LessonRequests, error) {
@@ -241,4 +359,25 @@ func (lessonsUC *LessonsUC) CreateLessonRequest(studentId int64, lessonId int64)
 
 func (lessonsUC *LessonsUC) DeleteLessonRequest(lessonRequest *models.LessonRequest) error {
 	panic("implement me")
+}
+
+func (lessonsUC *LessonsUC) GetMastersLessons(masterId int64) (models.Lessons, error) {
+	lessons := make([]models.Lesson, 0)
+	masterDBId, err := lessonsUC.validateMaster(masterId)
+	if err != nil {
+		return lessons, err
+	}
+	lessonsDB, err := lessonsUC.LessonsRepo.GetMastersLessons(masterDBId)
+	if err != nil {
+		return lessons, fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
+	}
+	for _, lessonDB := range lessonsDB {
+		var lesson models.Lesson
+		err = lessonsUC.matchLesson(&lessonDB, &lesson, masterId)
+		if err != nil {
+			return lessons, err
+		}
+		lessons = append(lessons, lesson)
+	}
+	return lessons, nil
 }

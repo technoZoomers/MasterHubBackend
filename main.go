@@ -37,8 +37,8 @@ func main() {
 
 	err := repo.Init(pgx.ConnConfig{
 		Database: utils.DBName,
-		//Host:     "213.219.214.220",
-		Host:     "localhost",
+		Host:     "213.219.214.220",
+		//Host:     "localhost",
 		User:     "alexis",
 		Password: "alexis",
 	})
@@ -136,7 +136,8 @@ func main() {
 	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.GetIntroData).Methods("GET")
 	r.Handle("/masters/{id}/chats/{chatId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.ChangeChatStatus, false)).Methods("PUT")
 	r.Handle("/masters/{id}/lessons", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.CreateLesson, false)).Methods("POST")
-	r.Handle("/masters/{id}/lessons", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.GetLessons, false)).Methods("GET")
+	r.HandleFunc("/masters/{id}/lessons", mhHandlers.LessonsHandlers.Get).Methods("GET")
+	r.Handle("/masters/{id}/lessons/{lessonId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.ChangeLessonInfo, false)).Methods("PUT")
 
 	//videos
 	r.HandleFunc("/videos", mhHandlers.VideosHandlers.Get).Methods("GET")

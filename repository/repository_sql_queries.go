@@ -118,8 +118,8 @@ CREATE TABLE messages (
 CREATE TABLE lessons (
     id SERIAL NOT NULL PRIMARY KEY,
     master_id int REFERENCES masters(id) ON DELETE CASCADE,
-    time_start timetz NOT NULL,
-    time_end timetz NOT NULL,
+    time_start time NOT NULL,
+    time_end time NOT NULL,
     date date NOT NULL,
     price numeric(20, 2) CONSTRAINT non_negative_price CHECK (price >= 0),
     education_format int NOT NULL CHECK (education_format >=1 AND education_format <= 2),
