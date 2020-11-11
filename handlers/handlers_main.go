@@ -167,7 +167,7 @@ func (handlers *Handlers) handleNotAcceptableError(writer http.ResponseWriter, e
 		utils.CreateErrorAnswerJson(writer, http.StatusNotAcceptable, models.CreateMessage(err.Error()))
 		return true
 	}
-	return handlers.handleError(writer, err)
+	return handlers.handleForbiddenError(writer, err)
 }
 
 func (handlers *Handlers) handleError(writer http.ResponseWriter, err error) bool {

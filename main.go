@@ -43,7 +43,6 @@ func main() {
 		Password: "alexis",
 	})
 
-	fmt.Println(time.Now().Date())
 	fmt.Println(time.Now())
 
 	//config, err := pgx.ParseConnectionString(os.Getenv("DATABASE_URL"))
@@ -137,6 +136,7 @@ func main() {
 	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.GetIntroData).Methods("GET")
 	r.Handle("/masters/{id}/chats/{chatId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.ChangeChatStatus, false)).Methods("PUT")
 	r.Handle("/masters/{id}/lessons", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.CreateLesson, false)).Methods("POST")
+	r.Handle("/masters/{id}/lessons", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.GetLessons, false)).Methods("GET")
 
 	//videos
 	r.HandleFunc("/videos", mhHandlers.VideosHandlers.Get).Methods("GET")

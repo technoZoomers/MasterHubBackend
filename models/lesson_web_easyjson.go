@@ -120,29 +120,6 @@ func easyjsonC066239bDecodeGithubComTechnoZoomersMasterHubBackendModels1(in *jle
 			easyjsonC066239bDecodeGithubComTechnoZoomersMasterHubBackendModels2(in, &out.Price)
 		case "status":
 			out.Status = int64(in.Int64())
-		case "student_id":
-			if in.IsNull() {
-				in.Skip()
-				out.StudentId = nil
-			} else {
-				in.Delim('[')
-				if out.StudentId == nil {
-					if !in.IsDelim(']') {
-						out.StudentId = make([]int64, 0, 8)
-					} else {
-						out.StudentId = []int64{}
-					}
-				} else {
-					out.StudentId = (out.StudentId)[:0]
-				}
-				for !in.IsDelim(']') {
-					var v4 int64
-					v4 = int64(in.Int64())
-					out.StudentId = append(out.StudentId, v4)
-					in.WantComma()
-				}
-				in.Delim(']')
-			}
 		default:
 			in.SkipRecursive()
 		}
@@ -201,22 +178,6 @@ func easyjsonC066239bEncodeGithubComTechnoZoomersMasterHubBackendModels1(out *jw
 		const prefix string = ",\"status\":"
 		out.RawString(prefix)
 		out.Int64(int64(in.Status))
-	}
-	{
-		const prefix string = ",\"student_id\":"
-		out.RawString(prefix)
-		if in.StudentId == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
-			out.RawString("null")
-		} else {
-			out.RawByte('[')
-			for v5, v6 := range in.StudentId {
-				if v5 > 0 {
-					out.RawByte(',')
-				}
-				out.Int64(int64(v6))
-			}
-			out.RawByte(']')
-		}
 	}
 	out.RawByte('}')
 }

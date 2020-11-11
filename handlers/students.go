@@ -65,13 +65,7 @@ func (sh *StudentsHandlers) ChangeStudentData(writer http.ResponseWriter, req *h
 		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(jsonError.Error()))
 		return
 	}
-	if studentId != student.UserId {
-		paramError := fmt.Errorf("wrong student id parameter")
-		logger.Errorf(paramError.Error())
-		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(paramError.Error()))
-		return
-	}
-	err = sh.StudentsUC.ChangeStudentData(&student)
+	err = sh.StudentsUC.ChangeStudentData(&student, studentId)
 	sh.answerStudent(writer, student, err)
 }
 

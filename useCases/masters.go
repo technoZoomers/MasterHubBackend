@@ -193,7 +193,12 @@ func (mastersUC *MastersUC) setAveragePrice(master *models.Master, avgPrice deci
 	return nil
 }
 
-func (mastersUC *MastersUC) ChangeMasterData(master *models.Master) error {
+func (mastersUC *MastersUC) ChangeMasterData(master *models.Master, masterId int64) error {
+	if master.UserId == mastersUC.useCases.errorId {
+		master.UserId = masterId
+	} else if masterId != master.UserId {
+		return &models.ForbiddenError{Reason: "master ids doesnt match"}
+	}
 	if master.UserId == mastersUC.useCases.errorId {
 		return &models.BadRequestError{Message: "incorrect master id", RequestId: master.UserId}
 	}

@@ -1,6 +1,9 @@
 package useCases
 
-import "github.com/technoZoomers/MasterHubBackend/repository"
+import (
+	"github.com/technoZoomers/MasterHubBackend/repository"
+	"time"
+)
 
 type UseCases struct {
 	UsersUC       *UsersUC
@@ -116,10 +119,12 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 			educationFormatMap:          map[int64]string{1: "онлайн", 2: "вживую"},
 			educationFormatMapBackwards: map[string]int64{"онлайн": 1, "вживую": 2},
 			layoutISODate:               "2006-01-02",
-			layoutISOTime:               "12:00:01",
+			layoutISOTime:               "15:04:05.00",
+			zeroTime:                    "00:00:00.00",
 		},
 	}
-	go useCases.WebsocketsUC.Start()
+	useCases.LessonsUC.lessonsConfig.zeroTimeParsed, _ = time.Parse(useCases.LessonsUC.lessonsConfig.layoutISOTime, useCases.LessonsUC.lessonsConfig.zeroTime)
+
 	useCases.errorMessages = ErrorMessagesUC{
 		DbError:             "database internal error",
 		InternalServerError: "internal server error",
@@ -134,5 +139,7 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 	useCases.errorId = 0
 	useCases.filesDir = "/masterhub_files"
 	//useCases.filesDir = ""
+
+	go useCases.WebsocketsUC.Start() // GOROUTINE FOR WEBSOCKETS
 	return nil
 }

@@ -17,6 +17,8 @@ type LessonsUC struct {
 }
 
 type LessonsConfig struct {
+	zeroTime                    string
+	zeroTimeParsed              time.Time
 	layoutISODate               string
 	layoutISOTime               string
 	educationFormatMap          map[int64]string
@@ -96,13 +98,44 @@ func (lessonsUC *LessonsUC) formatDuration(d time.Duration) string { // TODO: ma
 	return fmt.Sprintf("%02d:%02d:%02d", h, m, s)
 }
 
+func (lessonsUC *LessonsUC) validateTimeFormat(timeToParse string) (time.Time, error) {
+	timeParsed, err := time.Parse(lessonsUC.lessonsConfig.layoutISOTime, timeToParse)
+	if err != nil {
+		parseError := &models.NotAcceptableError{Message: fmt.Sprintf("couldnt parse time start: %s", err.Error())}
+		logger.Errorf(parseError.Error())
+		return timeParsed, parseError
+	}
+	return timeParsed, nil
+}
+
+func (lessonsUC *LessonsUC) calculateDuration(timeStart string, timeEnd string) (string, time.Duration, error) {
+	var duration string
+	var durationAsDuration time.Duration
+	timeStartAsTime, err := lessonsUC.validateTimeFormat(timeStart)
+	if err != nil {
+		return duration, durationAsDuration, err
+	}
+	timeEndAsTime, err := lessonsUC.validateTimeFormat(timeEnd)
+	if err != nil {
+		return duration, durationAsDuration, err
+	}
+	durationAsDuration = timeEndAsTime.Sub(timeStartAsTime)
+	duration = lessonsUC.formatDuration(durationAsDuration)
+	return duration, durationAsDuration, nil
+}
+
 func (lessonsUC *LessonsUC) matchLesson(lessonDB *models.LessonDB, lesson *models.Lesson, masterId int64) error {
 	lesson.Id = lessonDB.Id
 	lesson.MasterId = masterId
 	lesson.Date = lessonDB.Date.Format(lessonsUC.lessonsConfig.layoutISODate)
-	lesson.TimeStart = lessonDB.TimeStart.Format(lessonsUC.lessonsConfig.layoutISOTime)
-	lesson.TimeEnd = lessonDB.TimeEnd.Format(lessonsUC.lessonsConfig.layoutISOTime)
-	lesson.Duration = lessonsUC.formatDuration(lessonDB.TimeEnd.Sub(lessonDB.TimeStart))
+	duration, _, err := lessonsUC.calculateDuration(lessonDB.TimeStart, lessonDB.TimeEnd)
+	if err != nil {
+		return err
+	}
+	lesson.TimeStart = lessonDB.TimeStart
+	lesson.TimeEnd = lessonDB.TimeEnd
+	lesson.Duration = duration
+
 	edFormat, err := lessonsUC.matchEducationFormat(lessonDB.EducationFormat)
 	if err != nil {
 		return fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
@@ -128,22 +161,15 @@ func (lessonsUC *LessonsUC) matchLessonToDB(lesson *models.Lesson, lessonDB *mod
 		return parseError
 	}
 	lessonDB.Date = dateParsed
-	timeStartParsed, err := time.Parse(time.RFC3339, lesson.TimeStart)
+	duration, durationAsDuration, err := lessonsUC.calculateDuration(lesson.TimeStart, lesson.TimeEnd)
 	if err != nil {
-		parseError := fmt.Errorf("couldnt parse time start: %s", err.Error())
-		logger.Errorf(parseError.Error())
-		return parseError
+		return err
 	}
-	lessonDB.TimeStart = timeStartParsed
-	timeEndParsed, err := time.Parse(time.RFC3339, lesson.TimeEnd)
-	if err != nil {
-		parseError := fmt.Errorf("couldnt parse time end: %s", err.Error())
-		logger.Errorf(parseError.Error())
-		return parseError
-	}
-	lessonDB.TimeEnd = timeEndParsed
+	lessonDB.TimeStart = lesson.TimeStart
+	lessonDB.TimeEnd = lesson.TimeEnd
+	lesson.Duration = duration
 
-	if lessonDB.TimeEnd.Sub(lessonDB.TimeStart) <= 0 {
+	if durationAsDuration <= 0 {
 		formatError := &models.NotAcceptableError{Message: "lesson duration must be positive"}
 		logger.Errorf(formatError.Error())
 		return formatError
@@ -154,12 +180,17 @@ func (lessonsUC *LessonsUC) matchLessonToDB(lesson *models.Lesson, lessonDB *mod
 		return err
 	}
 	lessonDB.EducationFormat = edFormat
+	if lesson.Price.Value.IsNegative() {
+		formatError := &models.NotAcceptableError{Message: "lesson price must not be negative"}
+		logger.Errorf(formatError.Error())
+		return formatError
+	}
 	lessonDB.Price = lesson.Price.Value
-	err = lessonsUC.checkLessonStatus(lessonDB.Status)
+	err = lessonsUC.checkLessonStatus(lesson.Status)
 	if err != nil {
 		return err
 	}
-	lesson.Status = lessonDB.Status
+	lessonDB.Status = lesson.Status
 	return nil
 }
 
@@ -168,7 +199,12 @@ func (lessonsUC *LessonsUC) GetMastersLessons() (models.Lessons, error) {
 }
 
 func (lessonsUC *LessonsUC) CreateLesson(lesson *models.Lesson, masterId int64) error {
-	masterDBId, err := lessonsUC.validateMaster(masterId)
+	if lesson.MasterId == lessonsUC.useCases.errorId {
+		lesson.MasterId = masterId
+	} else if masterId != lesson.MasterId {
+		return &models.ForbiddenError{Reason: "master ids doesnt match"}
+	}
+	masterDBId, err := lessonsUC.validateMaster(lesson.MasterId)
 	if err != nil {
 		return err
 	}
@@ -187,8 +223,6 @@ func (lessonsUC *LessonsUC) CreateLesson(lesson *models.Lesson, masterId int64) 
 	if err != nil {
 		return fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
 	}
-	lesson.Duration = lessonsUC.formatDuration(lessonDB.TimeEnd.Sub(lessonDB.TimeStart))
-	lesson.StudentId = []int64{}
 	lesson.Id = lessonDB.Id
 	return nil
 }

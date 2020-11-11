@@ -179,7 +179,12 @@ func (studentsUC *StudentsUC) validateStudent(studentDB *models.StudentDB, stude
 	return nil
 }
 
-func (studentsUC *StudentsUC) ChangeStudentData(student *models.Student) error {
+func (studentsUC *StudentsUC) ChangeStudentData(student *models.Student, studentId int64) error {
+	if student.UserId == studentsUC.useCases.errorId {
+		student.UserId = studentId
+	} else if studentId != student.UserId {
+		return &models.ForbiddenError{Reason: "student ids doesnt match"}
+	}
 	if student.UserId == studentsUC.useCases.errorId {
 		return &models.BadRequestError{Message: "incorrect student id", RequestId: student.UserId}
 	}

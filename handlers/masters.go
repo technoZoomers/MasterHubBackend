@@ -57,13 +57,7 @@ func (mh *MastersHandlers) ChangeMasterData(writer http.ResponseWriter, req *htt
 		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(jsonError.Error()))
 		return
 	}
-	if masterId != master.UserId {
-		paramError := fmt.Errorf("wrong master id parameter")
-		logger.Errorf(paramError.Error())
-		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(paramError.Error()))
-		return
-	}
-	err = mh.MastersUC.ChangeMasterData(&master)
+	err = mh.MastersUC.ChangeMasterData(&master, masterId)
 	mh.answerMaster(writer, master, err)
 }
 
