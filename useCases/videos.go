@@ -426,6 +426,7 @@ func (videosUC *VideosUC) GetIntroData(videoData *models.VideoData, masterId int
 }
 
 func (videosUC *VideosUC) changeVideoData(videoDB *models.VideoDB, masterId int64, videoData *models.VideoData) error {
+	videoData.MasterId = masterId // TODO: refactor
 	masterDBId, err := videosUC.validateMaster(masterId)
 	if err != nil {
 		return err
