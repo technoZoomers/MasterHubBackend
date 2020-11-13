@@ -354,6 +354,8 @@ INSERT INTO videos (master_id, filename, extension, name, intro, uploaded, ratin
                                                                              (1, 'master_1_intro', 'webm', 'Архитектура', true, '2020-10-10T12:37:00+00:00', 10, 3) ,
                                                                              (6, 'master_6_intro', 'webm', 'Флейта',  true, '2020-10-10T12:38:00+00:00', 1, 2);
 
+INSERT INTO videos_subthemes (video_id, subtheme_id) VALUES (1, 13), (2, 6), (3, 13), (4, 44), (5, 6), (6, 6), (7, 44), (8, 58), (9, 6);
+
 INSERT INTO lessons (master_id, time_start, time_end, date, price, education_format, status) VALUES (1,'12:00:00', '13:10:00', '2020-11-20', 1000, 1, 1);
 
 `
