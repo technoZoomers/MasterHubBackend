@@ -110,10 +110,10 @@ func (repository *Repository) InitMongoDB(host string) error {
 		return err
 	}
 	repository.mongoDB = client.Database(utils.DBName)
-	err = repository.dropCollections()
-	if err != nil {
-		return err
-	}
+	//err = repository.dropCollections()
+	//if err != nil {
+	//	return err
+	//}
 	return nil
 }
 
@@ -126,12 +126,12 @@ func (repository *Repository) dropCollections() error {
 		logger.Errorf(dbError.Error())
 		return err
 	}
-	//err = repository.mongoDB.Collection(repository.AvatarsRepo.collectionName).Drop(context.TODO())
-	//if err != nil {
-	//	dbError := fmt.Errorf("can't drop avatars collection: %v", err.Error())
-	//	logger.Errorf(dbError.Error())
-	//	return err
-	//}
+	err = repository.mongoDB.Collection(repository.AvatarsRepo.collectionName).Drop(context.TODO())
+	if err != nil {
+		dbError := fmt.Errorf("can't drop avatars collection: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return err
+	}
 	return nil
 }
 

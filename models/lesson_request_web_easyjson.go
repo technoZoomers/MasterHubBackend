@@ -132,7 +132,7 @@ func easyjson3fe14cc9EncodeGithubComTechnoZoomersMasterHubBackendModels1(out *jw
 		out.RawString(prefix)
 		out.Int64(int64(in.StudentId))
 	}
-	if in.Status != 0 {
+	{
 		const prefix string = ",\"status\":"
 		out.RawString(prefix)
 		out.Int64(int64(in.Status))

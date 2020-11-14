@@ -112,9 +112,10 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 		},
 	}
 	useCases.LessonsUC = &LessonsUC{
-		useCases:    useCases,
-		LessonsRepo: lessonsRepo,
-		MastersRepo: mastersRepo,
+		useCases:     useCases,
+		LessonsRepo:  lessonsRepo,
+		MastersRepo:  mastersRepo,
+		StudentsRepo: studentsRepo,
 		lessonsConfig: LessonsConfig{
 			educationFormatMap:          map[int64]string{1: "онлайн", 2: "вживую"},
 			educationFormatMapBackwards: map[string]int64{"онлайн": 1, "вживую": 2},

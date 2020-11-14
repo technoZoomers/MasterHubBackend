@@ -73,6 +73,90 @@ func (lh *LessonsHandlers) ChangeLessonInfo(writer http.ResponseWriter, req *htt
 	lh.answerLesson(writer, lesson, http.StatusOK, err)
 }
 
+func (lh *LessonsHandlers) DeleteLesson(writer http.ResponseWriter, req *http.Request) {
+	var err error
+	sent, masterId := lh.handlers.validateMasterId(writer, req)
+	if sent {
+		return
+	}
+	sent = lh.handlers.checkUserAuth(writer, req, masterId)
+	if sent {
+		return
+	}
+	sent, lessonId := lh.handlers.validateLessonId(writer, req)
+	if sent {
+		return
+	}
+	err = lh.LessonsUC.DeleteMasterLesson(masterId, lessonId)
+	lh.answerEmpty(writer, http.StatusOK, err)
+}
+
+func (lh *LessonsHandlers) GetLessonStudents(writer http.ResponseWriter, req *http.Request) {
+	var err error
+	sent, masterId := lh.handlers.validateMasterId(writer, req)
+	if sent {
+		return
+	}
+	sent = lh.handlers.checkUserAuth(writer, req, masterId)
+	if sent {
+		return
+	}
+	sent, lessonId := lh.handlers.validateLessonId(writer, req)
+	if sent {
+		return
+	}
+	students, err := lh.LessonsUC.GetMastersLessonsStudents(masterId, lessonId)
+	lh.answerLessonStudents(writer, students, http.StatusOK, err)
+}
+
+func (lh *LessonsHandlers) CreateLessonRequest(writer http.ResponseWriter, req *http.Request) {
+	var err error
+	sent, studentId := lh.handlers.validateStudentId(writer, req)
+	if sent {
+		return
+	}
+	sent = lh.handlers.checkUserAuth(writer, req, studentId)
+	if sent {
+		return
+	}
+	sent, lessonId := lh.handlers.validateLessonId(writer, req)
+	if sent {
+		return
+	}
+	lessonRequest := models.LessonRequest{
+		LessonId:  lessonId,
+		StudentId: studentId,
+	}
+
+	err = lh.LessonsUC.CreateLessonRequest(&lessonRequest)
+	lh.answerLessonRequest(writer, lessonRequest, http.StatusCreated, err)
+}
+
+func (lh *LessonsHandlers) DeleteLessonRequest(writer http.ResponseWriter, req *http.Request) {
+	var err error
+	sent, studentId := lh.handlers.validateStudentId(writer, req)
+	if sent {
+		return
+	}
+	sent = lh.handlers.checkUserAuth(writer, req, studentId)
+	if sent {
+		return
+	}
+	sent, lessonId := lh.handlers.validateLessonId(writer, req)
+	if sent {
+		return
+	}
+	err = lh.LessonsUC.DeleteLessonRequest(studentId, lessonId)
+	lh.answerEmpty(writer, http.StatusOK, err)
+}
+
+func (lh *LessonsHandlers) answerLessonRequest(writer http.ResponseWriter, lessonRequest models.LessonRequest, statusCode int, err error) {
+	sent := lh.handlers.handleErrorConflict(writer, err)
+	if !sent {
+		utils.CreateAnswerLessonRequestJson(writer, statusCode, lessonRequest)
+	}
+}
+
 func (lh *LessonsHandlers) answerLesson(writer http.ResponseWriter, lesson models.Lesson, statusCode int, err error) {
 	sent := lh.handlers.handleNotAcceptableError(writer, err)
 	if !sent {
@@ -80,9 +164,23 @@ func (lh *LessonsHandlers) answerLesson(writer http.ResponseWriter, lesson model
 	}
 }
 
+func (lh *LessonsHandlers) answerLessonStudents(writer http.ResponseWriter, lessonStudents models.LessonStudents, statusCode int, err error) {
+	sent := lh.handlers.handleForbiddenError(writer, err)
+	if !sent {
+		utils.CreateAnswerLessonStudentsJson(writer, statusCode, lessonStudents)
+	}
+}
+
 func (lh *LessonsHandlers) answerLessons(writer http.ResponseWriter, lessons models.Lessons, statusCode int, err error) {
 	sent := lh.handlers.handleError(writer, err)
 	if !sent {
 		utils.CreateAnswerLessonsJson(writer, statusCode, lessons)
+	}
+}
+
+func (lh *LessonsHandlers) answerEmpty(writer http.ResponseWriter, statusCode int, err error) { //TODO: delete redundant functions
+	sent := lh.handlers.handleError(writer, err)
+	if !sent {
+		utils.CreateEmptyBodyAnswer(writer, statusCode)
 	}
 }

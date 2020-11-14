@@ -35,6 +35,70 @@ func (lessonsRepo *LessonsRepo) InsertLesson(lesson *models.LessonDB) error {
 	return nil
 }
 
+func (lessonsRepo *LessonsRepo) InsertLessonRequest(lessonRequest *models.LessonStudentDB) error {
+	var dbError error
+	transaction, err := lessonsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	_, err = transaction.Exec("INSERT INTO lessons_students (lesson_id, student_id, status) VALUES ($1, $2, $3)", lessonRequest.LessonId, lessonRequest.StudentId, lessonRequest.Status)
+	if err != nil {
+		dbError = fmt.Errorf("failed to insert lesson request: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		errRollback := lessonsRepo.repository.rollbackTransaction(transaction)
+		if errRollback != nil {
+			return errRollback
+		}
+		return dbError
+	}
+	err = lessonsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (lessonsRepo *LessonsRepo) GetLessonRequestByStudentIdAndLessonId(lessonRequest *models.LessonStudentDB, studentId int64, lessonId int64) error {
+	var dbError error
+	transaction, err := lessonsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	row := transaction.QueryRow("SELECT * FROM lessons_students WHERE lesson_id=$1 AND student_id=$2", lessonId, studentId)
+	err = row.Scan(&lessonRequest.LessonId, &lessonRequest.StudentId, &lessonRequest.Status)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve lesson student: %v", err.Error())
+		logger.Errorf(dbError.Error())
+	}
+	err = lessonsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (lessonsRepo *LessonsRepo) DeleteLessonRequestByStudentIdAndLessonId(studentId int64, lessonId int64) error {
+	var dbError error
+	transaction, err := lessonsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	_, err = transaction.Exec(" DELETE FROM lessons_students WHERE lesson_id=$1 AND student_id=$2", lessonId, studentId)
+	if err != nil {
+		dbError = fmt.Errorf("failed to delete request: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		errRollback := lessonsRepo.repository.rollbackTransaction(transaction)
+		if errRollback != nil {
+			return errRollback
+		}
+		return dbError
+	}
+	err = lessonsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (lessonsRepo *LessonsRepo) GetMastersLessons(masterId int64) ([]models.LessonDB, error) {
 	var dbError error
 	lessons := make([]models.LessonDB, 0)
@@ -119,6 +183,25 @@ func (lessonsRepo *LessonsRepo) GetLessonByIdAndMasterId(lesson *models.LessonDB
 	}
 	return nil
 }
+func (lessonsRepo *LessonsRepo) GetLessonById(lesson *models.LessonDB, lessonId int64) error {
+	var dbError error
+	transaction, err := lessonsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	row := transaction.QueryRow("SELECT * FROM lessons WHERE id=$1", lessonId)
+	err = row.Scan(&lesson.Id, &lesson.MasterId, &lesson.TimeStart,
+		&lesson.TimeEnd, &lesson.Date, &lesson.Price, &lesson.EducationFormat, &lesson.Status)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve lesson: %v", err.Error())
+		logger.Errorf(dbError.Error())
+	}
+	err = lessonsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func (lessonsRepo *LessonsRepo) UpdateLessonByIdAndMasterId(lesson *models.LessonDB) error {
 	var dbError error
 	transaction, err := lessonsRepo.repository.startTransaction()
@@ -143,4 +226,55 @@ func (lessonsRepo *LessonsRepo) UpdateLessonByIdAndMasterId(lesson *models.Lesso
 	return nil
 }
 
-//UPDATE lessons SET (time_start, time_end, date, price, education_format, status) = ('02:01:01', '02:01:02', '12-12-12', 100, 2, 1) WHERE id = 2 AND master_id = 1
+func (lessonsRepo *LessonsRepo) DeleteLessonById(lessonId int64) error {
+	var dbError error
+	transaction, err := lessonsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	_, err = transaction.Exec(" DELETE FROM lessons WHERE id=$1", lessonId)
+	if err != nil {
+		dbError = fmt.Errorf("failed to delete lesson: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		errRollback := lessonsRepo.repository.rollbackTransaction(transaction)
+		if errRollback != nil {
+			return errRollback
+		}
+		return dbError
+	}
+	err = lessonsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (lessonsRepo *LessonsRepo) GetLessonStudents(lessonId int64) ([]int64, error) {
+	var dbError error
+	lessonStudents := make([]int64, 0)
+	transaction, err := lessonsRepo.repository.startTransaction()
+	if err != nil {
+		return lessonStudents, err
+	}
+	rows, err := transaction.Query(`select user_id from lessons_students join students on lessons_students.student_id = students.id where lesson_id=$1`, lessonId)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve lesson students: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return lessonStudents, dbError
+	}
+	for rows.Next() {
+		var studentId int64
+		err = rows.Scan(&studentId)
+		if err != nil {
+			dbError = fmt.Errorf("failed to retrieve student: %v", err)
+			logger.Errorf(dbError.Error())
+			return lessonStudents, dbError
+		}
+		lessonStudents = append(lessonStudents, studentId)
+	}
+	err = lessonsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return lessonStudents, err
+	}
+	return lessonStudents, nil
+}

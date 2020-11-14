@@ -4,7 +4,7 @@ package models
 type LessonRequest struct {
 	LessonId  int64 `json:"lesson_id"`
 	StudentId int64 `json:"student_id"`
-	Status    int64 `json:"status,omitempty"`
+	Status    int64 `json:"status"`
 }
 
 //easyjson:json

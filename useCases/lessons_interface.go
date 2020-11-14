@@ -7,6 +7,8 @@ type LessonsUCInterface interface {
 	CreateLesson(lesson *models.Lesson, masterId int64) error
 	ChangeLessonInfo(lesson *models.Lesson, masterId int64, lessonId int64) error
 	GetMastersLessonsRequests() (models.LessonRequests, error)
-	CreateLessonRequest(studentId int64, lessonId int64) error
-	DeleteLessonRequest(lessonRequest *models.LessonRequest) error
+	CreateLessonRequest(lessonRequest *models.LessonRequest) error
+	DeleteLessonRequest(studentId int64, lessonId int64) error
+	DeleteMasterLesson(masterId int64, lessonId int64) error
+	GetMastersLessonsStudents(masterId int64, lessonId int64) (models.LessonStudents, error)
 }

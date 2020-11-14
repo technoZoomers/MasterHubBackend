@@ -116,6 +116,8 @@ func main() {
 	r.HandleFunc("/students/{id}", mhHandlers.StudentsHandlers.GetStudentById).Methods("GET")
 	r.Handle("/students/{id}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.StudentsHandlers.ChangeStudentData, false)).Methods("PUT")
 	r.Handle("/students/{id}/chats", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.CreateChatRequest, false)).Methods("POST")
+	r.Handle("/students/{id}/lessons/{lessonId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.CreateLessonRequest, false)).Methods("PUT")
+	r.Handle("/students/{id}/lessons/{lessonId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.DeleteLessonRequest, false)).Methods("DELETE")
 
 	//masters
 	r.HandleFunc("/masters", mhHandlers.MastersHandlers.Get).Methods("GET")
@@ -138,6 +140,8 @@ func main() {
 	r.Handle("/masters/{id}/lessons", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.CreateLesson, false)).Methods("POST")
 	r.HandleFunc("/masters/{id}/lessons", mhHandlers.LessonsHandlers.Get).Methods("GET")
 	r.Handle("/masters/{id}/lessons/{lessonId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.ChangeLessonInfo, false)).Methods("PUT")
+	r.Handle("/masters/{id}/lessons/{lessonId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.DeleteLesson, false)).Methods("DELETE")
+	r.Handle("/masters/{id}/lessons/{lessonId}/students", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.GetLessonStudents, false)).Methods("GET")
 
 	//videos
 	r.HandleFunc("/videos", mhHandlers.VideosHandlers.Get).Methods("GET")
