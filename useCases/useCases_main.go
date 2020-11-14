@@ -16,6 +16,7 @@ type UseCases struct {
 	ChatsUC       *ChatsUC
 	WebsocketsUC  *WebsocketsUC
 	LessonsUC     *LessonsUC
+	VideocallsUC  *VideocallsUC
 	errorMessages ErrorMessagesUC
 	errorId       int64
 	filesDir      string
@@ -24,7 +25,8 @@ type UseCases struct {
 func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repository.MastersRepoI, studentsRepo repository.StudentsRepoI,
 	themesRepo repository.ThemesRepoI, languagesRepo repository.LanguagesRepoI,
 	videosRepo repository.VideosRepoI, avatarsRepo repository.AvatarsRepoI, chatsRepo repository.ChatsRepoI,
-	wsRepo repository.WebsocketsRepo, cookiesRepo repository.CookiesRepoI, lessonsRepo repository.LessonsRepoI) error {
+	wsRepo repository.WebsocketsRepo, cookiesRepo repository.CookiesRepoI, lessonsRepo repository.LessonsRepoI,
+	vcRepo repository.VideocallsRepo) error {
 	useCases.UsersUC = &UsersUC{useCases, usersRepo, cookiesRepo}
 	useCases.MastersUC = &MastersUC{
 		useCases:      useCases,
@@ -126,7 +128,11 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 		},
 	}
 	useCases.LessonsUC.lessonsConfig.zeroTimeParsed, _ = time.Parse(useCases.LessonsUC.lessonsConfig.layoutISOTime, useCases.LessonsUC.lessonsConfig.zeroTime)
-
+	useCases.VideocallsUC = &VideocallsUC{
+		useCases:        useCases,
+		VideocallsRepo:  vcRepo,
+		rtcpPLIInterval: 3 * time.Second,
+	}
 	useCases.errorMessages = ErrorMessagesUC{
 		DbError:             "database internal error",
 		InternalServerError: "internal server error",

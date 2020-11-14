@@ -15,6 +15,8 @@ require (
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/lib/pq v1.8.0 // indirect
 	github.com/mailru/easyjson v0.7.6
+	github.com/pion/rtcp v1.2.3
+	github.com/pion/webrtc/v2 v2.2.26
 	github.com/shopspring/decimal v1.2.0
 	go.mongodb.org/mongo-driver v1.4.2
 	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0 // indirect

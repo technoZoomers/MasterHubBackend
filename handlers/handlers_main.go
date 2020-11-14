@@ -24,6 +24,7 @@ type Handlers struct {
 	ChatsHandlers          *ChatsHandlers
 	WSHandlers             *WSHandlers
 	LessonsHandlers        *LessonsHandlers
+	VCHandlers             *VCHandlers
 	badRequestError        *models.BadRequestError
 	conflictError          *models.ConflictError
 	noContentError         *models.NoContentError
@@ -39,7 +40,8 @@ type Handlers struct {
 func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useCases.MastersUCInterface, studentsUC useCases.StudentsUCInterface,
 	themesUC useCases.ThemesUCInterface, languagesUC useCases.LanguagesUCInterface,
 	videosUC useCases.VideosUCInterface, avatarsUC useCases.AvatarsUCInterface,
-	chatsUC useCases.ChatsUCInterface, wsUC useCases.WebsocketsUCInterface, lessonsUC useCases.LessonsUCInterface) error {
+	chatsUC useCases.ChatsUCInterface, wsUC useCases.WebsocketsUCInterface, lessonsUC useCases.LessonsUCInterface,
+	videocallsUC useCases.VideocallsUCInterface) error {
 	handlers.UsersHandlers = &UsersHandlers{handlers, usersUC}
 	handlers.MastersHandlers = &MastersHandlers{
 		handlers:  handlers,
@@ -117,6 +119,10 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 	handlers.LessonsHandlers = &LessonsHandlers{
 		handlers:  handlers,
 		LessonsUC: lessonsUC,
+	}
+	handlers.VCHandlers = &VCHandlers{
+		handlers:     handlers,
+		videocallsUC: videocallsUC,
 	}
 	handlers.cookieString = "user_session"
 	handlers.contextCookieKey = "cookie_key"
