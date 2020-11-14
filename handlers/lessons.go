@@ -109,6 +109,20 @@ func (lh *LessonsHandlers) GetLessonStudents(writer http.ResponseWriter, req *ht
 	lh.answerLessonStudents(writer, students, http.StatusOK, err)
 }
 
+func (lh *LessonsHandlers) GetLessonRequests(writer http.ResponseWriter, req *http.Request) {
+	var err error
+	sent, masterId := lh.handlers.validateMasterId(writer, req)
+	if sent {
+		return
+	}
+	sent = lh.handlers.checkUserAuth(writer, req, masterId)
+	if sent {
+		return
+	}
+	lessonsRequests, err := lh.LessonsUC.GetMastersLessonsRequests(masterId)
+	lh.answerLessonRequests(writer, lessonsRequests, http.StatusOK, err)
+}
+
 func (lh *LessonsHandlers) CreateLessonRequest(writer http.ResponseWriter, req *http.Request) {
 	var err error
 	sent, studentId := lh.handlers.validateStudentId(writer, req)
@@ -170,7 +184,12 @@ func (lh *LessonsHandlers) answerLessonStudents(writer http.ResponseWriter, less
 		utils.CreateAnswerLessonStudentsJson(writer, statusCode, lessonStudents)
 	}
 }
-
+func (lh *LessonsHandlers) answerLessonRequests(writer http.ResponseWriter, lessonRequests models.LessonRequests, statusCode int, err error) {
+	sent := lh.handlers.handleForbiddenError(writer, err)
+	if !sent {
+		utils.CreateAnswerLessonRequestsJson(writer, statusCode, lessonRequests)
+	}
+}
 func (lh *LessonsHandlers) answerLessons(writer http.ResponseWriter, lessons models.Lessons, statusCode int, err error) {
 	sent := lh.handlers.handleError(writer, err)
 	if !sent {

@@ -331,6 +331,13 @@ func (lessonsUC *LessonsUC) matchLessonToDBUpdate(lesson *models.Lesson, lessonD
 	return nil
 }
 
+func (lessonsUC *LessonsUC) matchLessonRequest(lessonRequestDB *models.LessonStudentDB, lessonRequest *models.LessonRequest) error {
+	lessonRequest.LessonId = lessonRequestDB.LessonId
+	lessonRequest.StudentId = lessonRequestDB.StudentId
+	lessonRequest.Status = lessonRequestDB.Status
+	return nil
+}
+
 func (lessonsUC *LessonsUC) CreateLesson(lesson *models.Lesson, masterId int64) error {
 	if lesson.MasterId == lessonsUC.useCases.errorId {
 		lesson.MasterId = masterId
@@ -409,8 +416,25 @@ func (lessonsUC *LessonsUC) ChangeLessonInfo(lesson *models.Lesson, masterId int
 	return nil
 }
 
-func (lessonsUC *LessonsUC) GetMastersLessonsRequests() (models.LessonRequests, error) {
-	panic("implement me")
+func (lessonsUC *LessonsUC) GetMastersLessonsRequests(masterId int64) (models.LessonRequests, error) {
+	lessonsRequests := make([]models.LessonRequest, 0)
+	masterDBId, err := lessonsUC.validateMaster(masterId)
+	if err != nil {
+		return lessonsRequests, err
+	}
+	lessonsRequestsDB, err := lessonsUC.LessonsRepo.GetMastersLessonsRequests(masterDBId)
+	if err != nil {
+		return lessonsRequests, fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
+	}
+	for _, lessonRequestDB := range lessonsRequestsDB {
+		var lessonRequest models.LessonRequest
+		err = lessonsUC.matchLessonRequest(&lessonRequestDB, &lessonRequest)
+		if err != nil {
+			return lessonsRequests, err
+		}
+		lessonsRequests = append(lessonsRequests, lessonRequest)
+	}
+	return lessonsRequests, nil
 }
 
 func (lessonsUC *LessonsUC) CreateLessonRequest(lessonRequest *models.LessonRequest) error {

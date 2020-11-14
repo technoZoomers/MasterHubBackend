@@ -15,4 +15,5 @@ type LessonsRepoI interface {
 	UpdateLessonByIdAndMasterId(lesson *models.LessonDB) error
 	DeleteLessonById(lessonId int64) error
 	GetLessonStudents(lessonId int64) ([]int64, error)
+	GetMastersLessonsRequests(masterId int64) ([]models.LessonStudentDB, error)
 }

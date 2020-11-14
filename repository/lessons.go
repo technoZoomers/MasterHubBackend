@@ -256,7 +256,7 @@ func (lessonsRepo *LessonsRepo) GetLessonStudents(lessonId int64) ([]int64, erro
 	if err != nil {
 		return lessonStudents, err
 	}
-	rows, err := transaction.Query(`select user_id from lessons_students join students on lessons_students.student_id = students.id where lesson_id=$1`, lessonId)
+	rows, err := transaction.Query(`select user_id from lessons_students join students on lessons_students.student_id = students.id where lesson_id=$1 AND status=1`, lessonId)
 	if err != nil {
 		dbError = fmt.Errorf("failed to retrieve lesson students: %v", err.Error())
 		logger.Errorf(dbError.Error())
@@ -271,6 +271,36 @@ func (lessonsRepo *LessonsRepo) GetLessonStudents(lessonId int64) ([]int64, erro
 			return lessonStudents, dbError
 		}
 		lessonStudents = append(lessonStudents, studentId)
+	}
+	err = lessonsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return lessonStudents, err
+	}
+	return lessonStudents, nil
+}
+
+func (lessonsRepo *LessonsRepo) GetMastersLessonsRequests(masterId int64) ([]models.LessonStudentDB, error) {
+	var dbError error
+	lessonStudents := make([]models.LessonStudentDB, 0)
+	transaction, err := lessonsRepo.repository.startTransaction()
+	if err != nil {
+		return lessonStudents, err
+	}
+	rows, err := transaction.Query(`select lesson_id, user_id, lessons_students.status from lessons_students join students on lessons_students.student_id = students.id join lessons on lessons_students.lesson_id = lessons.id where master_id=$1`, masterId)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve master lesson requests: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return lessonStudents, dbError
+	}
+	for rows.Next() {
+		var lessonRequest models.LessonStudentDB
+		err = rows.Scan(&lessonRequest.LessonId, &lessonRequest.StudentId, &lessonRequest.Status)
+		if err != nil {
+			dbError = fmt.Errorf("failed to retrieve request: %v", err)
+			logger.Errorf(dbError.Error())
+			return lessonStudents, dbError
+		}
+		lessonStudents = append(lessonStudents, lessonRequest)
 	}
 	err = lessonsRepo.repository.commitTransaction(transaction)
 	if err != nil {
