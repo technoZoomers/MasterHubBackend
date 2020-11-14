@@ -122,6 +122,7 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 			layoutISODate:               "2006-01-02",
 			layoutISOTime:               "15:04:05",
 			zeroTime:                    "00:00:00",
+			lessonRequestStatus:         map[int64]string{1: "approved", 2: "disapproved"},
 		},
 	}
 	useCases.LessonsUC.lessonsConfig.zeroTimeParsed, _ = time.Parse(useCases.LessonsUC.lessonsConfig.layoutISOTime, useCases.LessonsUC.lessonsConfig.zeroTime)

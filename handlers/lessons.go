@@ -73,6 +73,32 @@ func (lh *LessonsHandlers) ChangeLessonInfo(writer http.ResponseWriter, req *htt
 	lh.answerLesson(writer, lesson, http.StatusOK, err)
 }
 
+func (lh *LessonsHandlers) ChangeLessonRequest(writer http.ResponseWriter, req *http.Request) {
+	var err error
+	sent, masterId := lh.handlers.validateMasterId(writer, req)
+	if sent {
+		return
+	}
+	sent = lh.handlers.checkUserAuth(writer, req, masterId)
+	if sent {
+		return
+	}
+	sent, lessonId := lh.handlers.validateLessonId(writer, req)
+	if sent {
+		return
+	}
+	var lessonRequest models.LessonRequest
+	err = json.UnmarshalFromReader(req.Body, &lessonRequest)
+	if err != nil {
+		jsonError := fmt.Errorf("error unmarshaling json: %v", err.Error())
+		logger.Errorf(jsonError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(jsonError.Error()))
+		return
+	}
+	err = lh.LessonsUC.ChangeLessonRequest(&lessonRequest, masterId, lessonId)
+	lh.answerLessonRequest(writer, lessonRequest, http.StatusOK, err)
+}
+
 func (lh *LessonsHandlers) DeleteLesson(writer http.ResponseWriter, req *http.Request) {
 	var err error
 	sent, masterId := lh.handlers.validateMasterId(writer, req)
@@ -165,7 +191,7 @@ func (lh *LessonsHandlers) DeleteLessonRequest(writer http.ResponseWriter, req *
 }
 
 func (lh *LessonsHandlers) answerLessonRequest(writer http.ResponseWriter, lessonRequest models.LessonRequest, statusCode int, err error) {
-	sent := lh.handlers.handleErrorConflict(writer, err)
+	sent := lh.handlers.handleNotAcceptableError(writer, err)
 	if !sent {
 		utils.CreateAnswerLessonRequestJson(writer, statusCode, lessonRequest)
 	}

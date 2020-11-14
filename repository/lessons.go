@@ -76,6 +76,25 @@ func (lessonsRepo *LessonsRepo) GetLessonRequestByStudentIdAndLessonId(lessonReq
 	return nil
 }
 
+func (lessonsRepo *LessonsRepo) GetLessonRequestByStudentUserIdAndLessonId(lessonRequest *models.LessonStudentDB, studentId int64, lessonId int64) error {
+	var dbError error
+	transaction, err := lessonsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	row := transaction.QueryRow("SELECT * FROM lessons_students WHERE lesson_id=$1 AND student_id in (select id from students where user_id=$2)", lessonId, studentId)
+	err = row.Scan(&lessonRequest.LessonId, &lessonRequest.StudentId, &lessonRequest.Status)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve lesson student: %v", err.Error())
+		logger.Errorf(dbError.Error())
+	}
+	err = lessonsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (lessonsRepo *LessonsRepo) DeleteLessonRequestByStudentIdAndLessonId(studentId int64, lessonId int64) error {
 	var dbError error
 	transaction, err := lessonsRepo.repository.startTransaction()
@@ -130,9 +149,6 @@ func (lessonsRepo *LessonsRepo) GetMastersLessons(masterId int64) ([]models.Less
 	return lessons, nil
 }
 
-func (lessonsRepo *LessonsRepo) GetMastersLessonRequests() ([]models.LessonDB, error) {
-	panic("implement me")
-}
 func (lessonsRepo *LessonsRepo) CheckLessonTimeRange(lesson *models.LessonDB) ([]int64, error) {
 	var dbError error
 	lessonIds := make([]int64, 0)
@@ -307,4 +323,27 @@ func (lessonsRepo *LessonsRepo) GetMastersLessonsRequests(masterId int64) ([]mod
 		return lessonStudents, err
 	}
 	return lessonStudents, nil
+}
+func (lessonsRepo *LessonsRepo) UpdateLessonRequest(lessonRequest *models.LessonStudentDB) error {
+	var dbError error
+	transaction, err := lessonsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	_, err = transaction.Exec("update lessons_students set status=$1 where lesson_id=$2 and student_id in (select id from students where user_id=$3)",
+		lessonRequest.Status, lessonRequest.LessonId, lessonRequest.StudentId)
+	if err != nil {
+		dbError = fmt.Errorf("failed to update lesson request: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		errRollback := lessonsRepo.repository.rollbackTransaction(transaction)
+		if errRollback != nil {
+			return errRollback
+		}
+		return dbError
+	}
+	err = lessonsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
 }
