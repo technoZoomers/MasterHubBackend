@@ -76,18 +76,18 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 		extKey:         "extension",
 	}
 	repository.LessonsRepo = &LessonsRepo{repository}
-	err = repository.dropTables()
-	if err != nil {
-		return err
-	}
-	err = repository.createTables()
-	if err != nil {
-		return err
-	}
-	err = repository.fillTables()
-	if err != nil {
-		return err
-	}
+	//err = repository.dropTables()
+	//if err != nil {
+	//	return err
+	//}
+	//err = repository.createTables()
+	//if err != nil {
+	//	return err
+	//}
+	//err = repository.fillTables()
+	//if err != nil {
+	//	return err
+	//}
 	err = repository.InitMongoDB(config.Host)
 	if err != nil {
 		return err
@@ -126,12 +126,12 @@ func (repository *Repository) dropCollections() error {
 		logger.Errorf(dbError.Error())
 		return err
 	}
-	err = repository.mongoDB.Collection(repository.AvatarsRepo.collectionName).Drop(context.TODO())
-	if err != nil {
-		dbError := fmt.Errorf("can't drop avatars collection: %v", err.Error())
-		logger.Errorf(dbError.Error())
-		return err
-	}
+	//err = repository.mongoDB.Collection(repository.AvatarsRepo.collectionName).Drop(context.TODO())
+	//if err != nil {
+	//	dbError := fmt.Errorf("can't drop avatars collection: %v", err.Error())
+	//	logger.Errorf(dbError.Error())
+	//	return err
+	//}
 	return nil
 }
 
