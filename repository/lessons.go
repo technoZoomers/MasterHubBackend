@@ -330,7 +330,7 @@ func (lessonsRepo *LessonsRepo) UpdateLessonRequest(lessonRequest *models.Lesson
 	if err != nil {
 		return err
 	}
-	_, err = transaction.Exec("update lessons_students set status=$1 where lesson_id=$2 and student_id in (select id from students where user_id=$3)",
+	_, err = transaction.Exec("update lessons_students set status=$1 where lesson_id=$2 and student_id=$3",
 		lessonRequest.Status, lessonRequest.LessonId, lessonRequest.StudentId)
 	if err != nil {
 		dbError = fmt.Errorf("failed to update lesson request: %v", err.Error())
