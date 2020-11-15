@@ -218,3 +218,12 @@ func CreateAnswerLessonStudentsJson(writer http.ResponseWriter, statusCode int, 
 	}
 	createAnswerJson(writer, statusCode, marshalledLessonStudents)
 }
+
+func CreateAnswerSdpJson(writer http.ResponseWriter, statusCode int, sdp masterhub_models.Sdp) {
+	marshalledSdp, err := json.Marshal(sdp)
+	if err != nil {
+		jsonError := fmt.Errorf("error marshalling json: %v", err.Error())
+		logger.Error(jsonError)
+	}
+	createAnswerJson(writer, statusCode, marshalledSdp)
+}

@@ -28,8 +28,13 @@ func (vcUC *VideocallsUC) ConnectToTrack(peerConnection *models.PeerConnection) 
 }
 
 func (vcUC *VideocallsUC) AddTrack(peerConnection *models.PeerConnection) {
+	_, err := peerConnection.Connection.AddTransceiver(webrtc.RTPCodecTypeVideo)
+	if err != nil {
+		internalError := fmt.Errorf("error adding transceiver: %s", err.Error())
+		logger.Errorf(internalError.Error())
+	}
 	peerConnection.Connection.OnTrack(func(remoteTrack *webrtc.Track, receiver *webrtc.RTPReceiver) {
-
+		fmt.Println("on track")
 		go func() {
 			ticker := time.NewTicker(vcUC.rtcpPLIInterval)
 			for range ticker.C {
@@ -49,11 +54,11 @@ func (vcUC *VideocallsUC) AddTrack(peerConnection *models.PeerConnection) {
 
 		vcUC.VideocallsRepo.AddNewConnection(peerConnection, localTrack)
 
-		_, err = peerConnection.Connection.AddTransceiverFromTrack(localTrack)
-		if err != nil {
-			internalError := fmt.Errorf("error adding transceiver: %s", err.Error())
-			logger.Errorf(internalError.Error())
-		}
+		//_, err = peerConnection.Connection.AddTransceiverFromTrack(localTrack)
+		//if err != nil {
+		//	internalError := fmt.Errorf("error adding transceiver: %s", err.Error())
+		//	logger.Errorf(internalError.Error())
+		//}
 		rtpBuf := make([]byte, 1400)
 		for {
 			i, err := remoteTrack.Read(rtpBuf)

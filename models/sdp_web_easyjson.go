@@ -36,7 +36,7 @@ func easyjson21364dcaDecodeGithubComTechnoZoomersMasterHubBackendModels(in *jlex
 			continue
 		}
 		switch key {
-		case "Sdp":
+		case "sdp":
 			out.Sdp = string(in.String())
 		default:
 			in.SkipRecursive()
@@ -53,7 +53,7 @@ func easyjson21364dcaEncodeGithubComTechnoZoomersMasterHubBackendModels(out *jwr
 	first := true
 	_ = first
 	{
-		const prefix string = ",\"Sdp\":"
+		const prefix string = ",\"sdp\":"
 		out.RawString(prefix[1:])
 		out.String(string(in.Sdp))
 	}

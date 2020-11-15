@@ -37,8 +37,8 @@ func main() {
 
 	err := repo.Init(pgx.ConnConfig{
 		Database: utils.DBName,
-		//Host:     "213.219.214.220",
-		Host:     "localhost",
+		Host:     "213.219.214.220",
+		//Host:     "localhost",
 		User:     "alexis",
 		Password: "alexis",
 	})
@@ -59,7 +59,7 @@ func main() {
 	mhuseCases := useCases.UseCases{}
 
 	err = mhuseCases.Init(repo.UsersRepo, repo.MastersRepo, repo.StudentsRepo, repo.ThemesRepo, repo.LanguagesRepo,
-		repo.VideosRepo, repo.AvatarsRepo, repo.ChatsRepo, *repo.WebsocketsRepo, repo.CookiesRepo, repo.LessonsRepo, repo.VideocallsRepo)
+		repo.VideosRepo, repo.AvatarsRepo, repo.ChatsRepo, *repo.WebsocketsRepo, repo.CookiesRepo, repo.LessonsRepo, *repo.VideocallsRepo)
 	if err != nil {
 		logger.Fatalf("Couldn't initialize useCases: %v", err)
 	}
@@ -149,8 +149,8 @@ func main() {
 	r.HandleFunc("/videos", mhHandlers.VideosHandlers.Get).Methods("GET")
 
 	//videocalls
-	r.Handle("/videocalls/users/{id}/peers/{id}/create", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.Get, false).Methods("POST")
-	r.Handle("/videocalls/users/{id}/peers/{id}/connect", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.Get, false).Methods("POST")
+	r.Handle("/videocalls/users/{id}/peers/{peerId}/create", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VCHandlers.Create, true)).Methods("POST")
+	r.Handle("/videocalls/users/{id}/peers/{peerId}/connect", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VCHandlers.Connect, true)).Methods("POST")
 
 	//chats
 	r.Handle("/chats/{id}/messages", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.GetMessagesByChatId, false)).Methods("GET")
@@ -164,6 +164,7 @@ func main() {
 			"http://172.17.21.178:8080",
 			"http://192.168.1.4:8083",
 			"http://localhost:8080",
+			"http://127.0.0.1:4200",
 			"http://localhost:8083",
 			"http://127.0.0.1:8083",
 			"http://127.0.0.1:8080",

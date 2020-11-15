@@ -6,6 +6,7 @@ import (
 	"github.com/google/logger"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/pion/webrtc/v2"
 	"github.com/technoZoomers/MasterHubBackend/models"
 	"github.com/technoZoomers/MasterHubBackend/useCases"
 	"github.com/technoZoomers/MasterHubBackend/utils"
@@ -120,9 +121,19 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 		handlers:  handlers,
 		LessonsUC: lessonsUC,
 	}
+	mediaEngine := webrtc.MediaEngine{}
+	mediaEngine.RegisterCodec(webrtc.NewRTPVP8Codec(webrtc.DefaultPayloadTypeVP8, 90000))
 	handlers.VCHandlers = &VCHandlers{
 		handlers:     handlers,
 		videocallsUC: videocallsUC,
+		webrtcConfig: webrtc.Configuration{
+			ICEServers: []webrtc.ICEServer{
+				{
+					URLs: []string{"stun:stun.l.google.com:19302"},
+				},
+			},
+		},
+		webrtcAPI: webrtc.NewAPI(webrtc.WithMediaEngine(mediaEngine)),
 	}
 	handlers.cookieString = "user_session"
 	handlers.contextCookieKey = "cookie_key"
@@ -204,6 +215,10 @@ func (handlers *Handlers) validateId(writer http.ResponseWriter, req *http.Reque
 
 func (handlers *Handlers) validateUserId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
 	return handlers.validateId(writer, req, "id", "user")
+}
+
+func (handlers *Handlers) validatePeerId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
+	return handlers.validateId(writer, req, "peerId", "peer")
 }
 
 func (handlers *Handlers) validateStudentId(writer http.ResponseWriter, req *http.Request) (bool, int64) {

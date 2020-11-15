@@ -2,5 +2,5 @@ package models
 
 //easyjson:json
 type Sdp struct {
-	Sdp string
+	Sdp string `json:"sdp"`
 }
