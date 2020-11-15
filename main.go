@@ -164,6 +164,7 @@ func main() {
 			"http://172.17.21.178:8080",
 			"http://192.168.1.4:8083",
 			"http://localhost:8080",
+			"https://localhost:8080",
 			"http://127.0.0.1:4200",
 			"http://localhost:8083",
 			"http://127.0.0.1:8083",
