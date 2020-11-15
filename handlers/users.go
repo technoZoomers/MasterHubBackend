@@ -76,7 +76,7 @@ func (uh *UsersHandlers) setCookie(userId int64, cookie *http.Cookie) error {
 	cookie.Expires = time.Now().Add(365 * 24 * time.Hour)
 	//cookie.SameSite = http.SameSiteNoneMode
 	//cookie.Secure = true
-	cookie.HttpOnly = true
+	cookie.HttpOnly = false
 	cookie.Path = "/"
 	return uh.UsersUC.InsertCookie(userId, cookie.Value)
 }
