@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/google/logger"
+	"fmt"
 	"github.com/pion/webrtc/v2"
 	"github.com/technoZoomers/MasterHubBackend/models"
 )
@@ -12,7 +12,7 @@ type VideocallsRepo struct {
 }
 
 func (vcRepo *VideocallsRepo) AddNewConnection(peerConnection *models.PeerConnection, newTrack *webrtc.Track) {
-	logger.Infof("added new connection with user:%d", peerConnection.UserId)
+	fmt.Printf("added new connection with user:%d\n", peerConnection.UserId)
 	_, ok := vcRepo.peerConnMap[peerConnection.UserId]
 	if !ok {
 		vcRepo.AddTrackCh(peerConnection.UserId)

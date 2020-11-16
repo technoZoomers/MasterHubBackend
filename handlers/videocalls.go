@@ -65,14 +65,14 @@ func (vcHandlers *VCHandlers) createPeerConn(writer http.ResponseWriter, req *ht
 
 	if creator {
 		vcHandlers.videocallsUC.AddTrack(&pConnection)
-		logger.Infof("added new connection")
+		fmt.Println("added new connection")
 	} else {
 		err = vcHandlers.videocallsUC.ConnectToTrack(&pConnection)
 		if err != nil {
 			vcHandlers.handlers.handleError(writer, err)
 			return
 		}
-		logger.Infof("connected")
+		fmt.Println("connected")
 	}
 
 	err = peerConnection.SetRemoteDescription(offer)
