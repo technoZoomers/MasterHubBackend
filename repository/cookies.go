@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/technoZoomers/MasterHubBackend/models"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
 )
 
 type CookiesRepo struct {
@@ -27,23 +29,45 @@ func (cookiesRepo *CookiesRepo) DeleteCookie(cookie string) error {
 	return err
 }
 
-func (cookiesRepo *CookiesRepo) GetCookieByUser(userId int64, cookieDB *models.CookieDB) error {
+func (cookiesRepo *CookiesRepo) GetCookiesByUser(userId int64) ([]models.CookieDB, error) {
+	cookies := make([]models.CookieDB, 0)
 	cookiesCollection := cookiesRepo.repository.mongoDB.Collection(cookiesRepo.collectionName)
 	filter := bson.D{{cookiesRepo.userKey, userId}}
-	err := cookiesCollection.FindOne(context.TODO(), filter).Decode(&cookieDB)
+	findOptions := options.Find()
+	cur, err := cookiesCollection.Find(context.TODO(), filter, findOptions)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
-	return nil
+
+	for cur.Next(context.TODO()) {
+		var cookie models.CookieDB
+		err = cur.Decode(&cookie)
+		if err != nil {
+			log.Fatal(err)
+		}
+		cookies = append(cookies, cookie)
+
+	}
+
+	if err := cur.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	err = cur.Close(context.TODO())
+	if err != nil {
+		log.Fatal(err)
+	}
+	return cookies, nil
 }
 
 func (cookiesRepo *CookiesRepo) GetUserByCookie(cookie string, cookieDB *models.CookieDB) error {
-	//log.Println(cookie)
+	log.Println(cookie)
 	cookiesCollection := cookiesRepo.repository.mongoDB.Collection(cookiesRepo.collectionName)
 	filter := bson.D{{cookiesRepo.cookieKey, cookie}}
 	err := cookiesCollection.FindOne(context.TODO(), filter).Decode(&cookieDB)
 	if err != nil {
 		return err
 	}
+	log.Println(cookieDB)
 	return nil
 }
