@@ -74,10 +74,7 @@ func (vcHandlers *VCHandlers) createPeerConn(writer http.ResponseWriter, req *ht
 		}
 		fmt.Println("connected")
 	}
-	if creator {
-		fmt.Println(offer)
-		fmt.Println("connected 2")
-	}
+
 	err = peerConnection.SetRemoteDescription(offer)
 	if err != nil {
 		jsonError := fmt.Errorf("couldnt set remote description: %v", err.Error())
@@ -86,10 +83,6 @@ func (vcHandlers *VCHandlers) createPeerConn(writer http.ResponseWriter, req *ht
 		return
 	}
 
-	if creator {
-		fmt.Println("connected 3")
-
-	}
 	answer, err := peerConnection.CreateAnswer(nil)
 	if err != nil {
 		jsonError := fmt.Errorf("couldnt create answer: %v", err.Error())
@@ -97,9 +90,7 @@ func (vcHandlers *VCHandlers) createPeerConn(writer http.ResponseWriter, req *ht
 		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(jsonError.Error()))
 		return
 	}
-	if creator {
-		fmt.Println("connected 4")
-	}
+
 	err = peerConnection.SetLocalDescription(answer)
 	if err != nil {
 		jsonError := fmt.Errorf("couldnt set local description: %v", err.Error())
@@ -108,9 +99,6 @@ func (vcHandlers *VCHandlers) createPeerConn(writer http.ResponseWriter, req *ht
 		return
 	}
 
-	if creator {
-		fmt.Println("connected 5")
-	}
 	encodedSdp, err := utils.Encode(answer)
 	if err != nil {
 		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(err.Error()))
