@@ -162,43 +162,75 @@ func (chatsUC *ChatsUC) GetUserChatsById(userId int64, query models.ChatsQueryVa
 }
 
 func (chatsUC *ChatsUC) CreateChatRequest(chatRequest *models.Chat, studentId int64) error {
-	err := chatsUC.validateStudent(chatRequest.StudentId)
-	if err != nil {
-		return err
-	}
-	err = chatsUC.validateMaster(chatRequest.MasterId)
-	if err != nil {
-		return err
-	}
 	if chatRequest.StudentId != studentId {
 		accessError := &models.ForbiddenError{Reason: "can't create other student's chat"}
 		logger.Errorf(accessError.Error())
 		return accessError
 	}
-	chatDB := models.ChatDB{
-		Type:      1,
-		StudentId: chatRequest.StudentId,
-		MasterId:  chatRequest.MasterId,
-		Created:   time.Now(),
-	}
-	err = chatsUC.ChatsRepo.GetChatByStudentIdAndMasterId(&chatDB)
+	chatDB, err := chatsUC.createChat(chatRequest.StudentId, chatRequest.MasterId, chatsUC.chatsConfig.chatTypes["unseen"])
 	if err != nil {
-		return fmt.Errorf(chatsUC.useCases.errorMessages.DbError)
-	}
-	if chatDB.Id != chatsUC.useCases.errorId {
-		existsError := &models.ConflictError{Message: "chat already exists", ExistingContent: strconv.FormatInt(chatRequest.MasterId, 10)}
-		logger.Errorf(existsError.Error())
-		return existsError
-	}
-	err = chatsUC.ChatsRepo.InsertChatRequest(&chatDB)
-	if err != nil {
-		return fmt.Errorf(chatsUC.useCases.errorMessages.DbError)
+		return err
 	}
 	err = chatsUC.matchChat(&chatDB, chatRequest)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (chatsUC *ChatsUC) CreateChatByMaster(chatRequest *models.Chat, masterId int64) error {
+	if chatRequest.MasterId != masterId {
+		accessError := &models.ForbiddenError{Reason: "can't create other master's chat"}
+		logger.Errorf(accessError.Error())
+		return accessError
+	}
+	chatDB, err := chatsUC.createChat(chatRequest.StudentId, chatRequest.MasterId, chatsUC.chatsConfig.chatTypes["approved"])
+	if err != nil {
+		return err
+	}
+	err = chatsUC.matchChat(&chatDB, chatRequest)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (chatsUC *ChatsUC) createChat(studentId int64, masterId int64, chatType int64) (models.ChatDB, error) {
+	var chatDB models.ChatDB
+	err := chatsUC.validateStudent(studentId)
+	if err != nil {
+		return chatDB, err
+	}
+	err = chatsUC.validateMaster(masterId)
+	if err != nil {
+		return chatDB, err
+	}
+
+	if chatsUC.chatsConfig.chatTypesBackwards[chatType] == "" {
+		reqError := &models.BadRequestError{Message: "wrong chat type provided"}
+		logger.Errorf(reqError.Error())
+		return chatDB, reqError
+	}
+	chatDB = models.ChatDB{
+		Type:      chatType,
+		StudentId: studentId,
+		MasterId:  masterId,
+		Created:   time.Now(),
+	}
+	err = chatsUC.ChatsRepo.GetChatByStudentIdAndMasterId(&chatDB)
+	if err != nil {
+		return chatDB, fmt.Errorf(chatsUC.useCases.errorMessages.DbError)
+	}
+	if chatDB.Id != chatsUC.useCases.errorId {
+		existsError := &models.ConflictError{Message: "chat already exists", ExistingContent: strconv.FormatInt(chatDB.Id, 10)}
+		logger.Errorf(existsError.Error())
+		return chatDB, existsError
+	}
+	err = chatsUC.ChatsRepo.InsertChatRequest(&chatDB)
+	if err != nil {
+		return chatDB, fmt.Errorf(chatsUC.useCases.errorMessages.DbError)
+	}
+	return chatDB, nil
 }
 
 func (chatsUC *ChatsUC) ChangeChatStatus(chat *models.Chat, masterId int64, chatId int64) error {

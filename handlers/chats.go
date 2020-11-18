@@ -95,6 +95,28 @@ func (ch *ChatsHandlers) CreateChatRequest(writer http.ResponseWriter, req *http
 	ch.answerChat(writer, chatRequest, http.StatusCreated, err)
 }
 
+func (ch *ChatsHandlers) CreateChatByMaster(writer http.ResponseWriter, req *http.Request) {
+	var err error
+	sent, masterId := ch.handlers.validateMasterId(writer, req)
+	if sent {
+		return
+	}
+	sent = ch.handlers.checkUserAuth(writer, req, masterId)
+	if sent {
+		return
+	}
+	var chatRequest models.Chat
+	err = json.UnmarshalFromReader(req.Body, &chatRequest)
+	if err != nil {
+		jsonError := fmt.Errorf("error unmarshaling json: %v", err.Error())
+		logger.Errorf(jsonError.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusInternalServerError, models.CreateMessage(jsonError.Error()))
+		return
+	}
+	err = ch.ChatsUC.CreateChatByMaster(&chatRequest, masterId)
+	ch.answerChat(writer, chatRequest, http.StatusCreated, err)
+}
+
 func (ch *ChatsHandlers) ChangeChatStatus(writer http.ResponseWriter, req *http.Request) {
 	var err error
 	sent, masterId := ch.handlers.validateMasterId(writer, req)

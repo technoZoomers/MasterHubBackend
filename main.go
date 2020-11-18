@@ -136,6 +136,7 @@ func main() {
 	r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.GetIntro).Methods("GET")
 	r.Handle("/masters/{id}/intro/data", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.ChangeIntroData, false)).Methods("PUT")
 	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.GetIntroData).Methods("GET")
+	r.Handle("/masters/{id}/chats", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.CreateChatByMaster, false)).Methods("POST")
 	r.Handle("/masters/{id}/chats/{chatId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.ChangeChatStatus, false)).Methods("PUT")
 	r.Handle("/masters/{id}/lessons", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.CreateLesson, false)).Methods("POST")
 	r.HandleFunc("/masters/{id}/lessons", mhHandlers.LessonsHandlers.Get).Methods("GET")
