@@ -131,7 +131,7 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 	useCases.VideocallsUC = &VideocallsUC{
 		useCases:        useCases,
 		VideocallsRepo:  vcRepo,
-		rtcpPLIInterval: 3 * time.Second,
+		rtcpPLIInterval: 1 * time.Second,
 	}
 	useCases.errorMessages = ErrorMessagesUC{
 		DbError:             "database internal error",

@@ -363,11 +363,3 @@ INSERT INTO lessons (master_id, time_start, time_end, date, price, education_for
                                                                                                     (3,'13:10:00', '15:10:00', '2020-11-20', 500, 1, 1);
 
 `
-const lessons_recrecreate = ` 
-DELETE FROM lessons;
-INSERT INTO lessons (master_id, time_start, time_end, date, price, education_format, status) VALUES (1,'12:10:00', '13:10:00', '2020-11-20', 1000, 1, 1),
-                                                                                                    (1,'12:00:00', '13:10:00', '2020-11-21', 2000, 1, 1),
-                                                                                                    (2,'13:10:00', '14:10:00', '2020-11-20', 2000, 2, 1),
-                                                                                                    (3,'11:00:00', '12:00:00', '2020-11-21', 1000, 2, 1),
-                                                                                                    (3,'13:10:00', '15:10:00', '2020-11-20', 500, 1, 1);
-`
