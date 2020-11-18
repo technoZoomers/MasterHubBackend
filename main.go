@@ -43,7 +43,7 @@ func main() {
 		Password: "alexis",
 	})
 
-	fmt.Println(time.Now())
+	fmt.Println("I'm stupid")
 
 	//config, err := pgx.ParseConnectionString(os.Getenv("DATABASE_URL"))
 	//if err != nil {
