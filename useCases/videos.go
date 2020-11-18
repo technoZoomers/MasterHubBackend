@@ -195,9 +195,9 @@ func (videosUC *VideosUC) ChangeMasterIntro(videoData *models.VideoData, file mu
 	return nil
 }
 
-func (videosUC *VideosUC) matchVideo(videoDB *models.VideoDB, video *models.VideoData) error {
+func (videosUC *VideosUC) matchVideo(videoDB *models.VideoDB, video *models.VideoData, masterId int64) error {
 	video.Id = videoDB.Id
-	video.MasterId = videoDB.MasterId
+	video.MasterId = masterId
 	video.Name = videoDB.Name
 	video.FileExt = videoDB.Extension
 	video.Description = videoDB.Description
@@ -231,7 +231,7 @@ func (videosUC *VideosUC) GetVideosByMasterId(masterId int64) ([]models.VideoDat
 
 	for _, videoDB := range videosDB {
 		var video models.VideoData
-		err = videosUC.matchVideo(&videoDB, &video)
+		err = videosUC.matchVideo(&videoDB, &video, masterId)
 		if err != nil {
 			return videos, err
 		}
@@ -403,7 +403,7 @@ func (videosUC *VideosUC) getVideoData(videoDB *models.VideoDB, masterId int64, 
 	if err != nil {
 		return err
 	}
-	err = videosUC.matchVideo(videoDB, videoData)
+	err = videosUC.matchVideo(videoDB, videoData, masterId)
 	if err != nil {
 		return err
 	}
@@ -655,7 +655,11 @@ func (videosUC *VideosUC) Get(query models.VideosQueryValues) (models.VideosData
 	}
 	for _, videoDB := range videosDB {
 		var videoData models.VideoData
-		err = videosUC.matchVideo(&videoDB, &videoData)
+		masterId, err := videosUC.MastersRepo.GetMasterUserIdById(videoDB.MasterId) // TODO: move to select query for videos !!!!
+		if err != nil {
+			return videos, fmt.Errorf(videosUC.useCases.errorMessages.DbError)
+		}
+		err = videosUC.matchVideo(&videoDB, &videoData, masterId)
 		if err != nil {
 			return videos, err
 		}

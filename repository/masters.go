@@ -33,6 +33,26 @@ func (mastersRepo *MastersRepo) GetMasterByUserId(master *models.MasterDB) error
 	return nil
 }
 
+func (mastersRepo *MastersRepo) GetMasterUserIdById(id int64) (int64, error) { // TODO: refactor
+	var userId int64
+	var dbError error
+	transaction, err := mastersRepo.repository.startTransaction()
+	if err != nil {
+		return userId, err
+	}
+	row := transaction.QueryRow("SELECT user_id FROM masters WHERE id=$1", id)
+	err = row.Scan(&userId)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve master: %v", err.Error())
+		logger.Errorf(dbError.Error())
+	}
+	err = mastersRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return userId, err
+	}
+	return userId, nil
+}
+
 func (mastersRepo *MastersRepo) GetMasterIdByUsername(master *models.MasterDB) error {
 	var dbError error
 	transaction, err := mastersRepo.repository.startTransaction()

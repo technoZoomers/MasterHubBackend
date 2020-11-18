@@ -4,6 +4,7 @@ import "github.com/technoZoomers/MasterHubBackend/models"
 
 type MastersRepoI interface {
 	GetMasterByUserId(master *models.MasterDB) error
+	GetMasterUserIdById(id int64) (int64, error)
 	GetMasterIdByUsername(master *models.MasterDB) error
 	GetMasterSubthemesById(masterId int64) ([]int64, error)
 	DeleteMasterSubthemesById(masterId int64) error
