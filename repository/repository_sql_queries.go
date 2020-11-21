@@ -129,7 +129,7 @@ CREATE TABLE lessons (
 CREATE TABLE lessons_students (
     lesson_id int REFERENCES lessons(id) ON DELETE CASCADE,
     student_id int REFERENCES students(id) ON DELETE CASCADE,
-    status int NOT NULL CHECK (status >=0 AND status <= 2) DEFAULT 0
+    status int NOT NULL CHECK (status >=1 AND status <= 3) DEFAULT 1
 );
 
 `
@@ -372,4 +372,14 @@ INSERT INTO lessons (master_id, time_start, time_end, date, price, education_for
                                                                                                     (2,'13:10:00', '14:10:00', '2020-11-20', 2000, 2, 1),
                                                                                                     (3,'11:00:00', '12:00:00', '2020-11-21', 1000, 2, 1),
                                                                                                     (3,'13:10:00', '15:10:00', '2020-11-20', 500, 1, 1);
+`
+
+const drop_lessons_students = `
+DROP TABLE IF EXISTS lessons_students;
+CREATE TABLE lessons_students (
+    lesson_id int REFERENCES lessons(id) ON DELETE CASCADE,
+    student_id int REFERENCES students(id) ON DELETE CASCADE,
+    status int NOT NULL CHECK (status >=1 AND status <= 3) DEFAULT 1
+);
+
 `
