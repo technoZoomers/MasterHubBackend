@@ -118,14 +118,23 @@ func (lessonsRepo *LessonsRepo) DeleteLessonRequestByStudentIdAndLessonId(studen
 	return nil
 }
 
-func (lessonsRepo *LessonsRepo) GetMastersLessons(masterId int64) ([]models.LessonDB, error) {
+func (lessonsRepo *LessonsRepo) GetMastersLessons(masterId int64, query models.LessonsQueryValuesDB) ([]models.LessonDB, error) {
 	var dbError error
 	lessons := make([]models.LessonDB, 0)
 	transaction, err := lessonsRepo.repository.startTransaction()
 	if err != nil {
 		return lessons, err
 	}
-	rows, err := transaction.Query(`SELECT * FROM lessons WHERE master_id = $1`, masterId)
+	var selectQueryString string
+	var queryValues []interface{}
+	queryValues = append(queryValues, masterId)
+	if query.Status != 0 {
+		selectQueryString = `SELECT * FROM lessons WHERE master_id = $1 and status = $2`
+		queryValues = append(queryValues, query.Status)
+	} else {
+		selectQueryString = `SELECT * FROM lessons WHERE master_id = $1`
+	}
+	rows, err := transaction.Query(selectQueryString, queryValues...)
 	if err != nil {
 		dbError = fmt.Errorf("failed to retrieve lessons: %v", err.Error())
 		logger.Errorf(dbError.Error())
@@ -135,6 +144,46 @@ func (lessonsRepo *LessonsRepo) GetMastersLessons(masterId int64) ([]models.Less
 		var lessFound models.LessonDB
 		err = rows.Scan(&lessFound.Id, &lessFound.MasterId, &lessFound.TimeStart,
 			&lessFound.TimeEnd, &lessFound.Date, &lessFound.Price, &lessFound.EducationFormat, &lessFound.Status)
+		if err != nil {
+			dbError = fmt.Errorf("failed to retrieve lesson: %v", err)
+			logger.Errorf(dbError.Error())
+			return lessons, dbError
+		}
+		lessons = append(lessons, lessFound)
+	}
+	err = lessonsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return lessons, err
+	}
+	return lessons, nil
+}
+
+func (lessonsRepo *LessonsRepo) GetStudentsLessons(studentId int64, query models.LessonsQueryValuesDB) ([]models.LessonDB, error) {
+	var dbError error
+	lessons := make([]models.LessonDB, 0)
+	transaction, err := lessonsRepo.repository.startTransaction()
+	if err != nil {
+		return lessons, err
+	}
+	var selectQueryString string
+	var queryValues []interface{}
+	queryValues = append(queryValues, studentId)
+	if query.Status != 0 {
+		selectQueryString = `select lessons.id, time_start, time_end, date, price, lessons.education_format, lessons.status, masters.user_id from  lessons join lessons_students on lessons.id = lessons_students.lesson_id join masters on lessons.master_id = masters.id where student_id = $1 and lessons.status = $2`
+		queryValues = append(queryValues, query.Status)
+	} else {
+		selectQueryString = `select lessons.id, time_start, time_end, date, price, lessons.education_format, lessons.status, masters.user_id from  lessons join lessons_students on lessons.id = lessons_students.lesson_id join masters on lessons.master_id = masters.id where student_id = $1`
+	}
+	rows, err := transaction.Query(selectQueryString, queryValues...)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve lessons: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return lessons, dbError
+	}
+	for rows.Next() {
+		var lessFound models.LessonDB
+		err = rows.Scan(&lessFound.Id, &lessFound.TimeStart,
+			&lessFound.TimeEnd, &lessFound.Date, &lessFound.Price, &lessFound.EducationFormat, &lessFound.Status, &lessFound.MasterId)
 		if err != nil {
 			dbError = fmt.Errorf("failed to retrieve lesson: %v", err)
 			logger.Errorf(dbError.Error())
@@ -295,14 +344,23 @@ func (lessonsRepo *LessonsRepo) GetLessonStudents(lessonId int64) ([]int64, erro
 	return lessonStudents, nil
 }
 
-func (lessonsRepo *LessonsRepo) GetMastersLessonsRequests(masterId int64) ([]models.LessonStudentDB, error) {
+func (lessonsRepo *LessonsRepo) GetMastersLessonsRequests(masterId int64, query models.LessonsQueryValuesDB) ([]models.LessonStudentDB, error) {
 	var dbError error
 	lessonStudents := make([]models.LessonStudentDB, 0)
 	transaction, err := lessonsRepo.repository.startTransaction()
 	if err != nil {
 		return lessonStudents, err
 	}
-	rows, err := transaction.Query(`select lesson_id, user_id, lessons_students.status from lessons_students join students on lessons_students.student_id = students.id join lessons on lessons_students.lesson_id = lessons.id where master_id=$1`, masterId)
+	var selectQueryString string
+	var queryValues []interface{}
+	queryValues = append(queryValues, masterId)
+	if query.Status != 0 {
+		selectQueryString = `select lesson_id, user_id, lessons_students.status from lessons_students join students on lessons_students.student_id = students.id join lessons on lessons_students.lesson_id = lessons.id where master_id=$1 and lessons_students.status=$2`
+		queryValues = append(queryValues, query.Status)
+	} else {
+		selectQueryString = `select lesson_id, user_id, lessons_students.status from lessons_students join students on lessons_students.student_id = students.id join lessons on lessons_students.lesson_id = lessons.id where master_id=$1`
+	}
+	rows, err := transaction.Query(selectQueryString, queryValues...)
 	if err != nil {
 		dbError = fmt.Errorf("failed to retrieve master lesson requests: %v", err.Error())
 		logger.Errorf(dbError.Error())
@@ -324,6 +382,46 @@ func (lessonsRepo *LessonsRepo) GetMastersLessonsRequests(masterId int64) ([]mod
 	}
 	return lessonStudents, nil
 }
+
+func (lessonsRepo *LessonsRepo) GetStudentsLessonsRequests(studentId int64, query models.LessonsQueryValuesDB) ([]models.LessonStudentDB, error) {
+	var dbError error
+	lessonStudents := make([]models.LessonStudentDB, 0)
+	transaction, err := lessonsRepo.repository.startTransaction()
+	if err != nil {
+		return lessonStudents, err
+	}
+	var selectQueryString string
+	var queryValues []interface{}
+	queryValues = append(queryValues, studentId)
+	if query.Status != 0 {
+		selectQueryString = `select lesson_id, student_id, status from lessons_students where student_id=$1 and status=$2`
+		queryValues = append(queryValues, query.Status)
+	} else {
+		selectQueryString = `select lesson_id, student_id, status from lessons_students where student_id=$1`
+	}
+	rows, err := transaction.Query(selectQueryString, queryValues...)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve student lesson requests: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return lessonStudents, dbError
+	}
+	for rows.Next() {
+		var lessonRequest models.LessonStudentDB
+		err = rows.Scan(&lessonRequest.LessonId, &lessonRequest.StudentId, &lessonRequest.Status)
+		if err != nil {
+			dbError = fmt.Errorf("failed to retrieve request: %v", err)
+			logger.Errorf(dbError.Error())
+			return lessonStudents, dbError
+		}
+		lessonStudents = append(lessonStudents, lessonRequest)
+	}
+	err = lessonsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return lessonStudents, err
+	}
+	return lessonStudents, nil
+}
+
 func (lessonsRepo *LessonsRepo) UpdateLessonRequest(lessonRequest *models.LessonStudentDB) error {
 	var dbError error
 	transaction, err := lessonsRepo.repository.startTransaction()

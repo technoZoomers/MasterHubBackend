@@ -120,6 +120,9 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 	handlers.LessonsHandlers = &LessonsHandlers{
 		handlers:  handlers,
 		LessonsUC: lessonsUC,
+		LessonsQueryKeys: LessonsQueryKeys{
+			Status: "status",
+		},
 	}
 	mediaEngine := webrtc.MediaEngine{}
 	mediaEngine.RegisterCodec(webrtc.NewRTPVP8Codec(webrtc.DefaultPayloadTypeVP8, 90000))

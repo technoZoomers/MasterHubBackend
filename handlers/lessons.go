@@ -8,11 +8,18 @@ import (
 	"github.com/technoZoomers/MasterHubBackend/useCases"
 	"github.com/technoZoomers/MasterHubBackend/utils"
 	"net/http"
+	"net/url"
+	"strconv"
 )
 
 type LessonsHandlers struct {
-	handlers  *Handlers
-	LessonsUC useCases.LessonsUCInterface
+	handlers         *Handlers
+	LessonsUC        useCases.LessonsUCInterface
+	LessonsQueryKeys LessonsQueryKeys
+}
+
+type LessonsQueryKeys struct {
+	Status string
 }
 
 func (lh *LessonsHandlers) CreateLesson(writer http.ResponseWriter, req *http.Request) {
@@ -37,13 +44,33 @@ func (lh *LessonsHandlers) CreateLesson(writer http.ResponseWriter, req *http.Re
 	lh.answerLesson(writer, lesson, http.StatusCreated, err)
 }
 
+func (lh *LessonsHandlers) parseLessonsQuery(query url.Values, lessonsQuery *models.LessonsQueryValues) error {
+	statusString := query.Get(lh.LessonsQueryKeys.Status)
+	if statusString != "" {
+		status, err := strconv.ParseInt(statusString, 10, 64)
+		if err != nil {
+			return fmt.Errorf("error parsing query parameter %s: %v", lh.LessonsQueryKeys.Status, err.Error())
+		}
+		lessonsQuery.Status = status
+	}
+	return nil
+}
+
 func (lh *LessonsHandlers) Get(writer http.ResponseWriter, req *http.Request) {
 	var err error
 	sent, masterId := lh.handlers.validateMasterId(writer, req)
 	if sent {
 		return
 	}
-	lessons, err := lh.LessonsUC.GetMastersLessons(masterId)
+	query := req.URL.Query()
+	var lessonsQuery models.LessonsQueryValues
+	err = lh.parseLessonsQuery(query, &lessonsQuery)
+	if err != nil {
+		logger.Errorf(err.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
+		return
+	}
+	lessons, err := lh.LessonsUC.GetMastersLessons(masterId, lessonsQuery)
 	lh.answerLessons(writer, lessons, http.StatusOK, err)
 }
 
@@ -145,7 +172,37 @@ func (lh *LessonsHandlers) GetLessonRequests(writer http.ResponseWriter, req *ht
 	if sent {
 		return
 	}
-	lessonsRequests, err := lh.LessonsUC.GetMastersLessonsRequests(masterId)
+	query := req.URL.Query()
+	var lessonsQuery models.LessonsQueryValues
+	err = lh.parseLessonsQuery(query, &lessonsQuery)
+	if err != nil {
+		logger.Errorf(err.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
+		return
+	}
+	lessonsRequests, err := lh.LessonsUC.GetMastersLessonsRequests(masterId, lessonsQuery)
+	lh.answerLessonRequests(writer, lessonsRequests, http.StatusOK, err)
+}
+
+func (lh *LessonsHandlers) GetStudentsLessonRequests(writer http.ResponseWriter, req *http.Request) {
+	var err error
+	sent, studentId := lh.handlers.validateStudentId(writer, req)
+	if sent {
+		return
+	}
+	sent = lh.handlers.checkUserAuth(writer, req, studentId)
+	if sent {
+		return
+	}
+	query := req.URL.Query()
+	var lessonsQuery models.LessonsQueryValues
+	err = lh.parseLessonsQuery(query, &lessonsQuery)
+	if err != nil {
+		logger.Errorf(err.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
+		return
+	}
+	lessonsRequests, err := lh.LessonsUC.GetStudentsLessonsRequests(studentId, lessonsQuery)
 	lh.answerLessonRequests(writer, lessonsRequests, http.StatusOK, err)
 }
 
@@ -188,6 +245,28 @@ func (lh *LessonsHandlers) DeleteLessonRequest(writer http.ResponseWriter, req *
 	}
 	err = lh.LessonsUC.DeleteLessonRequest(studentId, lessonId)
 	lh.answerEmpty(writer, http.StatusOK, err)
+}
+
+func (lh *LessonsHandlers) GetStudentsLessons(writer http.ResponseWriter, req *http.Request) {
+	var err error
+	sent, studentId := lh.handlers.validateStudentId(writer, req)
+	if sent {
+		return
+	}
+	sent = lh.handlers.checkUserAuth(writer, req, studentId)
+	if sent {
+		return
+	}
+	query := req.URL.Query()
+	var lessonsQuery models.LessonsQueryValues
+	err = lh.parseLessonsQuery(query, &lessonsQuery)
+	if err != nil {
+		logger.Errorf(err.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(err.Error()))
+		return
+	}
+	lessons, err := lh.LessonsUC.GetStudentsLessons(studentId, lessonsQuery)
+	lh.answerLessons(writer, lessons, http.StatusOK, err)
 }
 
 func (lh *LessonsHandlers) answerLessonRequest(writer http.ResponseWriter, lessonRequest models.LessonRequest, statusCode int, err error) {

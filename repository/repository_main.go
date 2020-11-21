@@ -82,10 +82,10 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 		repository:  repository,
 		peerConnMap: make(map[int64]chan *webrtc.Track),
 	}
-	//err = repository.dropTables()
-	//if err != nil {
-	//	return err
-	//}
+	err = repository.dropTables()
+	if err != nil {
+		return err
+	}
 	//err = repository.createTables()
 	//if err != nil {
 	//	return err
@@ -152,7 +152,7 @@ func (repository *Repository) createTables() error {
 }
 
 func (repository *Repository) dropTables() error {
-	_, err := repository.pool.Exec(TABLES_DROPPING)
+	_, err := repository.pool.Exec(drop_lessons)
 	if err != nil {
 		return err
 	}

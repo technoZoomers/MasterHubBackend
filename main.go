@@ -118,6 +118,8 @@ func main() {
 	r.Handle("/students/{id}/chats", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.CreateChatRequest, false)).Methods("POST")
 	r.Handle("/students/{id}/lessons/{lessonId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.CreateLessonRequest, false)).Methods("PUT")
 	r.Handle("/students/{id}/lessons/{lessonId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.DeleteLessonRequest, false)).Methods("DELETE")
+	r.Handle("/students/{id}/lessons", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.GetStudentsLessons, false)).Methods("GET")
+	r.Handle("/students/{id}/lessons/requests", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.LessonsHandlers.GetStudentsLessonRequests, false)).Methods("GET")
 
 	//masters
 	r.HandleFunc("/masters", mhHandlers.MastersHandlers.Get).Methods("GET")

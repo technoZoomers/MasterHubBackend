@@ -26,6 +26,7 @@ type LessonsConfig struct {
 	educationFormatMap          map[int64]string
 	educationFormatMapBackwards map[string]int64
 	lessonRequestStatus         map[int64]string
+	lessonStatus                map[int64]string
 }
 
 func (lessonsUC *LessonsUC) validateMaster(masterId int64) (int64, error) { // TODO: throw away redundant functions
@@ -343,9 +344,9 @@ func (lessonsUC *LessonsUC) matchLessonToDBUpdate(lesson *models.Lesson, lessonD
 	return nil
 }
 
-func (lessonsUC *LessonsUC) matchLessonRequest(lessonRequestDB *models.LessonStudentDB, lessonRequest *models.LessonRequest) error {
+func (lessonsUC *LessonsUC) matchLessonRequest(lessonRequestDB *models.LessonStudentDB, lessonRequest *models.LessonRequest, studentId int64) error {
 	lessonRequest.LessonId = lessonRequestDB.LessonId
-	lessonRequest.StudentId = lessonRequestDB.StudentId
+	lessonRequest.StudentId = studentId
 	lessonRequest.Status = lessonRequestDB.Status
 	return nil
 }
@@ -448,8 +449,9 @@ func (lessonsUC *LessonsUC) ChangeLessonRequest(lessonRequest *models.LessonRequ
 		logger.Errorf(formatError.Error())
 		return formatError
 	}
-	if lessonsUC.lessonsConfig.lessonRequestStatus[lessonRequest.Status] == "" {
-		formatError := &models.NotAcceptableError{Message: "choose valid status: 1 or 2"}
+	if lessonsUC.lessonsConfig.lessonRequestStatus[lessonRequest.Status] == "" ||
+		lessonsUC.lessonsConfig.lessonRequestStatus[lessonRequest.Status] == "unseen" {
+		formatError := &models.NotAcceptableError{Message: "choose valid status: 2 or 3"}
 		logger.Errorf(formatError.Error())
 		return formatError
 	}
@@ -465,19 +467,70 @@ func (lessonsUC *LessonsUC) ChangeLessonRequest(lessonRequest *models.LessonRequ
 	}
 	return nil
 }
-func (lessonsUC *LessonsUC) GetMastersLessonsRequests(masterId int64) (models.LessonRequests, error) {
+func (lessonsUC *LessonsUC) GetMastersLessonsRequests(masterId int64, query models.LessonsQueryValues) (models.LessonRequests, error) {
 	lessonsRequests := make([]models.LessonRequest, 0)
+	var queryDB models.LessonsQueryValuesDB
+	err := lessonsUC.matchLessonsRequestQuery(&query, &queryDB)
+	if err != nil {
+		return lessonsRequests, err
+	}
 	masterDBId, err := lessonsUC.validateMaster(masterId)
 	if err != nil {
 		return lessonsRequests, err
 	}
-	lessonsRequestsDB, err := lessonsUC.LessonsRepo.GetMastersLessonsRequests(masterDBId)
+	lessonsRequestsDB, err := lessonsUC.LessonsRepo.GetMastersLessonsRequests(masterDBId, queryDB)
 	if err != nil {
 		return lessonsRequests, fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
 	}
 	for _, lessonRequestDB := range lessonsRequestsDB {
 		var lessonRequest models.LessonRequest
-		err = lessonsUC.matchLessonRequest(&lessonRequestDB, &lessonRequest)
+		err = lessonsUC.matchLessonRequest(&lessonRequestDB, &lessonRequest, lessonRequestDB.StudentId)
+		if err != nil {
+			return lessonsRequests, err
+		}
+		lessonsRequests = append(lessonsRequests, lessonRequest)
+	}
+	return lessonsRequests, nil
+}
+
+func (lessonsUC *LessonsUC) matchLessonsRequestQuery(query *models.LessonsQueryValues, queryDB *models.LessonsQueryValuesDB) error {
+	if query.Status != 0 && lessonsUC.lessonsConfig.lessonRequestStatus[query.Status] == "" {
+		requestError := &models.BadRequestError{Message: "choose valid status: 1, 2 or 3"}
+		logger.Errorf(requestError.Error())
+		return requestError
+	}
+	queryDB.Status = query.Status
+	return nil
+}
+
+func (lessonsUC *LessonsUC) matchLessonsQuery(query *models.LessonsQueryValues, queryDB *models.LessonsQueryValuesDB) error {
+	if query.Status != 0 && lessonsUC.lessonsConfig.lessonStatus[query.Status] == "" {
+		requestError := &models.BadRequestError{Message: "choose valid status: 1, 2 or 3"}
+		logger.Errorf(requestError.Error())
+		return requestError
+	}
+	queryDB.Status = query.Status
+	return nil
+}
+
+func (lessonsUC *LessonsUC) GetStudentsLessonsRequests(studentId int64, query models.LessonsQueryValues) (models.LessonRequests, error) {
+	lessonsRequests := make([]models.LessonRequest, 0)
+	var queryDB models.LessonsQueryValuesDB
+	err := lessonsUC.matchLessonsRequestQuery(&query, &queryDB)
+	if err != nil {
+		return lessonsRequests, err
+	}
+	studentDBId, err := lessonsUC.validateStudent(studentId)
+	if err != nil {
+		return lessonsRequests, err
+	}
+	lessonsRequestsDB, err := lessonsUC.LessonsRepo.GetStudentsLessonsRequests(studentDBId, queryDB)
+	if err != nil {
+		return lessonsRequests, fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
+	}
+	for _, lessonRequestDB := range lessonsRequestsDB {
+		var lessonRequest models.LessonRequest
+		err = lessonsUC.matchLessonRequest(&lessonRequestDB, &lessonRequest, studentId)
 		if err != nil {
 			return lessonsRequests, err
 		}
@@ -551,19 +604,50 @@ func (lessonsUC *LessonsUC) DeleteMasterLesson(masterId int64, lessonId int64) e
 	return nil
 }
 
-func (lessonsUC *LessonsUC) GetMastersLessons(masterId int64) (models.Lessons, error) {
+func (lessonsUC *LessonsUC) GetMastersLessons(masterId int64, query models.LessonsQueryValues) (models.Lessons, error) {
 	lessons := make([]models.Lesson, 0)
+	var queryDB models.LessonsQueryValuesDB
+	err := lessonsUC.matchLessonsQuery(&query, &queryDB)
+	if err != nil {
+		return lessons, err
+	}
 	masterDBId, err := lessonsUC.validateMaster(masterId)
 	if err != nil {
 		return lessons, err
 	}
-	lessonsDB, err := lessonsUC.LessonsRepo.GetMastersLessons(masterDBId)
+	lessonsDB, err := lessonsUC.LessonsRepo.GetMastersLessons(masterDBId, queryDB)
 	if err != nil {
 		return lessons, fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
 	}
 	for _, lessonDB := range lessonsDB {
 		var lesson models.Lesson
 		err = lessonsUC.matchLesson(&lessonDB, &lesson, masterId)
+		if err != nil {
+			return lessons, err
+		}
+		lessons = append(lessons, lesson)
+	}
+	return lessons, nil
+}
+
+func (lessonsUC *LessonsUC) GetStudentsLessons(studentId int64, query models.LessonsQueryValues) (models.Lessons, error) {
+	lessons := make([]models.Lesson, 0)
+	var queryDB models.LessonsQueryValuesDB
+	err := lessonsUC.matchLessonsQuery(&query, &queryDB)
+	if err != nil {
+		return lessons, err
+	}
+	studentDBId, err := lessonsUC.validateStudent(studentId)
+	if err != nil {
+		return lessons, err
+	}
+	lessonsDB, err := lessonsUC.LessonsRepo.GetStudentsLessons(studentDBId, queryDB)
+	if err != nil {
+		return lessons, fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
+	}
+	for _, lessonDB := range lessonsDB {
+		var lesson models.Lesson
+		err = lessonsUC.matchLesson(&lessonDB, &lesson, lessonDB.MasterId)
 		if err != nil {
 			return lessons, err
 		}
