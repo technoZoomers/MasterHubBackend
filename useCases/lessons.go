@@ -19,14 +19,15 @@ type LessonsUC struct {
 }
 
 type LessonsConfig struct {
-	zeroTime                    string
-	zeroTimeParsed              time.Time
-	layoutISODate               string
-	layoutISOTime               string
-	educationFormatMap          map[int64]string
-	educationFormatMapBackwards map[string]int64
-	lessonRequestStatus         map[int64]string
-	lessonStatus                map[int64]string
+	zeroTime                     string
+	zeroTimeParsed               time.Time
+	layoutISODate                string
+	layoutISOTime                string
+	educationFormatMap           map[int64]string
+	educationFormatMapBackwards  map[string]int64
+	lessonRequestStatus          map[int64]string
+	lessonStatus                 map[int64]string
+	lessonRequestStatusBackwards map[string]int64
 }
 
 func (lessonsUC *LessonsUC) validateMaster(masterId int64) (int64, error) { // TODO: throw away redundant functions
@@ -88,6 +89,22 @@ func (lessonsUC *LessonsUC) validateLesson(lessonId int64, lessonDB *models.Less
 		return &models.BadRequestError{Message: "incorrect lesson id", RequestId: lessonId}
 	}
 	err := lessonsUC.LessonsRepo.GetLessonById(lessonDB, lessonId)
+	if err != nil {
+		return fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
+	}
+	if lessonDB.Id == lessonsUC.useCases.errorId {
+		absenceError := &models.BadRequestError{Message: "lesson doesn't exist", RequestId: lessonId}
+		logger.Errorf(absenceError.Error())
+		return absenceError
+	}
+	return nil
+}
+
+func (lessonsUC *LessonsUC) validateLessonWithMasterUserId(lessonId int64, lessonDB *models.LessonDB) error {
+	if lessonId == lessonsUC.useCases.errorId {
+		return &models.BadRequestError{Message: "incorrect lesson id", RequestId: lessonId}
+	}
+	err := lessonsUC.LessonsRepo.GetLessonByIdWithMasterUserId(lessonDB, lessonId)
 	if err != nil {
 		return fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
 	}
@@ -557,6 +574,7 @@ func (lessonsUC *LessonsUC) CreateLessonRequest(lessonRequest *models.LessonRequ
 	lessonRequestDB := models.LessonStudentDB{
 		StudentId: studentDBId,
 		LessonId:  lessonRequest.LessonId,
+		Status:    lessonsUC.lessonsConfig.lessonRequestStatusBackwards["unseen"],
 	}
 	err = lessonsUC.LessonsRepo.InsertLessonRequest(&lessonRequestDB)
 	if err != nil {
@@ -672,4 +690,16 @@ func (lessonsUC *LessonsUC) GetMastersLessonsStudents(masterId int64, lessonId i
 		return lessonStudents, fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
 	}
 	return lessonStudents, nil
+}
+func (lessonsUC *LessonsUC) GetLessonById(lesson *models.Lesson) error {
+	var lessonDB models.LessonDB
+	err := lessonsUC.validateLessonWithMasterUserId(lesson.Id, &lessonDB)
+	if err != nil {
+		return err
+	}
+	err = lessonsUC.matchLesson(&lessonDB, lesson, lessonDB.MasterId)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -119,13 +119,14 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 		MastersRepo:  mastersRepo,
 		StudentsRepo: studentsRepo,
 		lessonsConfig: LessonsConfig{
-			educationFormatMap:          map[int64]string{1: "онлайн", 2: "вживую"},
-			educationFormatMapBackwards: map[string]int64{"онлайн": 1, "вживую": 2},
-			layoutISODate:               "2006-01-02",
-			layoutISOTime:               "15:04:05",
-			zeroTime:                    "00:00:00",
-			lessonStatus:                map[int64]string{1: "available", 2: "booked", 3: "ended"},
-			lessonRequestStatus:         map[int64]string{1: "unseen", 2: "approved", 3: "disapproved"},
+			educationFormatMap:           map[int64]string{1: "онлайн", 2: "вживую"},
+			educationFormatMapBackwards:  map[string]int64{"онлайн": 1, "вживую": 2},
+			layoutISODate:                "2006-01-02",
+			layoutISOTime:                "15:04:05",
+			zeroTime:                     "00:00:00",
+			lessonStatus:                 map[int64]string{1: "available", 2: "booked", 3: "ended"},
+			lessonRequestStatus:          map[int64]string{1: "unseen", 2: "approved", 3: "disapproved"},
+			lessonRequestStatusBackwards: map[string]int64{"unseen": 1, "approved": 2, "disapproved": 3},
 		},
 	}
 	useCases.LessonsUC.lessonsConfig.zeroTimeParsed, _ = time.Parse(useCases.LessonsUC.lessonsConfig.layoutISOTime, useCases.LessonsUC.lessonsConfig.zeroTime)

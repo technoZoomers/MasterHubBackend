@@ -247,6 +247,10 @@ func (handlers *Handlers) validateThemeId(writer http.ResponseWriter, req *http.
 	return handlers.validateId(writer, req, "id", "theme")
 }
 
+func (handlers *Handlers) validateLessonIdSimple(writer http.ResponseWriter, req *http.Request) (bool, int64) {
+	return handlers.validateId(writer, req, "id", "lesson")
+}
+
 func (handlers *Handlers) validateVideoId(writer http.ResponseWriter, req *http.Request) (bool, int64) {
 	return handlers.validateId(writer, req, "videoId", "video")
 }

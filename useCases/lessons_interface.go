@@ -14,4 +14,5 @@ type LessonsUCInterface interface {
 	DeleteMasterLesson(masterId int64, lessonId int64) error
 	GetMastersLessonsStudents(masterId int64, lessonId int64) (models.LessonStudents, error)
 	GetStudentsLessons(id int64, query models.LessonsQueryValues) (models.Lessons, error)
+	GetLessonById(lesson *models.Lesson) error
 }

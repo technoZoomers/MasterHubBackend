@@ -12,6 +12,7 @@ type LessonsRepoI interface {
 	GetStudentsLessons(studentId int64, query models.LessonsQueryValuesDB) ([]models.LessonDB, error)
 	GetLessonByIdAndMasterId(lesson *models.LessonDB, lessonId int64, masterId int64) error
 	GetLessonById(lesson *models.LessonDB, lessonId int64) error
+	GetLessonByIdWithMasterUserId(lesson *models.LessonDB, lessonId int64) error
 	CheckLessonTimeRange(lesson *models.LessonDB) ([]int64, error)
 	UpdateLessonByIdAndMasterId(lesson *models.LessonDB) error
 	DeleteLessonById(lessonId int64) error

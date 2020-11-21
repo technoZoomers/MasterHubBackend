@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/google/logger"
 	"github.com/gorilla/handlers"
@@ -11,7 +12,9 @@ import (
 	"github.com/technoZoomers/MasterHubBackend/repository"
 	"github.com/technoZoomers/MasterHubBackend/useCases"
 	"github.com/technoZoomers/MasterHubBackend/utils"
+	gomail "gopkg.in/mail.v2"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -21,14 +24,34 @@ func main() {
 	utils.LoggerSetup()
 	defer utils.LoggerClose()
 
-	//files, err := ioutil.ReadDir(".")
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//for _, f := range files {
-	//	fmt.Println(f.Name())
-	//}
+	m := gomail.NewMessage()
 
+	// Set E-Mail sender
+	m.SetHeader("From", "masterhub@mail.ru")
+
+	// Set E-Mail receiver
+	m.SetHeader("To", "spiridonovaalexis@mail.ru")
+
+	// Set E-Mail subject
+	m.SetHeader("Subject", "Gomail test subject")
+
+	// Set E-Mail body. You can set plain text or html with text/html
+	m.SetBody("text/plain", "This is Gomail test body")
+
+	//fmt.Println(os.Getenv("MASTERHUB_MAIL_PASSWORD"))
+
+	// Settings for SMTP server
+	d := gomail.NewDialer("smtp.mail.ru", 587, "masterhub@mail.ru", os.Getenv("MASTERHUB_MAIL_PASSWORD"))
+
+	// This is only needed when SSL/TLS certificate is not valid on server.
+	// In production this should be set to false.
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+
+	// Now send E-Mail
+	//if err := d.DialAndSend(m); err != nil {
+	//	fmt.Println(err)
+	//	panic(err)
+	//}
 	//database initialization
 
 	repo := repository.Repository{
@@ -157,6 +180,9 @@ func main() {
 
 	//chats
 	r.Handle("/chats/{id}/messages", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.GetMessagesByChatId, false)).Methods("GET")
+
+	//lessons
+	r.HandleFunc("/lessons/{id}", mhHandlers.LessonsHandlers.GetLessonById).Methods("GET")
 
 	cors := handlers.CORS(handlers.AllowCredentials(),
 		handlers.AllowedHeaders([]string{"X-Content-Type-Options", "Access-Control-Allow-Origin", "X-Requested-With", "Content-Type", "Authorization"}),

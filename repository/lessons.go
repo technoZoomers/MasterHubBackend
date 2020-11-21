@@ -169,10 +169,10 @@ func (lessonsRepo *LessonsRepo) GetStudentsLessons(studentId int64, query models
 	var queryValues []interface{}
 	queryValues = append(queryValues, studentId)
 	if query.Status != 0 {
-		selectQueryString = `select lessons.id, time_start, time_end, date, price, lessons.education_format, lessons.status, masters.user_id from  lessons join lessons_students on lessons.id = lessons_students.lesson_id join masters on lessons.master_id = masters.id where student_id = $1 and lessons.status = $2`
+		selectQueryString = `select lessons.id, time_start, time_end, date, price, lessons.education_format, lessons.status, masters.user_id from  lessons join lessons_students on lessons.id = lessons_students.lesson_id join masters on lessons.master_id = masters.id where lessons_students.status = 2 and student_id = $1 and lessons.status = $2`
 		queryValues = append(queryValues, query.Status)
 	} else {
-		selectQueryString = `select lessons.id, time_start, time_end, date, price, lessons.education_format, lessons.status, masters.user_id from  lessons join lessons_students on lessons.id = lessons_students.lesson_id join masters on lessons.master_id = masters.id where student_id = $1`
+		selectQueryString = `select lessons.id, time_start, time_end, date, price, lessons.education_format, lessons.status, masters.user_id from  lessons join lessons_students on lessons.id = lessons_students.lesson_id join masters on lessons.master_id = masters.id where lessons_students.status = 2 and student_id = $1`
 	}
 	rows, err := transaction.Query(selectQueryString, queryValues...)
 	if err != nil {
@@ -267,6 +267,27 @@ func (lessonsRepo *LessonsRepo) GetLessonById(lesson *models.LessonDB, lessonId 
 	}
 	return nil
 }
+
+func (lessonsRepo *LessonsRepo) GetLessonByIdWithMasterUserId(lesson *models.LessonDB, lessonId int64) error {
+	var dbError error
+	transaction, err := lessonsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	row := transaction.QueryRow("select lessons.id, time_start, time_end, date, price, lessons.education_format, lessons.status, masters.user_id from  lessons join masters on lessons.master_id = masters.id where lessons.id=$1", lessonId)
+	err = row.Scan(&lesson.Id, &lesson.TimeStart,
+		&lesson.TimeEnd, &lesson.Date, &lesson.Price, &lesson.EducationFormat, &lesson.Status, &lesson.MasterId)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve lesson: %v", err.Error())
+		logger.Errorf(dbError.Error())
+	}
+	err = lessonsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (lessonsRepo *LessonsRepo) UpdateLessonByIdAndMasterId(lesson *models.LessonDB) error {
 	var dbError error
 	transaction, err := lessonsRepo.repository.startTransaction()

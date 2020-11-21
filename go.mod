@@ -20,4 +20,5 @@ require (
 	github.com/shopspring/decimal v1.2.0
 	go.mongodb.org/mongo-driver v1.4.2
 	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0 // indirect
+	gopkg.in/mail.v2 v2.3.1 // indirect
 )

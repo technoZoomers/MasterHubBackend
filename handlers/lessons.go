@@ -269,6 +269,17 @@ func (lh *LessonsHandlers) GetStudentsLessons(writer http.ResponseWriter, req *h
 	lh.answerLessons(writer, lessons, http.StatusOK, err)
 }
 
+func (lh *LessonsHandlers) GetLessonById(writer http.ResponseWriter, req *http.Request) {
+	sent, lessonId := lh.handlers.validateLessonIdSimple(writer, req)
+	if sent {
+		return
+	}
+	var lesson models.Lesson
+	lesson.Id = lessonId
+	err := lh.LessonsUC.GetLessonById(&lesson)
+	lh.answerLesson(writer, lesson, http.StatusOK, err)
+}
+
 func (lh *LessonsHandlers) answerLessonRequest(writer http.ResponseWriter, lessonRequest models.LessonRequest, statusCode int, err error) {
 	sent := lh.handlers.handleNotAcceptableError(writer, err)
 	if !sent {
