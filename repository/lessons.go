@@ -342,7 +342,7 @@ func (lessonsRepo *LessonsRepo) GetLessonStudents(lessonId int64) ([]int64, erro
 	if err != nil {
 		return lessonStudents, err
 	}
-	rows, err := transaction.Query(`select user_id from lessons_students join students on lessons_students.student_id = students.id where lesson_id=$1 AND status=1`, lessonId)
+	rows, err := transaction.Query(`select user_id from lessons_students join students on lessons_students.student_id = students.id where lesson_id=$1 AND status=2`, lessonId)
 	if err != nil {
 		dbError = fmt.Errorf("failed to retrieve lesson students: %v", err.Error())
 		logger.Errorf(dbError.Error())
