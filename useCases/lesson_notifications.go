@@ -51,14 +51,12 @@ func (lnUC *LessonNotificationsUC) getSoonLessons() {
 			logger.Error(fmt.Errorf(lnUC.useCases.errorMessages.DbError))
 			return
 		}
-		fmt.Println("here 1")
 		var lesson models.Lesson
 		err = lnUC.useCases.LessonsUC.matchLesson(&lessonDB, &lesson, masterDB.UserId)
 		if err != nil {
 			return
 		}
 
-		fmt.Println("here 2")
 		lessonStudents, err := lnUC.LessonsRepo.GetLessonStudents(lessonDB.Id)
 		if err != nil {
 			logger.Error(fmt.Errorf(lnUC.useCases.errorMessages.DbError))
@@ -78,12 +76,9 @@ func (lnUC *LessonNotificationsUC) getSoonLessons() {
 			lnUC.sendEmail(emailStudent, studentMessage)
 			students = append(students, studentDB)
 		}
-		fmt.Println("here 3")
 
 		masterMessage := lnUC.createMasterMessage(&lesson, students)
-		fmt.Println("here 4")
 		lnUC.sendToWebsocket(masterDB.UserId, masterMessage)
-		fmt.Println("here 5")
 		lnUC.sendEmail(emailMaster, masterMessage)
 	}
 }

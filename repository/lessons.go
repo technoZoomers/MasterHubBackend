@@ -470,7 +470,6 @@ func (lessonsRepo *LessonsRepo) UpdateLessonRequest(lessonRequest *models.Lesson
 func (lessonsRepo *LessonsRepo) GetSoonLessons(dateNow string, timeNow string) ([]models.LessonDB, error) {
 	var dbError error
 	lessons := make([]models.LessonDB, 0)
-	fmt.Println(dateNow, timeNow)
 	transaction, err := lessonsRepo.repository.startTransaction()
 	if err != nil {
 		return lessons, err

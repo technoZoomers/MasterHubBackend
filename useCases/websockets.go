@@ -56,7 +56,6 @@ func (wsUC *WebsocketsUC) matchMessageToDB(messageDB *models.MessageDB, message 
 }
 
 func (wsUC *WebsocketsUC) processNotification(notification models.WebsocketNotification) {
-	fmt.Println("ssss")
 	marshalledNotification, err := json.Marshal(notification)
 	if err != nil {
 		jsonError := fmt.Errorf("error marshalling json: %v", err.Error())

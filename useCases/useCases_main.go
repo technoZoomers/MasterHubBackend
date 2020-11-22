@@ -2,6 +2,7 @@ package useCases
 
 import (
 	"crypto/tls"
+	"fmt"
 	"github.com/technoZoomers/MasterHubBackend/repository"
 	gomail "gopkg.in/mail.v2"
 	"os"
@@ -144,6 +145,7 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 		VideocallsRepo:  vcRepo,
 		rtcpPLIInterval: 1 * time.Second,
 	}
+	fmt.Println("MASTERHUB_MAIL_PASSWORD: ", os.Getenv("MASTERHUB_MAIL_PASSWORD"))
 	dialer := gomail.NewDialer("smtp.mail.ru", 587, "masterhub@mail.ru", os.Getenv("MASTERHUB_MAIL_PASSWORD"))
 	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 	useCases.LessonNotificationsUC = &LessonNotificationsUC{
