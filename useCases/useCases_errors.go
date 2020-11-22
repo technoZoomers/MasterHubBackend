@@ -4,6 +4,7 @@ type ErrorMessagesUC struct {
 	DbError             string
 	InternalServerError string
 	FileErrors          FileErrors
+	MailSendError       string
 }
 
 type FileErrors struct {

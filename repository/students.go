@@ -29,6 +29,26 @@ func (studentsRepo *StudentsRepo) GetStudentByUserId(student *models.StudentDB) 
 	return nil
 }
 
+func (studentsRepo *StudentsRepo) GetStudentByUserIdWithEmail(student *models.StudentDB) (string, error) {
+	var dbError error
+	var email string
+	transaction, err := studentsRepo.repository.startTransaction()
+	if err != nil {
+		return email, err
+	}
+	row := transaction.QueryRow("select students.id, user_id, username, fullname, email from students join users u on students.user_id = u.id where students.user_id = $1", student.UserId)
+	err = row.Scan(&student.Id, &student.UserId, &student.Username, &student.Fullname, &email)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve student: %v", err.Error())
+		logger.Errorf(dbError.Error())
+	}
+	err = studentsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return email, err
+	}
+	return email, nil
+}
+
 func (studentsRepo *StudentsRepo) GetStudentIdByUsername(student *models.StudentDB) error {
 	var dbError error
 	transaction, err := studentsRepo.repository.startTransaction()

@@ -11,6 +11,7 @@ type WebsocketsRepo struct {
 	NewClients     chan *models.WebsocketConnection
 	DroppedClients chan *models.WebsocketConnection
 	Messages       chan models.WebsocketMessage
+	Notifications  chan models.WebsocketNotification
 }
 
 func (wsRepo *WebsocketsRepo) AddNewCLient(clientConnection *models.WebsocketConnection) {

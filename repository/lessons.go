@@ -466,3 +466,35 @@ func (lessonsRepo *LessonsRepo) UpdateLessonRequest(lessonRequest *models.Lesson
 	}
 	return nil
 }
+
+func (lessonsRepo *LessonsRepo) GetSoonLessons(dateNow string, timeNow string) ([]models.LessonDB, error) {
+	var dbError error
+	lessons := make([]models.LessonDB, 0)
+	fmt.Println(dateNow, timeNow)
+	transaction, err := lessonsRepo.repository.startTransaction()
+	if err != nil {
+		return lessons, err
+	}
+	rows, err := transaction.Query("select * from lessons where date = $1 and (time_start - $2)::time < '00:15:00' and (time_start - $2)::time > '00:14:00' and status=2", dateNow, timeNow)
+	if err != nil {
+		dbError = fmt.Errorf("failed to retrieve lessons: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		return lessons, dbError
+	}
+	for rows.Next() {
+		var lesson models.LessonDB
+		err = rows.Scan(&lesson.Id, &lesson.MasterId, &lesson.TimeStart,
+			&lesson.TimeEnd, &lesson.Date, &lesson.Price, &lesson.EducationFormat, &lesson.Status)
+		if err != nil {
+			dbError = fmt.Errorf("failed to retrieve lesson: %v", err)
+			logger.Errorf(dbError.Error())
+			return lessons, dbError
+		}
+		lessons = append(lessons, lesson)
+	}
+	err = lessonsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return lessons, err
+	}
+	return lessons, nil
+}

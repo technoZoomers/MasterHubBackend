@@ -20,4 +20,5 @@ type LessonsRepoI interface {
 	GetMastersLessonsRequests(masterId int64, query models.LessonsQueryValuesDB) ([]models.LessonStudentDB, error)
 	GetStudentsLessonsRequests(studentId int64, query models.LessonsQueryValuesDB) ([]models.LessonStudentDB, error)
 	UpdateLessonRequest(lessonRequest *models.LessonStudentDB) error
+	GetSoonLessons(dateNow string, timeNow string) ([]models.LessonDB, error)
 }

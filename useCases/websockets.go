@@ -28,6 +28,10 @@ func (wsUC *WebsocketsUC) SendMessage(message models.WebsocketMessage) {
 	wsUC.WebsocketsRepo.Messages <- message
 }
 
+func (wsUC *WebsocketsUC) SendNotification(notification models.WebsocketNotification) {
+	wsUC.WebsocketsRepo.Notifications <- notification
+}
+
 func (wsUC *WebsocketsUC) Start() {
 	for {
 		select {
@@ -37,6 +41,8 @@ func (wsUC *WebsocketsUC) Start() {
 			wsUC.WebsocketsRepo.RemoveClient(conn)
 		case message := <-wsUC.WebsocketsRepo.Messages:
 			wsUC.processMessage(message)
+		case notification := <-wsUC.WebsocketsRepo.Notifications:
+			wsUC.processNotification(notification)
 		}
 	}
 }
@@ -47,6 +53,25 @@ func (wsUC *WebsocketsUC) matchMessageToDB(messageDB *models.MessageDB, message 
 	messageDB.Created = message.Created
 	messageDB.Text = message.Text
 	messageDB.Info = wsUC.messagesTypesMap[message.Type]
+}
+
+func (wsUC *WebsocketsUC) processNotification(notification models.WebsocketNotification) {
+	fmt.Println("ssss")
+	marshalledNotification, err := json.Marshal(notification)
+	if err != nil {
+		jsonError := fmt.Errorf("error marshalling json: %v", err.Error())
+		logger.Errorf(jsonError.Error())
+		return
+	}
+	if notification.Notification.UserId != 0 {
+		userConnString := wsUC.WebsocketsRepo.GetConnectionString(notification.Notification.UserId)
+		if userConnString != "" {
+			err = wsUC.writeMessageToConnection(userConnString, marshalledNotification)
+			if err != nil {
+				return
+			}
+		}
+	}
 }
 
 func (wsUC *WebsocketsUC) processMessage(message models.WebsocketMessage) {

@@ -31,6 +31,7 @@ type VideoConfig struct {
 	videoPrefixVideo  string
 	videoPrefixIntro  string
 	previewExt        string
+	videoDefaultExt   string
 	previewHeight     int64
 	previewWidth      int64
 }
@@ -109,6 +110,54 @@ func (videosUC *VideosUC) validateIntro(intro *models.VideoDB) error {
 	return nil
 }
 
+func (videosUC *VideosUC) convertVideo(videoOriginPath string, videoDestPath string) error {
+	cmd := exec.Command("ffmpeg", "-i", videoOriginPath, videoDestPath)
+	var buffer bytes.Buffer
+	cmd.Stdout = &buffer
+	if cmd.Run() != nil {
+		fileError := fmt.Errorf("%s", videosUC.useCases.errorMessages.FileErrors.FileGenerateError)
+		logger.Errorf(fileError.Error())
+		return fileError
+	}
+
+	return videosUC.newFile(videoDestPath, buffer.Bytes())
+}
+
+func (videosUC *VideosUC) convertVideotoWebm(oldPath string, filename string) error {
+	newPath := fmt.Sprintf("%s%s%s.%s", videosUC.useCases.filesDir, videosUC.videosConfig.videosDir, filename, videosUC.videosConfig.videoDefaultExt)
+	err := videosUC.convertVideo(oldPath, newPath)
+	if err != nil {
+		return err
+	}
+	err = os.Remove(oldPath)
+	if err != nil {
+		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileRemoveError, err.Error())
+		logger.Errorf(fileError.Error())
+		return fileError
+	}
+	return nil
+}
+
+func (videosUC *VideosUC) newFile(path string, bytes []byte) error {
+	newFile, err := os.Create(path)
+	if err != nil {
+		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileCreateError, err.Error())
+		logger.Errorf(fileError.Error())
+		return fileError
+	}
+	defer newFile.Close()
+
+	_, err = newFile.Write(bytes)
+
+	if err != nil {
+		os.Remove(path)
+		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileCreateError, err.Error())
+		logger.Errorf(fileError.Error())
+		return fileError
+	}
+	return nil
+}
+
 func (videosUC *VideosUC) newVideoPreview(videoPath string, filename string) error {
 	cmd := exec.Command("ffmpeg", "-i", videoPath, "-vframes", "1", "-s", fmt.Sprintf("%dx%d", videosUC.videosConfig.previewWidth, videosUC.videosConfig.previewHeight), "-f", "singlejpeg", "-")
 	var buffer bytes.Buffer
@@ -120,22 +169,7 @@ func (videosUC *VideosUC) newVideoPreview(videoPath string, filename string) err
 	}
 
 	newPath := fmt.Sprintf("%s%s%s.%s", videosUC.useCases.filesDir, videosUC.videosConfig.videosPreviewDir, filename, videosUC.videosConfig.previewExt)
-	newFile, err := os.Create(newPath)
-	if err != nil {
-		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileCreateError, err.Error())
-		logger.Errorf(fileError.Error())
-		return fileError
-	}
-	defer newFile.Close()
-
-	_, err = newFile.Write(buffer.Bytes())
-	if err != nil {
-		os.Remove(newPath)
-		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileCreateError, err.Error())
-		logger.Errorf(fileError.Error())
-		return fileError
-	}
-	return nil
+	return videosUC.newFile(newPath, buffer.Bytes())
 }
 
 func (videosUC *VideosUC) newVideo(videoData *models.VideoData, file multipart.File, masterId int64, intro bool) error {
@@ -167,25 +201,21 @@ func (videosUC *VideosUC) newVideo(videoData *models.VideoData, file multipart.F
 		return err
 	}
 	newPath := fmt.Sprintf("%s%s%s.%s", videosUC.useCases.filesDir, videosUC.videosConfig.videosDir, filename, fileExtension.Extension)
-	newFile, err := os.Create(newPath)
+	err = videosUC.newFile(newPath, fileBytes)
 	if err != nil {
-		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileCreateError, err.Error())
-		logger.Errorf(fileError.Error())
-		return fileError
+		return err
 	}
-	defer newFile.Close()
 
-	_, err = newFile.Write(fileBytes)
-	if err != nil {
-		os.Remove(newPath)
-		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileCreateError, err.Error())
-		logger.Errorf(fileError.Error())
-		return fileError
+	var ext string
+	if fileExtension.Extension == "avi" {
+		ext = videosUC.videosConfig.videoDefaultExt
+	} else {
+		ext = fileExtension.Extension
 	}
 
 	videoDB := models.VideoDB{
 		Filename:  filename,
-		Extension: fileExtension.Extension,
+		Extension: ext,
 		MasterId:  masterDBId,
 		Name:      videosUC.videosConfig.videosDefaultName,
 		Intro:     intro,
@@ -206,7 +236,9 @@ func (videosUC *VideosUC) newVideo(videoData *models.VideoData, file multipart.F
 	videoData.Rating = 0
 
 	go videosUC.newVideoPreview(newPath, filename)
-
+	if fileExtension.Extension == "avi" {
+		go videosUC.convertVideotoWebm(newPath, filename)
+	}
 	return nil
 }
 
@@ -376,46 +408,7 @@ func (videosUC *VideosUC) DeleteMasterIntro(masterId int64) error {
 }
 
 func (videosUC *VideosUC) getVideo(videoDB *models.VideoDB, masterId int64) ([]byte, error) {
-	var videoBytes []byte
-	masterDBId, err := videosUC.validateMaster(masterId)
-	if err != nil {
-		return videoBytes, err
-	}
-	videoDB.MasterId = masterDBId
-	if videoDB.Intro {
-		err = videosUC.validateIntro(videoDB)
-	} else {
-		err = videosUC.validateVideo(videoDB)
-	}
-	if err != nil {
-		return videoBytes, err
-	}
-	filename := fmt.Sprintf("%s%s%s.%s", videosUC.useCases.filesDir, videosUC.videosConfig.videosDir, videoDB.Filename, videoDB.Extension)
-	videoFile, err := os.Open(filename)
-	if err != nil {
-		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileOpenError, err.Error())
-		logger.Errorf(fileError.Error())
-		return videoBytes, fileError
-	}
-	defer videoFile.Close()
-
-	reader := bufio.NewReader(videoFile)
-	videoFileInfo, err := videoFile.Stat()
-	if err != nil {
-		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileOpenError, err.Error())
-		logger.Errorf(fileError.Error())
-		return videoBytes, fileError
-	}
-	videoFileSize := videoFileInfo.Size()
-
-	videoBytes = make([]byte, videoFileSize)
-	_, err = reader.Read(videoBytes)
-	if err != nil {
-		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileReadError, err.Error())
-		logger.Errorf(fileError.Error())
-		return videoBytes, fileError
-	}
-	return videoBytes, nil
+	return videosUC.getVideoFile(videoDB, masterId, false)
 }
 
 func (videosUC *VideosUC) GetMasterVideo(masterId int64, videoId int64) ([]byte, error) {
@@ -433,11 +426,11 @@ func (videosUC *VideosUC) GetMasterIntro(masterId int64) ([]byte, error) {
 	return videosUC.getVideo(&videoDB, masterId)
 }
 
-func (videosUC *VideosUC) getVideoPreview(videoDB *models.VideoDB, masterId int64) ([]byte, error) {
-	var previewBytes []byte
+func (videosUC *VideosUC) getVideoFile(videoDB *models.VideoDB, masterId int64, preview bool) ([]byte, error) {
+	var fileBytes []byte
 	masterDBId, err := videosUC.validateMaster(masterId)
 	if err != nil {
-		return previewBytes, err
+		return fileBytes, err
 	}
 	videoDB.MasterId = masterDBId
 	if videoDB.Intro {
@@ -446,34 +439,43 @@ func (videosUC *VideosUC) getVideoPreview(videoDB *models.VideoDB, masterId int6
 		err = videosUC.validateVideo(videoDB)
 	}
 	if err != nil {
-		return previewBytes, err
+		return fileBytes, err
 	}
-	filename := fmt.Sprintf("%s%s%s.%s", videosUC.useCases.filesDir, videosUC.videosConfig.videosPreviewDir, videoDB.Filename, videosUC.videosConfig.previewExt)
-	previewFile, err := os.Open(filename)
+	var filename string
+	if preview {
+		filename = fmt.Sprintf("%s%s%s.%s", videosUC.useCases.filesDir, videosUC.videosConfig.videosPreviewDir, videoDB.Filename, videosUC.videosConfig.previewExt)
+	} else {
+		filename = fmt.Sprintf("%s%s%s.%s", videosUC.useCases.filesDir, videosUC.videosConfig.videosDir, videoDB.Filename, videoDB.Extension)
+	}
+	file, err := os.Open(filename)
 	if err != nil {
 		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileOpenError, err.Error())
 		logger.Errorf(fileError.Error())
-		return previewBytes, fileError
+		return fileBytes, fileError
 	}
-	defer previewFile.Close()
+	defer file.Close()
 
-	reader := bufio.NewReader(previewFile)
-	previewFileInfo, err := previewFile.Stat()
+	reader := bufio.NewReader(file)
+	fileInfo, err := file.Stat()
 	if err != nil {
 		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileOpenError, err.Error())
 		logger.Errorf(fileError.Error())
-		return previewBytes, fileError
+		return fileBytes, fileError
 	}
-	previewFileSize := previewFileInfo.Size()
+	previewFileSize := fileInfo.Size()
 
-	previewBytes = make([]byte, previewFileSize)
-	_, err = reader.Read(previewBytes)
+	fileBytes = make([]byte, previewFileSize)
+	_, err = reader.Read(fileBytes)
 	if err != nil {
 		fileError := fmt.Errorf("%s: %s", videosUC.useCases.errorMessages.FileErrors.FileReadError, err.Error())
 		logger.Errorf(fileError.Error())
-		return previewBytes, fileError
+		return fileBytes, fileError
 	}
-	return previewBytes, nil
+	return fileBytes, nil
+}
+
+func (videosUC *VideosUC) getVideoPreview(videoDB *models.VideoDB, masterId int64) ([]byte, error) {
+	return videosUC.getVideoFile(videoDB, masterId, true)
 }
 
 func (videosUC *VideosUC) GetMasterVideoPreview(masterId int64, videoId int64) ([]byte, error) {

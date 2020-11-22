@@ -7,4 +7,5 @@ type StudentsRepoI interface {
 	GetStudentIdByUsername(student *models.StudentDB) error
 	InsertStudent(student *models.StudentDB) error
 	UpdateStudent(student *models.StudentDB) error
+	GetStudentByUserIdWithEmail(student *models.StudentDB) (string, error)
 }

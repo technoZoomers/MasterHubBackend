@@ -1,25 +1,29 @@
 package useCases
 
 import (
+	"crypto/tls"
 	"github.com/technoZoomers/MasterHubBackend/repository"
+	gomail "gopkg.in/mail.v2"
+	"os"
 	"time"
 )
 
 type UseCases struct {
-	UsersUC       *UsersUC
-	MastersUC     *MastersUC
-	StudentsUC    *StudentsUC
-	ThemesUC      *ThemesUC
-	LanguagesUC   *LanguagesUC
-	VideosUC      *VideosUC
-	AvatarsUC     *AvatarsUC
-	ChatsUC       *ChatsUC
-	WebsocketsUC  *WebsocketsUC
-	LessonsUC     *LessonsUC
-	VideocallsUC  *VideocallsUC
-	errorMessages ErrorMessagesUC
-	errorId       int64
-	filesDir      string
+	UsersUC               *UsersUC
+	MastersUC             *MastersUC
+	StudentsUC            *StudentsUC
+	ThemesUC              *ThemesUC
+	LanguagesUC           *LanguagesUC
+	VideosUC              *VideosUC
+	AvatarsUC             *AvatarsUC
+	ChatsUC               *ChatsUC
+	WebsocketsUC          *WebsocketsUC
+	LessonsUC             *LessonsUC
+	VideocallsUC          *VideocallsUC
+	LessonNotificationsUC *LessonNotificationsUC
+	errorMessages         ErrorMessagesUC
+	errorId               int64
+	filesDir              string
 }
 
 func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repository.MastersRepoI, studentsRepo repository.StudentsRepoI,
@@ -57,6 +61,7 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 			videoPrefixVideo:  "_video_",
 			videoPrefixIntro:  "_intro",
 			previewExt:        "jpg",
+			videoDefaultExt:   "webm",
 			previewWidth:      640,
 			previewHeight:     360,
 		},
@@ -139,9 +144,27 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 		VideocallsRepo:  vcRepo,
 		rtcpPLIInterval: 1 * time.Second,
 	}
+	dialer := gomail.NewDialer("smtp.mail.ru", 587, "masterhub@mail.ru", os.Getenv("MASTERHUB_MAIL_PASSWORD"))
+	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+	useCases.LessonNotificationsUC = &LessonNotificationsUC{
+		useCases:      useCases,
+		StudentsRepo:  studentsRepo,
+		MastersRepo:   mastersRepo,
+		LessonsRepo:   lessonsRepo,
+		CheckInterval: 1 * time.Minute,
+		dialer:        dialer,
+		websocketUC:   useCases.WebsocketsUC,
+		lessonsNotificationsConfig: LessonsNotificationsConfig{
+			masterhubTheme: "Masterhub notification",
+			masterhubEmail: "masterhub@mail.ru",
+			layoutISODate:  "2006-01-02",
+			layoutISOTime:  "15:04:05",
+		},
+	}
 	useCases.errorMessages = ErrorMessagesUC{
 		DbError:             "database internal error",
 		InternalServerError: "internal server error",
+		MailSendError:       "error sending email",
 		FileErrors: FileErrors{
 			FileOpenError:          "error opening file",
 			FileReadError:          "error reading file",
@@ -157,5 +180,7 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 	//useCases.filesDir = ""
 
 	go useCases.WebsocketsUC.Start() // GOROUTINE FOR WEBSOCKETS
+
+	go useCases.LessonNotificationsUC.Start() // GOROUTINE FOR NOTIFICATIONS
 	return nil
 }
