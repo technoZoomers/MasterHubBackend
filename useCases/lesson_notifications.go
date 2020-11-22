@@ -85,8 +85,9 @@ func (lnUC *LessonNotificationsUC) getSoonLessons() {
 
 func (lnUC *LessonNotificationsUC) createStudentMessage(lesson *models.Lesson, master *models.MasterDB) string {
 	priceFloat, _ := lesson.Price.Value.Float64()
-	return fmt.Sprintf("У вас назначен урок с %s (%s) в %s продолжительностью %s. Он пройдет в формате %s и будет стоить: %f %s. Не забудьте посетить!",
-		master.Fullname, master.Username, lesson.TimeStart, lesson.Duration, lesson.EducationFormat, priceFloat, lesson.Price.Currency)
+	priceFloatString := fmt.Sprintf("%.2f", priceFloat)
+	return fmt.Sprintf("У вас назначен урок с %s (%s) в %s продолжительностью %s. Он пройдет в формате %s и будет стоить: %s %s. Не забудьте посетить!",
+		master.Fullname, master.Username, lesson.TimeStart, lesson.Duration, lesson.EducationFormat, priceFloatString, lesson.Price.Currency)
 }
 
 func (lnUC *LessonNotificationsUC) createMasterMessage(lesson *models.Lesson, students []models.StudentDB) string {

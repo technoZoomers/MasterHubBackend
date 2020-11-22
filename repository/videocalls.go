@@ -24,6 +24,13 @@ func (vcRepo *VideocallsRepo) AddTrackCh(userId int64) {
 	vcRepo.peerConnMap[userId] = make(chan *webrtc.Track, 1)
 }
 
+func (vcRepo *VideocallsRepo) DeleteTrackCh(peerConnection *models.PeerConnection) {
+	_, ok := vcRepo.peerConnMap[peerConnection.UserId]
+	if ok {
+		delete(vcRepo.peerConnMap, peerConnection.UserId)
+	}
+}
+
 func (vcRepo *VideocallsRepo) GetTrack(peerConnection *models.PeerConnection) *webrtc.Track {
 	_, ok := vcRepo.peerConnMap[peerConnection.PeerId]
 	if !ok {

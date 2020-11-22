@@ -18,12 +18,13 @@ type VideocallsUC struct {
 }
 
 func (vcUC *VideocallsUC) ConnectToTrack(peerConnection *models.PeerConnection) error {
-	_, err := peerConnection.Connection.AddTrack(vcUC.VideocallsRepo.GetTrack(peerConnection))
+	sender, err := peerConnection.Connection.AddTrack(vcUC.VideocallsRepo.GetTrack(peerConnection))
 	if err != nil {
 		internalError := fmt.Errorf("couldnt add track: %s", err.Error())
 		logger.Errorf(internalError.Error())
 		return internalError
 	}
+	peerConnection.Sender = sender
 	return nil
 }
 
@@ -60,19 +61,29 @@ func (vcUC *VideocallsUC) AddTrack(peerConnection *models.PeerConnection) {
 		//	internalError := fmt.Errorf("error adding transceiver: %s", err.Error())
 		//	logger.Errorf(internalError.Error())
 		//}
-		rtpBuf := make([]byte, 1400)
-		for {
-			i, err := remoteTrack.Read(rtpBuf)
-			if err != nil {
-				internalError := fmt.Errorf("error reading: %s", err.Error())
-				logger.Errorf(internalError.Error())
+		go func() {
+			defer func() {
+				err = peerConnection.Connection.RemoveTrack(peerConnection.Sender)
+				if err != nil {
+					internalError := fmt.Errorf("error reading: %s", err.Error())
+					logger.Errorf(internalError.Error())
+				}
+				vcUC.VideocallsRepo.DeleteTrackCh(peerConnection)
+			}()
+			rtpBuf := make([]byte, 1400)
+			for {
+				i, err := remoteTrack.Read(rtpBuf)
+				if err != nil {
+					internalError := fmt.Errorf("error reading: %s", err.Error())
+					logger.Errorf(internalError.Error())
+				}
+				_, err = localTrack.Write(rtpBuf[:i])
+				if err != nil && err != io.ErrClosedPipe {
+					internalError := fmt.Errorf("error writing: %s", err.Error())
+					logger.Errorf(internalError.Error())
+				}
 			}
-			_, err = localTrack.Write(rtpBuf[:i])
-			if err != nil && err != io.ErrClosedPipe {
-				internalError := fmt.Errorf("error writing: %s", err.Error())
-				logger.Errorf(internalError.Error())
-			}
-		}
+		}()
 
 	})
 }
