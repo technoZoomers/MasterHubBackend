@@ -14,7 +14,9 @@ RUN apt-get install -y ffmpeg
 USER root
 
 RUN echo "Europe/Moscow" > /etc/timezone
-RUN dpkg-reconfigure -f noninteractive tzdata
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe/Moscow
+RUN apt-get install -y tzdata
 
 EXPOSE 5000
 
