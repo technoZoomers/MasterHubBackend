@@ -33,6 +33,12 @@ func (lnUC *LessonNotificationsUC) Start() {
 		lnUC.getSoonLessons()
 	}
 }
+func (lnUC *LessonNotificationsUC) CheckFinished() {
+	ticker := time.NewTicker(lnUC.CheckInterval)
+	for range ticker.C {
+		lnUC.updateFinishedLessons()
+	}
+}
 
 func (lnUC *LessonNotificationsUC) getSoonLessons() {
 	lessonsDB, err := lnUC.LessonsRepo.GetSoonLessons(time.Now().Format(lnUC.lessonsNotificationsConfig.layoutISODate),
@@ -120,4 +126,13 @@ func (lnUC *LessonNotificationsUC) sendEmail(email string, messageText string) {
 
 func (lnUC *LessonNotificationsUC) sendToWebsocket(userId int64, messageText string) {
 	lnUC.websocketUC.SendNotification(models.WebsocketNotification{Type: 4, Notification: models.Notification{UserId: userId, Text: messageText}})
+}
+
+func (lnUC *LessonNotificationsUC) updateFinishedLessons() {
+	err := lnUC.LessonsRepo.UpdateFinishedLessons(time.Now().Format(lnUC.lessonsNotificationsConfig.layoutISODate),
+		time.Now().Format(lnUC.lessonsNotificationsConfig.layoutISOTime))
+	if err != nil {
+		logger.Error(fmt.Errorf(lnUC.useCases.errorMessages.DbError))
+		return
+	}
 }

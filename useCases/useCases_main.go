@@ -183,6 +183,8 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 
 	go useCases.WebsocketsUC.Start() // GOROUTINE FOR WEBSOCKETS
 
-	go useCases.LessonNotificationsUC.Start() // GOROUTINE FOR NOTIFICATIONS
+	go useCases.LessonNotificationsUC.Start()         // GOROUTINE FOR NOTIFICATIONS
+	go useCases.LessonNotificationsUC.CheckFinished() // GOROUTINE FOR CHECK LESSON FINISHED
+
 	return nil
 }

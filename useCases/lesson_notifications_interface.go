@@ -7,4 +7,5 @@ type LessonNotificationsUCInterface interface {
 	RemoveClient(clientConnection *models.WebsocketConnection)
 	SendMessage(message models.WebsocketMessage)
 	Start()
+	CheckFinished()
 }

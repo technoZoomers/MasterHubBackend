@@ -497,3 +497,27 @@ func (lessonsRepo *LessonsRepo) GetSoonLessons(dateNow string, timeNow string) (
 	}
 	return lessons, nil
 }
+
+func (lessonsRepo *LessonsRepo) UpdateFinishedLessons(dateNow string, timeNow string) error {
+	var dbError error
+	transaction, err := lessonsRepo.repository.startTransaction()
+	if err != nil {
+		return err
+	}
+	_, err = transaction.Exec("update lessons set status=3 where date = $1 and time_end < $2::time",
+		dateNow, timeNow)
+	if err != nil {
+		dbError = fmt.Errorf("failed to update lesson: %v", err.Error())
+		logger.Errorf(dbError.Error())
+		errRollback := lessonsRepo.repository.rollbackTransaction(transaction)
+		if errRollback != nil {
+			return errRollback
+		}
+		return dbError
+	}
+	err = lessonsRepo.repository.commitTransaction(transaction)
+	if err != nil {
+		return err
+	}
+	return nil
+}
