@@ -10,8 +10,10 @@ type VideosUCInterface interface {
 	NewMasterIntro(videoData *models.VideoData, file multipart.File, masterId int64) error
 	GetVideosByMasterId(masterId int64) ([]models.VideoData, error)
 	GetMasterVideo(masterId int64, videoId int64) ([]byte, error)
+	GetMasterVideoPreview(masterId int64, videoId int64) ([]byte, error)
 	DeleteMasterVideo(masterId int64, videoId int64) error
 	GetMasterIntro(masterId int64) ([]byte, error)
+	GetMasterIntroPreview(masterId int64) ([]byte, error)
 	DeleteMasterIntro(masterId int64) error
 	ChangeMasterIntro(videoData *models.VideoData, file multipart.File, masterId int64) error
 	GetVideoDataById(videoData *models.VideoData, masterId int64) error

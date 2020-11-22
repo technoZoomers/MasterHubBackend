@@ -7,6 +7,10 @@ RUN go build .
 
 FROM ubuntu:18.04 AS release
 
+RUN apt-get -y update
+RUN apt-get -y upgrade
+RUN apt-get install -y ffmpeg
+
 USER root
 
 EXPOSE 5000

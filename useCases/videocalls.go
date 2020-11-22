@@ -33,6 +33,7 @@ func (vcUC *VideocallsUC) AddTrack(peerConnection *models.PeerConnection) {
 		internalError := fmt.Errorf("error adding transceiver: %s", err.Error())
 		logger.Errorf(internalError.Error())
 	}
+
 	peerConnection.Connection.OnTrack(func(remoteTrack *webrtc.Track, receiver *webrtc.RTPReceiver) {
 		fmt.Println("on track")
 		go func() {

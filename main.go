@@ -52,6 +52,7 @@ func main() {
 	//	fmt.Println(err)
 	//	panic(err)
 	//}
+
 	//database initialization
 
 	repo := repository.Repository{
@@ -151,6 +152,8 @@ func main() {
 	r.Handle("/masters/{id}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.MastersHandlers.ChangeMasterData, false)).Methods("PUT")
 	r.Handle("/masters/{id}/videos/create", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.Upload, false)).Methods("POST")
 	r.HandleFunc("/masters/{id}/videos/{videoId}", mhHandlers.VideosHandlers.GetVideoById).Methods("GET")
+	r.HandleFunc("/masters/{id}/videos/{videoId}/preview", mhHandlers.VideosHandlers.GetVideoPreviewById).Methods("GET")
+
 	r.Handle("/masters/{id}/videos/{videoId}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.DeleteVideoById, false)).Methods("DELETE")
 	r.HandleFunc("/masters/{id}/videos/{videoId}/data", mhHandlers.VideosHandlers.GetVideoDataById).Methods("GET")
 	r.Handle("/masters/{id}/videos/{videoId}/data", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.ChangeVideoData, false)).Methods("PUT")
@@ -159,6 +162,8 @@ func main() {
 	r.Handle("/masters/{id}/intro", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.ChangeIntro, false)).Methods("PUT")
 	r.Handle("/masters/{id}/intro", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.DeleteIntro, false)).Methods("DELETE")
 	r.HandleFunc("/masters/{id}/intro", mhHandlers.VideosHandlers.GetIntro).Methods("GET")
+	r.HandleFunc("/masters/{id}/intro/preview", mhHandlers.VideosHandlers.GetIntroPreview).Methods("GET")
+
 	r.Handle("/masters/{id}/intro/data", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.VideosHandlers.ChangeIntroData, false)).Methods("PUT")
 	r.HandleFunc("/masters/{id}/intro/data", mhHandlers.VideosHandlers.GetIntroData).Methods("GET")
 	r.Handle("/masters/{id}/chats", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.CreateChatByMaster, false)).Methods("POST")

@@ -152,7 +152,7 @@ func (repository *Repository) createTables() error {
 }
 
 func (repository *Repository) dropTables() error {
-	_, err := repository.pool.Exec(drop_lessons_students)
+	_, err := repository.pool.Exec(drop_videos)
 	if err != nil {
 		return err
 	}

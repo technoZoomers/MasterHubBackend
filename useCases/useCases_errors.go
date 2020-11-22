@@ -12,4 +12,6 @@ type FileErrors struct {
 	FileReadExtensionError string
 	FileCreateError        string
 	FileRemoveError        string
+	FileGenerateError      string
+	FileConvertError       string
 }

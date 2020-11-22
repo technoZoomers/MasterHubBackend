@@ -52,9 +52,13 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 		videosConfig: VideoConfig{
 			videosDefaultName: "noname",
 			videosDir:         "/master_videos/",
+			videosPreviewDir:  "/master_videos_preview/",
 			videoPrefixMaster: "master_",
 			videoPrefixVideo:  "_video_",
 			videoPrefixIntro:  "_intro",
+			previewExt:        "jpg",
+			previewWidth:      640,
+			previewHeight:     360,
 		},
 	}
 	useCases.AvatarsUC = &AvatarsUC{
@@ -144,6 +148,8 @@ func (useCases *UseCases) Init(usersRepo repository.UsersRepoI, mastersRepo repo
 			FileReadExtensionError: "error reading file extension",
 			FileCreateError:        "error creating file",
 			FileRemoveError:        "error removing file",
+			FileGenerateError:      "error generating file with ffmpeg",
+			FileConvertError:       "error converting file with ffmpeg",
 		},
 	}
 	useCases.errorId = 0

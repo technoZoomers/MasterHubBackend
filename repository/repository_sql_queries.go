@@ -383,3 +383,7 @@ CREATE TABLE lessons_students (
 );
 
 `
+const drop_videos = `
+delete from videos_subthemes;
+delete from videos;
+`

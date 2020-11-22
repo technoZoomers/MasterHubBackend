@@ -121,6 +121,34 @@ func (vh *VideosHandlers) GetIntro(writer http.ResponseWriter, req *http.Request
 	vh.getVideo(writer, req, true)
 }
 
+func (vh *VideosHandlers) getVideoPreview(writer http.ResponseWriter, req *http.Request, intro bool) {
+	var err error
+	sent, masterId := vh.handlers.validateMasterId(writer, req)
+	if sent {
+		return
+	}
+	var previewBytes []byte
+	if intro {
+		previewBytes, err = vh.VideosUC.GetMasterIntroPreview(masterId)
+		vh.answerMultipartIntro(writer, previewBytes, http.StatusOK, err)
+	} else {
+		sent, videoId := vh.handlers.validateVideoId(writer, req)
+		if sent {
+			return
+		}
+		previewBytes, err = vh.VideosUC.GetMasterVideoPreview(masterId, videoId)
+		vh.answerMultipart(writer, previewBytes, http.StatusOK, err)
+	}
+}
+
+func (vh *VideosHandlers) GetVideoPreviewById(writer http.ResponseWriter, req *http.Request) {
+	vh.getVideoPreview(writer, req, false)
+}
+
+func (vh *VideosHandlers) GetIntroPreview(writer http.ResponseWriter, req *http.Request) {
+	vh.getVideoPreview(writer, req, true)
+}
+
 func (vh *VideosHandlers) ChangeIntro(writer http.ResponseWriter, req *http.Request) {
 	var err error
 	var videoData models.VideoData
