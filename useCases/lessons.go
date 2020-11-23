@@ -31,22 +31,27 @@ type LessonsConfig struct {
 }
 
 func (lessonsUC *LessonsUC) validateMaster(masterId int64) (int64, error) { // TODO: throw away redundant functions
+	masterId, _, err := lessonsUC.validateMasterWithPrice(masterId)
+	return masterId, err
+}
+
+func (lessonsUC *LessonsUC) validateMasterWithPrice(masterId int64) (int64, decimal.Decimal, error) { // TODO: throw away redundant functions
 	if masterId == lessonsUC.useCases.errorId {
-		return lessonsUC.useCases.errorId, &models.BadRequestError{Message: "incorrect master id", RequestId: masterId}
+		return lessonsUC.useCases.errorId, decimal.Zero, &models.BadRequestError{Message: "incorrect master id", RequestId: masterId}
 	}
 	masterDB := models.MasterDB{
 		UserId: masterId,
 	}
 	err := lessonsUC.MastersRepo.GetMasterByUserId(&masterDB)
 	if err != nil {
-		return lessonsUC.useCases.errorId, fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
+		return lessonsUC.useCases.errorId, masterDB.AveragePrice, fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
 	}
 	if masterDB.Id == lessonsUC.useCases.errorId {
 		absenceError := &models.BadRequestError{Message: "master doesn't exist", RequestId: masterId}
 		logger.Errorf(absenceError.Error())
-		return lessonsUC.useCases.errorId, absenceError
+		return lessonsUC.useCases.errorId, masterDB.AveragePrice, absenceError
 	}
-	return masterDB.Id, nil
+	return masterDB.Id, masterDB.AveragePrice, nil
 }
 
 func (lessonsUC *LessonsUC) validateStudent(studentId int64) (int64, error) {
@@ -212,7 +217,16 @@ func (lessonsUC *LessonsUC) validateTimeFormat(timeToParse string) (time.Time, e
 		logger.Errorf(parseError.Error())
 		return timeParsed, parseError
 	}
-	return timeParsed, nil
+	if timeParsed.Hour() > time.Now().Hour() {
+		if timeParsed.Minute() > time.Now().Minute() {
+			if timeParsed.Second() > time.Now().Second() {
+				return timeParsed, nil
+			}
+		}
+	}
+	formatError := &models.NotAcceptableError{Message: "can't set past time"}
+	logger.Errorf(formatError.Error())
+	return timeParsed, formatError
 }
 
 func (lessonsUC *LessonsUC) calculateDuration(timeStart string, timeEnd string) (string, time.Duration, error) {
@@ -260,7 +274,22 @@ func (lessonsUC *LessonsUC) matchLesson(lessonDB *models.LessonDB, lesson *model
 	return nil
 }
 
-func (lessonsUC *LessonsUC) matchLessonToDB(lesson *models.Lesson, lessonDB *models.LessonDB) error {
+func (lessonsUC *LessonsUC) checkLessonDate(lessonDate time.Time) error {
+	lessonYear, lessonMonth, lessonDay := lessonDate.Date()
+	nowYear, nowMonth, nowDay := time.Now().Date()
+	if lessonYear > nowYear {
+		if lessonMonth > nowMonth {
+			if lessonDay > nowDay {
+				return nil
+			}
+		}
+	}
+	formatError := &models.NotAcceptableError{Message: "can't set past date"}
+	logger.Errorf(formatError.Error())
+	return formatError
+}
+
+func (lessonsUC *LessonsUC) matchLessonToDB(lesson *models.Lesson, lessonDB *models.LessonDB, masterPrice decimal.Decimal) error {
 	dateParsed, err := time.Parse(lessonsUC.lessonsConfig.layoutISODate, lesson.Date)
 	if err != nil {
 		parseError := fmt.Errorf("couldnt parse date: %s", err.Error())
@@ -287,11 +316,13 @@ func (lessonsUC *LessonsUC) matchLessonToDB(lesson *models.Lesson, lessonDB *mod
 		return err
 	}
 	lessonDB.EducationFormat = edFormat
-	if lesson.Price.Value.IsNegative() {
-		formatError := &models.NotAcceptableError{Message: "lesson price must not be negative"}
+	masterPriceFloat, _ := masterPrice.Float64()
+	if !lesson.Price.Value.IsZero() {
+		formatError := &models.NotAcceptableError{Message: "lesson price can't be set"}
 		logger.Errorf(formatError.Error())
 		return formatError
 	}
+	lesson.Price.Value = decimal.NewFromFloat(durationAsDuration.Minutes() / 60 * masterPriceFloat).Truncate(2)
 	lessonDB.Price = lesson.Price.Value
 	err = lessonsUC.checkLessonStatus(lesson.Status)
 	if err != nil {
@@ -343,12 +374,11 @@ func (lessonsUC *LessonsUC) matchLessonToDBUpdate(lesson *models.Lesson, lessonD
 	if lesson.Price.Currency == "" {
 		_ = lessonsUC.matchPrice(lesson, lessonDB.Price)
 	}
-	if lesson.Price.Value.IsNegative() {
-		formatError := &models.NotAcceptableError{Message: "lesson price must not be negative"}
+	if lessonDB.Price != lesson.Price.Value {
+		formatError := &models.NotAcceptableError{Message: "lesson price can't be changed"}
 		logger.Errorf(formatError.Error())
 		return formatError
 	}
-	lessonDB.Price = lesson.Price.Value
 	if lesson.Status == lessonsUC.useCases.errorId {
 		lesson.Status = lessonDB.Status
 	} else {
@@ -383,7 +413,7 @@ func (lessonsUC *LessonsUC) CreateLesson(lesson *models.Lesson, masterId int64) 
 	} else if masterId != lesson.MasterId {
 		return &models.ForbiddenError{Reason: "master ids doesnt match"}
 	}
-	masterDBId, err := lessonsUC.validateMaster(lesson.MasterId)
+	masterDBId, masterPrice, err := lessonsUC.validateMasterWithPrice(lesson.MasterId)
 	if err != nil {
 		return err
 	}
@@ -394,7 +424,7 @@ func (lessonsUC *LessonsUC) CreateLesson(lesson *models.Lesson, masterId int64) 
 	if err != nil {
 		return err
 	}
-	err = lessonsUC.matchLessonToDB(lesson, lessonDB)
+	err = lessonsUC.matchLessonToDB(lesson, lessonDB, masterPrice)
 	if err != nil {
 		return err
 	}
