@@ -247,9 +247,12 @@ func (mastersUC *MastersUC) ChangeMasterData(master *models.Master, masterId int
 
 	var emptyPrice models.Price
 	if master.AveragePrice != emptyPrice && !master.AveragePrice.Value.Equal(masterDB.AveragePrice) {
-		fileError := fmt.Errorf("master average price can't be changed")
-		logger.Errorf(fileError.Error())
-		return fileError
+		if master.AveragePrice.Value.LessThanOrEqual(decimal.Zero) {
+			fileError := fmt.Errorf("введите положительную цену для часа занятия")
+			logger.Errorf(fileError.Error())
+			return fileError
+		}
+		masterDB.AveragePrice = master.AveragePrice.Value
 	}
 	masterDB.Fullname = master.Fullname
 	masterDB.Description = master.Description
@@ -799,6 +802,9 @@ func (mastersUC *MastersUC) Register(masterFull *models.MasterFull) error {
 	}
 	masterDB.Username = masterFull.Username
 	masterDB.Description = masterFull.Description
+	if masterFull.AveragePrice.Value.IsZero() {
+		masterFull.AveragePrice.Value = decimal.NewFromInt(1000)
+	}
 	masterDB.AveragePrice = masterFull.AveragePrice.Value // TODO: REFACTOR!!!
 	masterDB.Fullname = masterFull.Fullname
 	err = mastersUC.insertMastersThemeDB(masterFull.Theme.Theme, &masterDB)
