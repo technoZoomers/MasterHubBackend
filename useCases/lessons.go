@@ -217,29 +217,59 @@ func (lessonsUC *LessonsUC) validateTimeFormat(timeToParse string) (time.Time, e
 		logger.Errorf(parseError.Error())
 		return timeParsed, parseError
 	}
-	if timeParsed.Hour() > time.Now().Hour() {
-		if timeParsed.Minute() > time.Now().Minute() {
-			if timeParsed.Second() > time.Now().Second() {
-				return timeParsed, nil
-			}
-		}
-	}
-	formatError := &models.NotAcceptableError{Message: "can't set past time"}
-	logger.Errorf(formatError.Error())
-	return timeParsed, formatError
+	return timeParsed, nil
 }
 
-func (lessonsUC *LessonsUC) calculateDuration(timeStart string, timeEnd string) (string, time.Duration, error) {
+func (lessonsUC *LessonsUC) validateTimeFormatInsert(timeToParse string, dateEqual bool) (time.Time, error) {
+	timeParsed, err := lessonsUC.validateTimeFormat(timeToParse)
+	if err != nil {
+		return timeParsed, err
+	}
+	if dateEqual {
+		if timeParsed.Hour() > time.Now().Hour() {
+			return timeParsed, nil
+		} else if timeParsed.Hour() == time.Now().Hour() {
+			if timeParsed.Minute() > time.Now().Minute() {
+				return timeParsed, nil
+			} else if timeParsed.Minute() == time.Now().Minute() {
+				if timeParsed.Second() > time.Now().Second() {
+					return timeParsed, nil
+				}
+			}
+		}
+		formatError := &models.NotAcceptableError{Message: "can't set past time"}
+		logger.Errorf(formatError.Error())
+		return timeParsed, formatError
+	}
+	return timeParsed, nil
+}
+
+func (lessonsUC *LessonsUC) calculateDuration(timeStart string, timeEnd string, insert bool, dateEqual bool) (string, time.Duration, error) {
 	var duration string
 	var durationAsDuration time.Duration
-	timeStartAsTime, err := lessonsUC.validateTimeFormat(timeStart)
-	if err != nil {
-		return duration, durationAsDuration, err
+	var timeStartAsTime time.Time
+	var timeEndAsTime time.Time
+	var err error
+	if insert {
+		timeStartAsTime, err = lessonsUC.validateTimeFormatInsert(timeStart, dateEqual)
+		if err != nil {
+			return duration, durationAsDuration, err
+		}
+		timeEndAsTime, err = lessonsUC.validateTimeFormatInsert(timeEnd, dateEqual)
+		if err != nil {
+			return duration, durationAsDuration, err
+		}
+	} else {
+		timeStartAsTime, err = lessonsUC.validateTimeFormat(timeStart)
+		if err != nil {
+			return duration, durationAsDuration, err
+		}
+		timeEndAsTime, err = lessonsUC.validateTimeFormat(timeEnd)
+		if err != nil {
+			return duration, durationAsDuration, err
+		}
 	}
-	timeEndAsTime, err := lessonsUC.validateTimeFormat(timeEnd)
-	if err != nil {
-		return duration, durationAsDuration, err
-	}
+
 	durationAsDuration = timeEndAsTime.Sub(timeStartAsTime)
 	duration = lessonsUC.formatDuration(durationAsDuration)
 	return duration, durationAsDuration, nil
@@ -249,7 +279,7 @@ func (lessonsUC *LessonsUC) matchLesson(lessonDB *models.LessonDB, lesson *model
 	lesson.Id = lessonDB.Id
 	lesson.MasterId = masterId
 	lesson.Date = lessonDB.Date.Format(lessonsUC.lessonsConfig.layoutISODate)
-	duration, _, err := lessonsUC.calculateDuration(lessonDB.TimeStart, lessonDB.TimeEnd)
+	duration, _, err := lessonsUC.calculateDuration(lessonDB.TimeStart, lessonDB.TimeEnd, false, false)
 	if err != nil {
 		return err
 	}
@@ -274,19 +304,25 @@ func (lessonsUC *LessonsUC) matchLesson(lessonDB *models.LessonDB, lesson *model
 	return nil
 }
 
-func (lessonsUC *LessonsUC) checkLessonDate(lessonDate time.Time) error {
+func (lessonsUC *LessonsUC) checkLessonDate(lessonDate time.Time) (bool, error) {
 	lessonYear, lessonMonth, lessonDay := lessonDate.Date()
 	nowYear, nowMonth, nowDay := time.Now().Date()
 	if lessonYear > nowYear {
+		return false, nil
+	} else if lessonYear == nowYear {
 		if lessonMonth > nowMonth {
+			return false, nil
+		} else if lessonMonth == nowMonth {
 			if lessonDay > nowDay {
-				return nil
+				return false, nil
+			} else if lessonDay == nowDay {
+				return true, nil
 			}
 		}
 	}
 	formatError := &models.NotAcceptableError{Message: "can't set past date"}
 	logger.Errorf(formatError.Error())
-	return formatError
+	return false, formatError
 }
 
 func (lessonsUC *LessonsUC) matchLessonToDB(lesson *models.Lesson, lessonDB *models.LessonDB, masterPrice decimal.Decimal) error {
@@ -296,8 +332,12 @@ func (lessonsUC *LessonsUC) matchLessonToDB(lesson *models.Lesson, lessonDB *mod
 		logger.Errorf(parseError.Error())
 		return parseError
 	}
+	dateEqual, err := lessonsUC.checkLessonDate(dateParsed)
+	if err != nil {
+		return err
+	}
 	lessonDB.Date = dateParsed
-	duration, durationAsDuration, err := lessonsUC.calculateDuration(lesson.TimeStart, lesson.TimeEnd)
+	duration, durationAsDuration, err := lessonsUC.calculateDuration(lesson.TimeStart, lesson.TimeEnd, true, dateEqual)
 	if err != nil {
 		return err
 	}
@@ -333,12 +373,17 @@ func (lessonsUC *LessonsUC) matchLessonToDB(lesson *models.Lesson, lessonDB *mod
 }
 
 func (lessonsUC *LessonsUC) matchLessonToDBUpdate(lesson *models.Lesson, lessonDB *models.LessonDB) error {
+	var dateEqual bool
 	if lesson.Date != "" {
 		dateParsed, err := time.Parse(lessonsUC.lessonsConfig.layoutISODate, lesson.Date)
 		if err != nil {
 			parseError := fmt.Errorf("couldnt parse date: %s", err.Error())
 			logger.Errorf(parseError.Error())
 			return parseError
+		}
+		dateEqual, err = lessonsUC.checkLessonDate(dateParsed)
+		if err != nil {
+			return err
 		}
 		lessonDB.Date = dateParsed
 	} else {
@@ -350,7 +395,7 @@ func (lessonsUC *LessonsUC) matchLessonToDBUpdate(lesson *models.Lesson, lessonD
 	if lesson.TimeStart == "" {
 		lesson.TimeStart = lessonDB.TimeStart
 	}
-	duration, durationAsDuration, err := lessonsUC.calculateDuration(lesson.TimeStart, lesson.TimeEnd)
+	duration, durationAsDuration, err := lessonsUC.calculateDuration(lesson.TimeStart, lesson.TimeEnd, true, dateEqual)
 	if err != nil {
 		return err
 	}
