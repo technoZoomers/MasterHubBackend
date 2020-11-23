@@ -160,7 +160,7 @@ func easyjsonDbb80089DecodeGithubComTechnoZoomersMasterHubBackendModels1(in *jle
 				}
 				in.Delim(']')
 			}
-		case "avg_price":
+		case "hour_price":
 			easyjsonDbb80089DecodeGithubComTechnoZoomersMasterHubBackendModels2(in, &out.AveragePrice)
 		default:
 			in.SkipRecursive()
@@ -239,7 +239,7 @@ func easyjsonDbb80089EncodeGithubComTechnoZoomersMasterHubBackendModels1(out *jw
 		}
 	}
 	{
-		const prefix string = ",\"avg_price\":"
+		const prefix string = ",\"hour_price\":"
 		out.RawString(prefix)
 		easyjsonDbb80089EncodeGithubComTechnoZoomersMasterHubBackendModels2(out, in.AveragePrice)
 	}

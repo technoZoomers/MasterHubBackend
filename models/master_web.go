@@ -10,7 +10,7 @@ type Master struct {
 	Description     string   `json:"description"`
 	Qualification   string   `json:"qualification"`
 	EducationFormat []string `json:"education_format"`
-	AveragePrice    Price    `json:"avg_price"`
+	AveragePrice    Price    `json:"hour_price"`
 }
 
 //easyjson:json
