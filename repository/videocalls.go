@@ -25,9 +25,9 @@ func (vcRepo *VideocallsRepo) AddTrackCh(userId int64) {
 }
 
 func (vcRepo *VideocallsRepo) DeleteTrackCh(peerConnection *models.PeerConnection) {
-	_, ok := vcRepo.peerConnMap[peerConnection.UserId]
+	_, ok := vcRepo.peerConnMap[peerConnection.PeerId]
 	if ok {
-		delete(vcRepo.peerConnMap, peerConnection.UserId)
+		delete(vcRepo.peerConnMap, peerConnection.PeerId)
 	}
 }
 

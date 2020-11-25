@@ -69,6 +69,7 @@ func (vcUC *VideocallsUC) AddTrack(peerConnection *models.PeerConnection) {
 					logger.Errorf(internalError.Error())
 				}
 				vcUC.VideocallsRepo.DeleteTrackCh(peerConnection)
+				fmt.Println("removed track")
 			}()
 			rtpBuf := make([]byte, 1400)
 			for {
