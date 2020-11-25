@@ -77,11 +77,13 @@ func (vcUC *VideocallsUC) AddTrack(peerConnection *models.PeerConnection) {
 				if err != nil {
 					internalError := fmt.Errorf("error reading: %s", err.Error())
 					logger.Errorf(internalError.Error())
+					return
 				}
 				_, err = localTrack.Write(rtpBuf[:i])
 				if err != nil && err != io.ErrClosedPipe {
 					internalError := fmt.Errorf("error writing: %s", err.Error())
 					logger.Errorf(internalError.Error())
+					return
 				}
 			}
 		}()
