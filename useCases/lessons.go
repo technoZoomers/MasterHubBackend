@@ -431,15 +431,15 @@ func (lessonsUC *LessonsUC) matchLessonToDBUpdate(lesson *models.Lesson, lessonD
 		if err != nil {
 			return err
 		}
-		lessonStudents, err := lessonsUC.LessonsRepo.GetLessonStudents(lesson.Id)
+		_, err := lessonsUC.LessonsRepo.GetLessonStudents(lesson.Id)
 		if err != nil {
 			return fmt.Errorf(lessonsUC.useCases.errorMessages.DbError)
 		}
-		if len(lessonStudents) == 0 {
-			formatError := &models.NotAcceptableError{Message: "can't book a lesson with no students"}
-			logger.Errorf(formatError.Error())
-			return formatError
-		}
+		//if len(lessonStudents) == 0 {
+		//	formatError := &models.NotAcceptableError{Message: "can't book a lesson with no students"} // TODO: fix validation FRONT
+		//	logger.Errorf(formatError.Error())
+		//	return formatError
+		//}
 		lessonDB.Status = lesson.Status
 	}
 	return nil
