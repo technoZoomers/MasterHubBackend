@@ -188,8 +188,8 @@ func (mastersRepo *MastersRepo) UpdateMaster(master *models.MasterDB) error {
 	if err != nil {
 		return err
 	}
-	_, err = transaction.Exec("UPDATE masters SET (username, fullname, theme, description, qualification, education_format) = ($1, $2, nullif($3, 0), $4, $5, $6) where id = $7",
-		master.Username, master.Fullname, master.Theme, master.Description, master.Qualification, master.EducationFormat, master.Id)
+	_, err = transaction.Exec("UPDATE masters SET (username, fullname, theme, description, qualification, education_format, avg_price) = ($1, $2, nullif($3, 0), $4, $5, $6, $7) where id = $8",
+		master.Username, master.Fullname, master.Theme, master.Description, master.Qualification, master.EducationFormat, master.AveragePrice, master.Id)
 	if err != nil {
 		dbError = fmt.Errorf("failed to update master: %v", err.Error())
 		logger.Errorf(dbError.Error())
