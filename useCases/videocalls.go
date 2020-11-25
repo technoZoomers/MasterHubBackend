@@ -78,6 +78,7 @@ func (vcUC *VideocallsUC) AddTrack(peerConnection *models.PeerConnection) {
 					logger.Errorf(internalError.Error())
 					return
 				}
+				fmt.Println(i.Timestamp, i.Extension)
 				err = localTrack.WriteRTP(i)
 				if err != nil && err != io.ErrClosedPipe {
 					internalError := fmt.Errorf("error writing: %s", err.Error())
