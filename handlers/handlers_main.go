@@ -126,6 +126,7 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 	}
 	mediaEngine := webrtc.MediaEngine{}
 	mediaEngine.RegisterCodec(webrtc.NewRTPVP8Codec(webrtc.DefaultPayloadTypeVP8, 90000))
+	mediaEngine.RegisterCodec(webrtc.NewRTPOpusCodec(webrtc.DefaultPayloadTypeOpus, 48000))
 	handlers.VCHandlers = &VCHandlers{
 		handlers:     handlers,
 		videocallsUC: videocallsUC,
