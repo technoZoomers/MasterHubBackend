@@ -19,6 +19,7 @@ type VideocallsUC struct {
 
 func (vcUC *VideocallsUC) ConnectToTrack(peerConnection *models.PeerConnection) error {
 	track := vcUC.VideocallsRepo.GetTrack(peerConnection)
+	vcUC.VideocallsRepo.DeleteTrackCh(peerConnection.PeerId)
 	senderAudio, err := peerConnection.Connection.AddTrack(track.AudioTrack)
 	if err != nil {
 		internalError := fmt.Errorf("couldnt add audio track: %s", err.Error())
@@ -33,6 +34,34 @@ func (vcUC *VideocallsUC) ConnectToTrack(peerConnection *models.PeerConnection) 
 		return internalError
 	}
 	peerConnection.SenderVideo = senderVideo
+	peerConnection.Connection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
+
+		fmt.Printf("Connection State has changed %s \n", connectionState.String())
+		if connectionState == webrtc.ICEConnectionStateConnected {
+			fmt.Println("connected")
+			return
+		}
+
+		if connectionState == webrtc.ICEConnectionStateFailed ||
+			connectionState == webrtc.ICEConnectionStateDisconnected {
+
+			vcUC.VideocallsRepo.DeleteTrackCh(peerConnection.PeerId)
+
+			err = peerConnection.Connection.RemoveTrack(peerConnection.SenderVideo)
+			if err != nil {
+				internalError := fmt.Errorf("error removing video sender: %s", err.Error())
+				logger.Errorf(internalError.Error())
+			}
+			fmt.Println("removed video track")
+
+			err = peerConnection.Connection.RemoveTrack(peerConnection.SenderAudio)
+			if err != nil {
+				internalError := fmt.Errorf("error removing audio sender: %s", err.Error())
+				logger.Errorf(internalError.Error())
+			}
+			fmt.Println("removed audio track")
+		}
+	})
 	return nil
 }
 
@@ -69,6 +98,23 @@ func (vcUC *VideocallsUC) AddTrack(peerConnection *models.PeerConnection) {
 			}
 		}
 
+	})
+
+	peerConnection.Connection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
+
+		fmt.Printf("Connection State has changed %s \n", connectionState.String())
+		if connectionState == webrtc.ICEConnectionStateConnected {
+			fmt.Println("connected")
+			return
+		}
+
+		if connectionState == webrtc.ICEConnectionStateFailed ||
+			connectionState == webrtc.ICEConnectionStateDisconnected {
+
+			vcUC.VideocallsRepo.DeleteTrackCh(peerConnection.UserId)
+			fmt.Println("disconnected")
+
+		}
 	})
 }
 

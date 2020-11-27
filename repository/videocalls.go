@@ -50,12 +50,10 @@ func (vcRepo *VideocallsRepo) DeleteTrackFromMap(userId int64) {
 	delete(vcRepo.tracksMap, userId)
 }
 
-//func (vcRepo *VideocallsRepo) DeleteTrackCh(peerConnection *models.PeerConnection) {
-//	_, ok := vcRepo.peerConnMap[peerConnection.PeerId]
-//	if ok {
-//		delete(vcRepo.peerConnMap, peerConnection.PeerId)
-//	}
-//}
+func (vcRepo *VideocallsRepo) DeleteTrackCh(userId int64) {
+	delete(vcRepo.peerConnMap, userId)
+
+}
 
 func (vcRepo *VideocallsRepo) GetTrack(peerConnection *models.PeerConnection) *Track {
 	_, ok := vcRepo.peerConnMap[peerConnection.PeerId]
