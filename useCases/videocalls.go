@@ -39,6 +39,7 @@ func (vcUC *VideocallsUC) ConnectToTrack(peerConnection *models.PeerConnection) 
 		fmt.Printf("Connection State has changed %s \n", connectionState.String())
 		if connectionState == webrtc.ICEConnectionStateConnected {
 			fmt.Println("connected")
+			vcUC.VideocallsRepo.AddCallerState(peerConnection.UserId)
 			return
 		}
 
@@ -46,6 +47,7 @@ func (vcUC *VideocallsUC) ConnectToTrack(peerConnection *models.PeerConnection) 
 			connectionState == webrtc.ICEConnectionStateDisconnected {
 
 			vcUC.VideocallsRepo.DeleteTrackCh(peerConnection.PeerId)
+			vcUC.VideocallsRepo.RemoveCallerState(peerConnection.UserId)
 
 			err = peerConnection.Connection.RemoveTrack(peerConnection.SenderVideo)
 			if err != nil {
@@ -105,6 +107,7 @@ func (vcUC *VideocallsUC) AddTrack(peerConnection *models.PeerConnection) {
 		fmt.Printf("Connection State has changed %s \n", connectionState.String())
 		if connectionState == webrtc.ICEConnectionStateConnected {
 			fmt.Println("connected")
+			vcUC.VideocallsRepo.AddCallerState(peerConnection.UserId)
 			return
 		}
 
@@ -112,6 +115,7 @@ func (vcUC *VideocallsUC) AddTrack(peerConnection *models.PeerConnection) {
 			connectionState == webrtc.ICEConnectionStateDisconnected {
 
 			vcUC.VideocallsRepo.DeleteTrackCh(peerConnection.UserId)
+			vcUC.VideocallsRepo.RemoveCallerState(peerConnection.UserId)
 			fmt.Println("disconnected")
 
 		}

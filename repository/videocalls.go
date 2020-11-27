@@ -11,6 +11,7 @@ type VideocallsRepo struct {
 	repository  *Repository
 	peerConnMap map[int64]chan *Track
 	tracksMap   map[int64]*Track
+	isCalling   map[int64]bool
 }
 
 type Track struct {
@@ -44,6 +45,18 @@ func (vcRepo *VideocallsRepo) AddTrackToMap(userId int64) {
 func (vcRepo *VideocallsRepo) GetTrackFromMap(userId int64) (*Track, bool) {
 	track, ok := vcRepo.tracksMap[userId]
 	return track, ok
+}
+
+func (vcRepo *VideocallsRepo) AddCallerState(userId int64) {
+	vcRepo.isCalling[userId] = true
+}
+
+func (vcRepo *VideocallsRepo) RemoveCallerState(userId int64) {
+	vcRepo.isCalling[userId] = false
+}
+
+func (vcRepo *VideocallsRepo) GetCallerState(userId int64) bool {
+	return vcRepo.isCalling[userId]
 }
 
 func (vcRepo *VideocallsRepo) DeleteTrackFromMap(userId int64) {
