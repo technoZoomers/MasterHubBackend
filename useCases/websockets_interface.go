@@ -7,5 +7,6 @@ type WebsocketsUCInterface interface {
 	RemoveClient(clientConnection *models.WebsocketConnection)
 	SendMessage(message models.WebsocketMessage)
 	SendNotification(notification models.WebsocketNotification)
+	CheckOnline(userId int64) bool
 	Start()
 }

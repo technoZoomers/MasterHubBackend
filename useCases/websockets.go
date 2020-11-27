@@ -32,6 +32,14 @@ func (wsUC *WebsocketsUC) SendNotification(notification models.WebsocketNotifica
 	wsUC.WebsocketsRepo.Notifications <- notification
 }
 
+func (wsUC *WebsocketsUC) CheckOnline(userId int64) bool {
+	userConnString := wsUC.WebsocketsRepo.GetConnectionString(userId)
+	if userConnString != "" {
+		return false
+	}
+	return true
+}
+
 func (wsUC *WebsocketsUC) Start() {
 	for {
 		select {

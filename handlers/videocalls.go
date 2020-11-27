@@ -14,6 +14,7 @@ import (
 type VCHandlers struct {
 	handlers     *Handlers
 	videocallsUC useCases.VideocallsUCInterface
+	wsUC         useCases.WebsocketsUCInterface
 	webrtcAPI    *webrtc.API
 	webrtcConfig webrtc.Configuration
 }
@@ -30,6 +31,13 @@ func (vcHandlers *VCHandlers) createPeerConn(writer http.ResponseWriter, req *ht
 	//}
 	sent, peerId := vcHandlers.handlers.validatePeerId(writer, req)
 	if sent {
+		return
+	}
+	onlinePeer := vcHandlers.wsUC.CheckOnline(peerId)
+	if !onlinePeer {
+		notOnline := fmt.Errorf("user %d is not online", peerId)
+		logger.Errorf(notOnline.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(notOnline.Error()))
 		return
 	}
 	var sdp models.Sdp

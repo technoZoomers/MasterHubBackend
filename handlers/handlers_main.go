@@ -130,6 +130,7 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 	handlers.VCHandlers = &VCHandlers{
 		handlers:     handlers,
 		videocallsUC: videocallsUC,
+		wsUC:         wsUC,
 		webrtcConfig: webrtc.Configuration{
 			ICEServers: []webrtc.ICEServer{
 				{
