@@ -218,3 +218,7 @@ func (vcUC *VideocallsUC) sendAudioTrack(remoteTrack *webrtc.Track, peerConnecti
 
 	return nil
 }
+
+func (vcUC *VideocallsUC) CheckIsCalling(peerId int64) bool {
+	return vcUC.VideocallsRepo.GetCallerState(peerId)
+}

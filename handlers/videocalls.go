@@ -40,6 +40,13 @@ func (vcHandlers *VCHandlers) createPeerConn(writer http.ResponseWriter, req *ht
 		utils.CreateErrorAnswerJson(writer, http.StatusBadRequest, models.CreateMessage(notOnline.Error()))
 		return
 	}
+	callingPeer := vcHandlers.videocallsUC.CheckIsCalling(peerId)
+	if callingPeer {
+		isCalling := fmt.Errorf("user %d is already calling another user", peerId)
+		logger.Errorf(isCalling.Error())
+		utils.CreateErrorAnswerJson(writer, http.StatusConflict, models.CreateMessage(isCalling.Error()))
+		return
+	}
 	var sdp models.Sdp
 	err = json.UnmarshalFromReader(req.Body, &sdp)
 	if err != nil {
