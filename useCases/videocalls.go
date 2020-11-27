@@ -39,7 +39,7 @@ func (vcUC *VideocallsUC) ConnectToTrack(peerConnection *models.PeerConnection) 
 		fmt.Printf("Connection State has changed %s \n", connectionState.String())
 		if connectionState == webrtc.ICEConnectionStateConnected {
 			fmt.Println("connected")
-			vcUC.VideocallsRepo.AddCallerState(peerConnection.UserId)
+			vcUC.VideocallsRepo.AddCallerState(peerConnection.UserId, peerConnection.PeerId)
 			return
 		}
 
@@ -107,7 +107,7 @@ func (vcUC *VideocallsUC) AddTrack(peerConnection *models.PeerConnection) {
 		fmt.Printf("Connection State has changed %s \n", connectionState.String())
 		if connectionState == webrtc.ICEConnectionStateConnected {
 			fmt.Println("connected")
-			vcUC.VideocallsRepo.AddCallerState(peerConnection.UserId)
+			vcUC.VideocallsRepo.AddCallerState(peerConnection.UserId, peerConnection.PeerId)
 			return
 		}
 
@@ -219,6 +219,6 @@ func (vcUC *VideocallsUC) sendAudioTrack(remoteTrack *webrtc.Track, peerConnecti
 	return nil
 }
 
-func (vcUC *VideocallsUC) CheckIsCalling(peerId int64) bool {
+func (vcUC *VideocallsUC) CheckIsCalling(peerId int64) int64 {
 	return vcUC.VideocallsRepo.GetCallerState(peerId)
 }

@@ -41,7 +41,7 @@ func (vcHandlers *VCHandlers) createPeerConn(writer http.ResponseWriter, req *ht
 		return
 	}
 	callingPeer := vcHandlers.videocallsUC.CheckIsCalling(peerId)
-	if callingPeer {
+	if callingPeer != userId {
 		isCalling := fmt.Errorf("user %d is already calling another user", peerId)
 		logger.Errorf(isCalling.Error())
 		utils.CreateErrorAnswerJson(writer, http.StatusConflict, models.CreateMessage(isCalling.Error()))

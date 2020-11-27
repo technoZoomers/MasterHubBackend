@@ -82,7 +82,7 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 		repository:  repository,
 		peerConnMap: make(map[int64]chan *Track),
 		tracksMap:   make(map[int64]*Track),
-		isCalling:   make(map[int64]bool),
+		isCalling:   make(map[int64]int64),
 	}
 	//err = repository.dropTables()
 	//if err != nil {
