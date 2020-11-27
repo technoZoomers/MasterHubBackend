@@ -43,7 +43,11 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 	videosUC useCases.VideosUCInterface, avatarsUC useCases.AvatarsUCInterface,
 	chatsUC useCases.ChatsUCInterface, wsUC useCases.WebsocketsUCInterface, lessonsUC useCases.LessonsUCInterface,
 	videocallsUC useCases.VideocallsUCInterface) error {
-	handlers.UsersHandlers = &UsersHandlers{handlers, usersUC}
+	handlers.UsersHandlers = &UsersHandlers{
+		handlers: handlers,
+		UsersUC:  usersUC,
+		wsUC:     wsUC,
+	}
 	handlers.MastersHandlers = &MastersHandlers{
 		handlers:  handlers,
 		MastersUC: mastersUC,

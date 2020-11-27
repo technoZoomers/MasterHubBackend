@@ -15,6 +15,7 @@ import (
 type UsersHandlers struct {
 	handlers *Handlers
 	UsersUC  useCases.UsersUCInterface
+	wsUC     useCases.WebsocketsUCInterface
 }
 
 func (uh *UsersHandlers) GetUserById(writer http.ResponseWriter, req *http.Request) {
@@ -30,6 +31,17 @@ func (uh *UsersHandlers) GetUserById(writer http.ResponseWriter, req *http.Reque
 	user.Id = userId
 	err := uh.UsersUC.GetUserById(&user)
 	uh.answerUser(writer, user, err)
+}
+
+func (uh *UsersHandlers) CheckOnline(writer http.ResponseWriter, req *http.Request) {
+	sent, userId := uh.handlers.validateUserId(writer, req)
+	if sent {
+		return
+	}
+	var status models.Status
+	onlinePeer := uh.wsUC.CheckOnline(userId)
+	status.Online = onlinePeer
+	uh.answerStatus(writer, status, nil)
 }
 
 func (uh *UsersHandlers) Login(writer http.ResponseWriter, req *http.Request) {
@@ -101,6 +113,13 @@ func (uh *UsersHandlers) answerUser(writer http.ResponseWriter, user models.User
 	sent := uh.handlers.handleError(writer, err)
 	if !sent {
 		utils.CreateAnswerUserJson(writer, http.StatusOK, user)
+	}
+}
+
+func (uh *UsersHandlers) answerStatus(writer http.ResponseWriter, status models.Status, err error) {
+	sent := uh.handlers.handleError(writer, err)
+	if !sent {
+		utils.CreateAnswerStatusJson(writer, http.StatusOK, status)
 	}
 }
 

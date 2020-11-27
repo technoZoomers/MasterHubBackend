@@ -227,3 +227,12 @@ func CreateAnswerSdpJson(writer http.ResponseWriter, statusCode int, sdp masterh
 	}
 	createAnswerJson(writer, statusCode, marshalledSdp)
 }
+
+func CreateAnswerStatusJson(writer http.ResponseWriter, statusCode int, status masterhub_models.Status) {
+	marshalledStatus, err := json.Marshal(status)
+	if err != nil {
+		jsonError := fmt.Errorf("error marshalling json: %v", err.Error())
+		logger.Error(jsonError)
+	}
+	createAnswerJson(writer, statusCode, marshalledStatus)
+}
