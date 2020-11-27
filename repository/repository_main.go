@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/jackc/pgx"
-	"github.com/pion/webrtc/v2"
 	"github.com/technoZoomers/MasterHubBackend/models"
 	"github.com/technoZoomers/MasterHubBackend/utils"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -81,7 +80,8 @@ func (repository *Repository) Init(config pgx.ConnConfig) error {
 	repository.LessonsRepo = &LessonsRepo{repository}
 	repository.VideocallsRepo = &VideocallsRepo{
 		repository:  repository,
-		peerConnMap: make(map[int64]chan *webrtc.Track),
+		peerConnMap: make(map[int64]chan *Track),
+		tracksMap:   make(map[int64]*Track),
 	}
 	//err = repository.dropTables()
 	//if err != nil {
