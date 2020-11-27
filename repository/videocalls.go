@@ -46,6 +46,10 @@ func (vcRepo *VideocallsRepo) GetTrackFromMap(userId int64) (*Track, bool) {
 	return track, ok
 }
 
+func (vcRepo *VideocallsRepo) DeleteTrackFromMap(userId int64) {
+	delete(vcRepo.tracksMap, userId)
+}
+
 //func (vcRepo *VideocallsRepo) DeleteTrackCh(peerConnection *models.PeerConnection) {
 //	_, ok := vcRepo.peerConnMap[peerConnection.PeerId]
 //	if ok {

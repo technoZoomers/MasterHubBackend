@@ -93,6 +93,7 @@ func (vcUC *VideocallsUC) sendVideoTrack(remoteTrack *webrtc.Track, peerConnecti
 	newTrack, _ := vcUC.VideocallsRepo.GetTrackFromMap(peerConnection.UserId)
 	newTrack.VideoTrack = localTrack
 	if newTrack.AudioTrack != nil {
+		vcUC.VideocallsRepo.DeleteTrackFromMap(peerConnection.UserId)
 		vcUC.VideocallsRepo.AddNewConnection(peerConnection, newTrack)
 	}
 
@@ -135,10 +136,9 @@ func (vcUC *VideocallsUC) sendAudioTrack(remoteTrack *webrtc.Track, peerConnecti
 	newTrack, _ := vcUC.VideocallsRepo.GetTrackFromMap(peerConnection.UserId)
 	newTrack.AudioTrack = localTrack
 	if newTrack.VideoTrack != nil {
+		vcUC.VideocallsRepo.DeleteTrackFromMap(peerConnection.UserId)
 		vcUC.VideocallsRepo.AddNewConnection(peerConnection, newTrack)
 	}
-
-	vcUC.VideocallsRepo.AddNewConnection(peerConnection, newTrack)
 
 	go func() {
 		//defer func() {
