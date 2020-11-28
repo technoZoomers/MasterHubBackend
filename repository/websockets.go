@@ -21,6 +21,7 @@ func (wsRepo *WebsocketsRepo) AddNewCLient(clientConnection *models.WebsocketCon
 }
 
 func (wsRepo *WebsocketsRepo) RemoveClient(clientConnection *models.WebsocketConnection) {
+	delete(wsRepo.userConnMap, clientConnection.UserId)
 	delete(wsRepo.clientsMap, clientConnection.Connection.RemoteAddr().String())
 }
 
