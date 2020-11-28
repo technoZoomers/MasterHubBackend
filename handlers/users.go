@@ -16,6 +16,7 @@ type UsersHandlers struct {
 	handlers *Handlers
 	UsersUC  useCases.UsersUCInterface
 	wsUC     useCases.WebsocketsUCInterface
+	vcUC     useCases.VideocallsUCInterface
 }
 
 func (uh *UsersHandlers) GetUserById(writer http.ResponseWriter, req *http.Request) {
@@ -33,7 +34,7 @@ func (uh *UsersHandlers) GetUserById(writer http.ResponseWriter, req *http.Reque
 	uh.answerUser(writer, user, err)
 }
 
-func (uh *UsersHandlers) CheckOnline(writer http.ResponseWriter, req *http.Request) {
+func (uh *UsersHandlers) CheckStatus(writer http.ResponseWriter, req *http.Request) {
 	sent, userId := uh.handlers.validateUserId(writer, req)
 	if sent {
 		return
@@ -41,6 +42,12 @@ func (uh *UsersHandlers) CheckOnline(writer http.ResponseWriter, req *http.Reque
 	var status models.Status
 	onlinePeer := uh.wsUC.CheckOnline(userId)
 	status.Online = onlinePeer
+	callingPeer := uh.vcUC.CheckIsCalling(userId)
+	if callingPeer != 0 {
+		status.IsCalling = true
+	} else {
+		status.IsCalling = false
+	}
 	uh.answerStatus(writer, status, nil)
 }
 

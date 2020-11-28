@@ -38,6 +38,8 @@ func easyjson3d10f4c5DecodeGithubComTechnoZoomersMasterHubBackendModels(in *jlex
 		switch key {
 		case "online":
 			out.Online = bool(in.Bool())
+		case "is_calling":
+			out.IsCalling = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -56,6 +58,11 @@ func easyjson3d10f4c5EncodeGithubComTechnoZoomersMasterHubBackendModels(out *jwr
 		const prefix string = ",\"online\":"
 		out.RawString(prefix[1:])
 		out.Bool(bool(in.Online))
+	}
+	{
+		const prefix string = ",\"is_calling\":"
+		out.RawString(prefix)
+		out.Bool(bool(in.IsCalling))
 	}
 	out.RawByte('}')
 }

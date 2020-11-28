@@ -88,7 +88,7 @@ func main() {
 	r.Handle("/users/login", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.UsersHandlers.Login, true)).Methods("POST")
 	r.Handle("/users/logout", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.UsersHandlers.Logout, false)).Methods("DELETE")
 	r.Handle("/users/{id}", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.UsersHandlers.GetUserById, false)).Methods("GET")
-	r.HandleFunc("/users/{id}/online", mhHandlers.UsersHandlers.CheckOnline).Methods("GET")
+	r.HandleFunc("/users/{id}/status", mhHandlers.UsersHandlers.CheckStatus).Methods("GET")
 
 	r.Handle("/users/{id}/chats", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.ChatsHandlers.GetChatsByUserId, false)).Methods("GET")
 	//r.Handle("/users/{id}/avatars", mhMiddlewares.AuthMiddleware.Auth(mhHandlers.AvatarsHandlers.UploadAvatar, false)).Methods("POST")

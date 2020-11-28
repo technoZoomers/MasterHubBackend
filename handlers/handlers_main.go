@@ -47,6 +47,7 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 		handlers: handlers,
 		UsersUC:  usersUC,
 		wsUC:     wsUC,
+		vcUC:     videocallsUC,
 	}
 	handlers.MastersHandlers = &MastersHandlers{
 		handlers:  handlers,
