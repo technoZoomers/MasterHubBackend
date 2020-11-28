@@ -52,6 +52,7 @@ func (vcRepo *VideocallsRepo) AddCallerState(userId int64, peerId int64) {
 }
 
 func (vcRepo *VideocallsRepo) RemoveCallerState(userId int64) {
+	fmt.Printf("remove caller state with user:%d\n", userId)
 	delete(vcRepo.isCalling, userId)
 }
 
