@@ -86,6 +86,7 @@ func (handlers *Handlers) Init(usersUC useCases.UsersUCInterface, mastersUC useC
 			FormDataKey: "video",
 			VideoFormats: map[string]bool{
 				"video/webm":               true,
+				"video/avi":                true,
 				"audio/ogg":                true,
 				"video/mp4":                true,
 				"video/quicktime":          true,
