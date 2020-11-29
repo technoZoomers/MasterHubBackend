@@ -45,6 +45,12 @@ func (vcUC *VideocallsUC) ConnectToTrack(peerConnection *models.PeerConnection) 
 
 		if connectionState == webrtc.ICEConnectionStateFailed ||
 			connectionState == webrtc.ICEConnectionStateDisconnected {
+			fmt.Println("Connection state: ", peerConnection.Connection.ConnectionState().String())
+			fmt.Println("Signalling state: ", peerConnection.Connection.SignalingState())
+			fmt.Println("Stats: ", peerConnection.Connection.GetStats())
+			fmt.Println("ICETransportPolicy: ", peerConnection.Connection.GetConfiguration().ICETransportPolicy)
+			fmt.Println("ICEServers: ", peerConnection.Connection.GetConfiguration().ICEServers)
+			fmt.Println("ICE Connection state: ", peerConnection.Connection.ICEConnectionState().String())
 
 			vcUC.VideocallsRepo.DeleteTrackCh(peerConnection.PeerId)
 			vcUC.VideocallsRepo.RemoveCallerState(peerConnection.UserId)
